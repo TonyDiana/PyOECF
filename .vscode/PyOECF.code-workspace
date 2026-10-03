@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "name": "PyEOCF",
+      "path": "..",
+    },
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "**/BIB_REAL_slr/": true,
+    },
+  },
+}

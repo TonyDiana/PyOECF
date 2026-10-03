@@ -1,0 +1,7 @@
+# --- Elementos Python innecesarios ---
+**/__pycache__/
+**/*.pyc
+.venv/
+
+# --- No copiar el desplegable ---
+__UsarEste/

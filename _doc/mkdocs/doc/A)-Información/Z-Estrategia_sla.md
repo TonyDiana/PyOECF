@@ -1,0 +1,1 @@
+/home/tony/Dev/Python/Bibliotecas/Repo/rec/estrategias/Estrategia.md

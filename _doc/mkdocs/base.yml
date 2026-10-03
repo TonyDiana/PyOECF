@@ -1,0 +1,70 @@
+# Base compartida de MkDocs para todas las bibliotecas, via INHERIT.
+# Lo especial de cada repo (site_name, plugins con sus paths de
+# mkdocstrings) vive en el mkdocs.yml propio de cada proyecto, no aqui:
+# la lista "plugins" se REEMPLAZA entera al heredar (mergedeep no fusiona
+# listas por clave), asi que declararla aqui no serviria de nada.
+
+docs_dir: doc
+site_dir: ../Datasheet
+
+# No publicar el codigo fuente de las extensiones propias (campos_cabecera.py
+# y su __pycache__) que viven dentro de docs_dir solo para que PYTHONPATH y
+# extra_css los encuentren - no hace falta que lleguen al sitio generado.
+exclude_docs: |
+  *.py
+  __pycache__/
+  _rec/includes/
+
+theme:
+  name: material
+  language: es
+
+  features:
+    - navigation.tracking
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Modo claro
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Modo oscuro
+
+extra:
+  generator: false
+
+extra_css:
+  - _rec/compartidos_slr/extra.css
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - footnotes
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.snippets:
+      base_path:
+        - doc/_rec/includes
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - campos_cabecera
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+# dev_addr no se define aqui: lo calcula mkgen.sh por proyecto (puerto propio).

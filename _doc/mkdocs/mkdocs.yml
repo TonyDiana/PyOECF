@@ -1,0 +1,41 @@
+# mkdocs.yml propio de <<REPO>> - solo lo especial de este repo.
+# Todo lo comun viene por INHERIT desde Repo/_doc/mkdocs/base.yml.
+
+INHERIT: ../../../Repo/_doc/mkdocs/base.yml
+
+site_name: Biblioteca <<REPO>>
+
+theme:
+  logo: _rec/local/logo_slp.png
+  favicon: _rec/local/logo_slp.png
+
+plugins:
+  - search
+  - offline
+  - autorefs
+  - macros
+  - glightbox
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - ../../../
+          options:
+            show_if_no_docstring: false
+            docstring_style: sphinx
+            summary: true
+            heading_level: 3
+  - to-pdf:
+      # Preparado pero apagado por defecto - no lo usamos en <<REPO>> todavia.
+      # Para generarlo puntualmente: PDF_ENABLED=true bash mk_slr.sh build
+      enabled: !ENV [PDF_ENABLED, false]
+      author: Tony Diana
+      # back_cover con QR necesita site_url (no aplica si <<REPO>> no se
+      # publica en ningun dominio) - desactivado para que no falle si se activa.
+      back_cover: false
+      output_path: "<<REPO>>.pdf"
+      cover_title: "<<REPO>>"
+      cover_subtitle: "<<DESCRIPCION>>"
+      cover_logo: _rec/local/logo_slp.png
+      toc_title: "Tabla de contenidos"
+      toc_level: 3
