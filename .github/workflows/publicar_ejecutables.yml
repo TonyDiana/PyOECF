@@ -1,0 +1,163 @@
+# =============================================================================
+# Genera los ejecutables de PyOECF (Windows, macOS y Linux) con PyOECF.spec
+#
+# - Automático, al subir Remoto.sh la rama de despliegue: crea una release
+#   con el nombre de VERSION y le adjunta los ejecutables. Si esa versión ya
+#   está publicada, se PARA: las versiones nunca se sobrescriben.
+#   Las versiones 0.x (alfa/beta) se marcan como "pre-release".
+#
+# - A mano (pestaña Actions → "Publicar ejecutables" → Run workflow): SOLO
+#   genera los ejecutables, sin release. Se descargan desde la propia página
+#   de la ejecución. Sirve para probar sin gastar un número de versión.
+# =============================================================================
+
+name: Publicar ejecutables
+
+on:
+  push:
+    # --- OJO: mismo valor que RAMA_DESTINO en rec/scripts/remoto.conf
+    branches: [deploy]
+  workflow_dispatch:
+
+permissions:
+  # --- Crear la release y su etiqueta
+  contents: write
+
+env:
+  # --- OJO: mismo nombre que K.nombre en src/kernel/constantes.py
+  NOMBRE: "PyOECF"
+  # --- OJO: misma versión que en INSTALACION.md
+  PYTHON: "3.14"
+  # --- OJO: misma versión que en DESARROLLO de rec/requirements/requirements.conf
+  #     (requirements.conf no llega a la rama de despliegue)
+  PYINSTALLER: "pyinstaller~=6.22"
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Leer VERSION y comprobar que no está ya publicada
+  # ---------------------------------------------------------------------------
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.leer.outputs.version }}
+      previa: ${{ steps.leer.outputs.previa }}
+
+    steps:
+      - name: Descargar el repo
+        uses: actions/checkout@v7
+
+      - name: Leer VERSION
+        id: leer
+        shell: bash
+        run: |
+          v="$(tr -d '[:space:]' < VERSION)"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          # --- 0.x = alfa/beta → pre-release
+          if [[ "$v" == 0.* ]]; then previa=true; else previa=false; fi
+          echo "previa=$previa" >> "$GITHUB_OUTPUT"
+          echo "Versión: $v (previa: $previa)"
+
+      - name: Comprobar que la versión no está publicada
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ steps.leer.outputs.version }}"
+          if gh release view "$v" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::La versión $v ya está publicada. Sube VERSION antes de desplegar."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Generar el ejecutable en cada sistema (PyInstaller no genera para otro)
+  # ---------------------------------------------------------------------------
+  construir:
+    needs: version
+    strategy:
+      # --- Si falla uno, los demás siguen: así se ve qué sistema falla
+      fail-fast: false
+      matrix:
+        include:
+          - maquina: windows-latest
+            sistema: windows
+          - maquina: macos-latest
+            sistema: macos
+          # --- Fija, no "latest": el ejecutable solo funciona en sistemas
+          #     iguales o más nuevos que la máquina que lo genera
+          - maquina: ubuntu-24.04
+            sistema: linux
+    runs-on: ${{ matrix.maquina }}
+
+    steps:
+      - name: Descargar el repo
+        uses: actions/checkout@v7
+
+      - name: Instalar Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON }}
+
+      - name: Instalar dependencias
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt "$PYINSTALLER"
+
+      - name: Generar el ejecutable
+        shell: bash
+        run: pyinstaller --noconfirm PyOECF.spec
+
+      - name: Empaquetar
+        shell: bash
+        run: |
+          paquete="$NOMBRE-${{ needs.version.outputs.version }}-${{ matrix.sistema }}"
+          mkdir paquetes
+          case "${{ matrix.sistema }}" in
+            windows) cp "dist/$NOMBRE.exe" "paquetes/$paquete.exe" ;;
+            # --- ditto conserva la estructura y los permisos de la .app
+            macos)   ditto -c -k --keepParent "dist/$NOMBRE.app" "paquetes/$paquete.zip" ;;
+            # --- tar conserva el permiso de ejecución
+            linux)   tar -czf "paquetes/$paquete.tar.gz" -C dist "$NOMBRE" ;;
+          esac
+          ls -la paquetes
+
+      - name: Guardar el paquete
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.sistema }}
+          path: paquetes/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Crear la release con los tres paquetes (solo en el automático)
+  # ---------------------------------------------------------------------------
+  publicar:
+    needs: [version, construir]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reunir los paquetes
+        uses: actions/download-artifact@v8
+        with:
+          path: paquetes
+          merge-multiple: true
+
+      - name: Crear la release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ needs.version.outputs.version }}"
+          opciones=()
+          if [[ "${{ needs.version.outputs.previa }}" == "true" ]]; then
+            opciones+=(--prerelease)
+          fi
+          gh release create "$v" paquetes/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$NOMBRE $v" \
+            --notes "Instrucciones: ver INSTALACION.md" \
+            "${opciones[@]}"
