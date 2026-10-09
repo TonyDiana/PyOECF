@@ -2,25 +2,30 @@
 """
     :Propósito: Kernel PyOECF.
     :Autor:     Tony Diana
-    :Versión:   26.10.06
+    :Versión:   26.10.09
 """
 
-# cSpell:ignore biboecf, boton, codigo, customtkinter, initialdir, meipass
-# cSpell:ignore padx, pady, screeninfo, tamano, textvariable, winfo
-# cSpell:ignore choosedir, exps, leidas, mclocale, mcset, msgcat, redibuja
+# cSpell:ignore biboecf, borderwidth, boton, choosedir, codigo, customtkinter
+# cSpell:ignore exps, initialdir, leidas, mclocale, mcset, meipass, msgcat
+# cSpell:ignore oecf, padx, pady, redibuja, redibujar, relx, screeninfo, tamano
+# cSpell:ignore textvariable, winfo
 
 # --- Valenciano
-# cSpell:ignore accedir, acord, Ajuda, Analitzar, Càmera, carpetes, denegat
-# cSpell:ignore Eixir, existeix, fitxer, imatge, imatges, Incidències
-# cSpell:ignore Llegint, llegir, Mostra, nincidències, Permís, pogut
-# cSpell:ignore Selecció, Seleccioneu, Sèrie, sèrie, Trieu, vàlid, Versió
+# cSpell:ignore acadèmica, accedir, acord, Ajuda, Analitzar, Càmera, carpetes
+# cSpell:ignore denegat, Eixir, existeix, fitxer, imatge, imatges, Incidències
+# cSpell:ignore Llegint, llegir, Llicència, lliure, Mostra, nincidències
+# cSpell:ignore Permís, pogut, Selecció, Seleccioneu, sèrie, Sèrie, Trieu
+# cSpell:ignore vàlid, Versió
 
 __all__ = ["Ventana"]
 
 # --- Bibliotecas estándar Python
+import os
+import subprocess
+import sys
 import tkinter as tk
 import webbrowser
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from tkinter import filedialog
 
@@ -31,12 +36,19 @@ import screeninfo
 # --- Bibliotecas internas
 from bib import biboecf, std
 from .constantes import K
-from .temporal import Rejilla, grabar_json
+from .json_estudio import grabar_json
+from .rejilla import Rejilla
 
 
 #
 class Ventana(ctk.CTk):
     """ Ventana principal de PyOECF. """
+
+    # --- OJO: aquí NO tiene efecto. __slots__ solo impide crear atributos
+    #     nuevos si todas las clases de las que se hereda también lo usan,
+    #     y customtkinter (ctk.CTk) no lo usa: la ventana sigue teniendo su
+    #     __dict__ y admite cualquier atributo. Se deja por la norma
+    # __slots__ = []
 
     # --- Constantes de la ventana (las de toda la app están en K)
     class KV(std.EnumMutable):
@@ -47,16 +59,22 @@ class Ventana(ctk.CTk):
                        K.ca: "Versió"}
         txt_carpeta = {K.es: "Seleccione carpeta", K.en: "Select folder",
                        K.ca: "Seleccioneu carpeta"}
-        txt_analizar = {K.es: "Analizar", K.en: "Analyze",
-                        K.ca: "Analitzar"}
+        txt_preparar = {K.es: "Preparar", K.en: "Prepare",
+                        K.ca: "Preparar"}
+        txt_abrir_oecf = {K.es: "Abrir OECF", K.en: "Open OECF",
+                          K.ca: "Obrir OECF"}
         txt_fase_carpeta = {K.es: "Carpeta", K.en: "Folder",
                             K.ca: "Carpeta"}
         txt_fase_cam = {K.es: "Cámara", K.en: "Camera",
                         K.ca: "Càmera"}
         txt_archivo = {K.es: "Primera imagen", K.en: "First image",
                        K.ca: "Primera imatge"}
-        txt_marca = {K.es: "Marca", K.en: "Brand",
-                     K.ca: "Marca"}
+        txt_fecha = {K.es: "Fecha", K.en: "Date", K.ca: "Data"}
+
+        # --- Fecha y hora de disparo, como se escriben en cada idioma
+        formato_fecha = {K.es: "%d/%m/%Y %H:%M:%S",
+                         K.en: "%Y-%m-%d %H:%M:%S",
+                         K.ca: "%d/%m/%Y %H:%M:%S"}
         txt_modelo = {K.es: "Modelo", K.en: "Model",
                       K.ca: "Model"}
         txt_exp = {K.es: "Tv", K.en: "Tv",
@@ -84,12 +102,20 @@ class Ventana(ctk.CTk):
         # --- Resumen de la rejilla en una línea: separador entre trozos
         sep_resumen = " · "
 
-        # --- Incidencias de la rejilla: botón en su hueco de ZX 2/3, con
-        #     cuántas hay, y su propia ventana (ancho × alto, en píxeles)
-        txt_incidencias = {K.es: "Incidencias\n{n}", K.en: "Issues\n{n}",
-                           K.ca: "Incidències\n{n}"}
-        txt_sin_incidencias = {K.es: "Sin\nincidencias", K.en: "No\nissues",
-                               K.ca: "Sense\nincidències"}
+        # --- Incidencias de la rejilla: botón bajo la Z0, con cuántas
+        #     hay, y su propia ventana (ancho × alto, en píxeles)
+        txt_incidencias = {K.es: "Incidencias ({n})", K.en: "Issues ({n})",
+                           K.ca: "Incidències ({n})"}
+        txt_sin_incidencias = {K.es: "Sin incidencias", K.en: "No issues",
+                               K.ca: "Sense incidències"}
+
+        # --- Las incidencias, una por línea, también en un archivo de
+        #     texto en la carpeta OECF, en el idioma de la ventana
+        sep_incidencias = "\n"
+        archivo_incidencias = "incidencias.txt"
+        # --- Analizar: botón bajo la ZX, activo solo si la serie sirve
+        txt_analizar = {K.es: "Analizar", K.en: "Analyze",
+                        K.ca: "Analitzar"}
         txt_titulo_incidencias = {K.es: "Incidencias de la serie",
                                   K.en: "Series issues",
                                   K.ca: "Incidències de la sèrie"}
@@ -105,6 +131,9 @@ class Ventana(ctk.CTk):
 
         txt_no_read = {K.es: "No se ha podido leer", K.en: "Could not be read",
                        K.ca: "No s'ha pogut llegir"}
+        txt_licencia = {K.es: "Licencia académica de uso libre",
+                        K.en: "Academic license, free to use",
+                        K.ca: "Llicència acadèmica d'ús lliure"}
         txt_ayuda = {K.es: "Ayuda", K.en: "Help",
                      K.ca: "Ajuda"}
         txt_idioma = {K.es: "Idioma", K.en: "Language",
@@ -114,7 +143,14 @@ class Ventana(ctk.CTk):
 
         # --- Medidas (píxeles)
         margen = 10
-        borde_caja = 2
+        grosor_marco = 2
+
+        # --- Tamaño de la letra de la licencia, en la cabecera (la normal
+        #     del tema es 13)
+        letra_licencia = 15
+
+        # --- Hueco entre el icono y la licencia, en la cabecera
+        sep_licencia = 20
 
         # --- Datos en una línea: hueco entre un dato y el siguiente
         sep_datos = 30
@@ -126,9 +162,27 @@ class Ventana(ctk.CTk):
         separador_superior = 0
         ancho_carpeta = 650
 
-        # --- Milisegundos tras abrir la ventana para volver a poner el
-        #     icono: en Windows, customtkinter pone el suyo a los 200 ms
-        retraso_icono = 300
+        # --- Principio de sys.platform en Windows: ahí el icono va con
+        #     iconbitmap() y el .ico, o customtkinter pone el suyo
+        plataforma_windows = "win"
+
+        # --- Abrir una carpeta en el explorador de archivos: macOS
+        #     (sys.platform) y la orden de macOS y de Linux. En Windows,
+        #     os.startfile
+        plataforma_mac = "darwin"
+        abrir_mac = "open"
+        abrir_linux = "xdg-open"
+
+        # --- Milisegundos sin teclear en la ruta antes de mostrar la
+        #     cámara: así no se lee la carpeta con cada letra
+        espera_tecleo = 500
+
+        # --- Repintado forzado (ver Ajustar): milisegundos tras ajustar
+        #     el tamaño en que se pide a cada elemento que se redibuje (una
+        #     pasada por cada uno: la segunda repasa lo que se pinte tarde)
+        #     y el evento de Tk que lo pide
+        esperas_repintado = (200, 600)
+        tk_redibujar = "<Expose>"
 
         # --- Milisegundos entre la lectura de una imagen y la siguiente:
         #     lo justo para que la ventana atienda al ratón y se repinte
@@ -172,31 +226,76 @@ class Ventana(ctk.CTk):
             'Invalid file name "%1$s".': {
                 K.ca: 'Nom de fitxer no vàlid "%1$s".'}}
 
+    # --- Variables de clase (solo hay una ventana)
+    #
+    # --- Llamada pendiente a _mostrar_cam(): al teclear la ruta, se espera
+    #     a que se deje de escribir
+    __espera: str | None = None
+
+    # --- Cajas hasta Carpeta (incluida): las de encima se quitan al
+    #     cambiar de carpeta
+    __propias_carpeta: int = 0
+
+    #
+    # --- Caja --- | icono | Licencia académica | © Tony Diana |
+    #
+
+    # --- Siempre arriba, aunque crezcan las cajas de debajo
+    def caja_cabecera(self) -> None:
+        # --- Abreviar escritura
+        kv = self.KV
+
+        fila = self.CrearCaja(fija=True, marco=False)
+
+        # --- Icono del programa en una etiqueta de Tk, con el fondo de la
+        #     ventana: la de customtkinter pide CTkImage, y esa necesita
+        #     Pillow. Se guarda la imagen: si no, Python la borra
+        try:
+            self.icono_cabecera = tk.PhotoImage(
+                file=K.path / K.carpeta_recursos / K.icono_png)
+            fondo = self._apply_appearance_mode(
+                ctk.ThemeManager.theme["CTk"]["fg_color"])
+            tk.Label(fila, image=self.icono_cabecera, bg=fondo,
+                     borderwidth=0).pack(side="left")
+        except tk.TclError:
+            pass
+
+        # --- La licencia, a la izquierda tras el icono, un poco separada;
+        #     el autor, a la derecha
+        self.ApuntarTexto(ctk.CTkLabel(
+            fila, font=ctk.CTkFont(size=kv.letra_licencia)),
+            kv.txt_licencia).pack(side="left", padx=(kv.sep_licencia, 0))
+        ctk.CTkLabel(fila, text=K.derechos).pack(side="right")
+
     #
     # --- Caja --- | Ayuda | Idioma | Salir |
     #
 
     def caja_ayuda(self) -> None:
+        # --- Abreviar escritura
         kv = self.KV
-        fila = self.nueva_caja()
 
-        # --- Los extremos primero, para que Idioma ocupe el centro
-        self.traducible(ctk.CTkButton(fila, command=self.ayuda),
-                        kv.txt_ayuda).pack(side="left")
-        self.traducible(ctk.CTkButton(fila, command=self.destroy),
-                        kv.txt_salir).pack(side="right")
+        fila = self.CrearCaja()
+
+        # --- Los extremos primero, para que Idioma ocupe el centro. Ayuda
+        #     abre la web de ayuda en el navegador
+        self.ApuntarTexto(ctk.CTkButton(
+            fila, command=lambda: webbrowser.open(K.url_help)),
+            kv.txt_ayuda).pack(side="left")
+        self.ApuntarTexto(ctk.CTkButton(fila, command=self.destroy),
+                          kv.txt_salir).pack(side="right")
 
         # --- Idioma: grupo centrado en el hueco entre Ayuda y Salir. Al
         #     elegir otro en la lista, cambia toda la ventana
         grupo = ctk.CTkFrame(fila, fg_color="transparent")
         grupo.pack(side="left", expand=True)
 
-        self.traducible(ctk.CTkLabel(grupo), kv.txt_idioma).pack(
+        self.ApuntarTexto(ctk.CTkLabel(grupo), kv.txt_idioma).pack(
             side="left")
 
         lista = ctk.CTkComboBox(
             grupo, values=list(K.idiomas.values()), state="readonly",
-            command=self.cambiar_idioma)
+            command=self.CambiarIdioma)
 
         lista.set(K.idiomas[K.idioma])
         lista.pack(side="left", padx=(kv.margen, 0))
@@ -206,6 +305,7 @@ class Ventana(ctk.CTk):
     #
 
     def caja_carpeta(self) -> None:
+        # --- Abreviar escritura
         kv = self.KV
 
         # --- Diálogo de carpetas: estas dos preparaciones solo afectan al
@@ -213,7 +313,7 @@ class Ventana(ctk.CTk):
         #
         # --- Sin carpetas ocultas (las que empiezan por punto), pero con
         #     la casilla para verlas
-        def sin_ocultos() -> None:
+        def _sin_ocultos() -> None:
             try:
                 self.tk.call(*kv.tcl_cargar_dialogo)
             except tk.TclError:
@@ -230,12 +330,13 @@ class Ventana(ctk.CTk):
         # --- En el idioma de la app y no en el del sistema: se completan
         #     las traducciones que le faltan a Tk y, si el diálogo ya
         #     existe, se destruye para que se cree de nuevo en ese idioma
-        def en_su_idioma() -> None:
+        def _idioma() -> None:
             try:
                 for original, textos in kv.tcl_faltan.items():
-                    for idioma, traducido in textos.items():
-                        self.tk.call(*kv.tcl_espacio, (kv.tcl_traducir, idioma,
-                                                       original, traducido))
+                    for codigo, traducido in textos.items():
+                        self.tk.call(*kv.tcl_espacio, (kv.tcl_traducir,
+                                                       codigo, original,
+                                                       traducido))
                 self.tk.call(kv.tcl_idioma, K.idioma)
                 if int(self.tk.call("winfo", "exists", kv.tcl_dialogo)):
                     self.tk.call("destroy", kv.tcl_dialogo)
@@ -245,9 +346,9 @@ class Ventana(ctk.CTk):
         # --- Pide la carpeta y la escribe en la casilla. El diálogo
         #     empieza en la carpeta de la casilla, si existe; si no, en la
         #     del usuario (no en la de la app)
-        def elegir() -> None:
-            sin_ocultos()
-            en_su_idioma()
+        def _elegir() -> None:
+            _sin_ocultos()
+            _idioma()
             escrita = self.ruta.get().strip()
             inicio = Path(escrita) if escrita else Path.home()
             if not inicio.is_dir():
@@ -256,32 +357,67 @@ class Ventana(ctk.CTk):
             ruta = filedialog.askdirectory(parent=self, initialdir=inicio)
             if ruta:
                 self.ruta.set(ruta)
+                _mostrar_cam()
+
+        # --- ¿La carpeta escrita es la de la cámara que ya se ve?
+        def _es_la_vista() -> bool:
+            return (self.OECF is not None
+                    and self.carpetaEscrita == self.OECF.path)
 
         # --- Otra carpeta: se quitan las cajas de encima de esta, sean
         #     las que sean. Los argumentos los pone trace_add y no se usan
-        def otra_carpeta(*_) -> None:
-            if self.carpeta_escrita() != self.analizada:
-                self.quitar_cajas(propias)
+        def _otra_carpeta(*_) -> None:
+            if _es_la_vista():
+                return
+            self.QuitarCajas(self.__propias_carpeta)
 
-        # --- La caja: botón · ruta elegida · Analizar. Las cajas que haya
+            # --- after() programa _mostrar_cam() para dentro de
+            #     espera_tecleo ms y devuelve el identificador de esa
+            #     llamada; after_cancel() la anula si aún no se ha hecho.
+            #     Cada letra anula la llamada anterior y programa otra:
+            #     solo se ejecuta la de la última, al dejar de teclear
+            if self.__espera is not None:
+                self.after_cancel(self.__espera)
+            self.__espera = self.after(kv.espera_tecleo, _mostrar_cam)
+
+        # --- Muestra la caja de la cámara de la carpeta escrita, si no es
+        #     la que ya se ve
+        def _mostrar_cam() -> None:
+
+            # --- Si se llega desde el diálogo, se anula la llamada que
+            #     pudiera quedar pendiente de haber tecleado antes
+            if self.__espera is not None:
+                self.after_cancel(self.__espera)
+                self.__espera = None
+            if not _es_la_vista():
+                self.caja_cam()
+
+        # --- La caja: botón · ruta elegida · Abrir OECF · Preparar. Las
+        #     cajas que haya
         #     hasta esta (incluida) son las propias; el resto, de encima
-        fila = self.nueva_caja(kv.txt_fase_carpeta)
-        propias = len(self.cajas)
-        self.traducible(ctk.CTkButton(fila, command=elegir),
-                        kv.txt_carpeta).pack(side="left")
+        fila = self.CrearCaja(kv.txt_fase_carpeta)
+        self.__propias_carpeta = len(self.cajas)
+        self.ApuntarTexto(ctk.CTkButton(fila, command=_elegir),
+                          kv.txt_carpeta).pack(side="left")
 
-        # --- Analizar antes que la casilla, para que esta ocupe el hueco.
-        #     Empieza inactivo: aún no hay ruta
-        self.boton_analizar = self.traducible(
-            ctk.CTkButton(fila, command=self.caja_cam, state="disabled"),
-            kv.txt_analizar)
-        self.boton_analizar.pack(side="right", padx=(kv.margen, 0))
+        # --- Preparar antes que la casilla, para que esta ocupe el hueco.
+        #     Empieza inactivo: aún no hay RAW
+        self.boton_preparar = ctk.CTkButton(fila, command=self.Preparar,
+                                            state="disabled")
+        self.ApuntarTexto(self.boton_preparar, kv.txt_preparar)
+        self.boton_preparar.pack(side="right", padx=(kv.margen, 0))
 
-        # --- Cada cambio en la ruta (elegida o tecleada) activa o
-        #     desactiva Analizar
+        # --- Abrir OECF, a la izquierda de Preparar. Inactivo hasta que
+        #     se prepare la serie
+        self.boton_oecf = ctk.CTkButton(fila, command=self.AbrirOECF,
+                                        state="disabled")
+        self.ApuntarTexto(self.boton_oecf, kv.txt_abrir_oecf)
+        self.boton_oecf.pack(side="right", padx=(kv.margen, 0))
+
+        # --- Cada cambio en la ruta (elegida o tecleada) quita las cajas
+        #     de encima y muestra la cámara de la carpeta nueva
         self.ruta = ctk.StringVar()
-        self.ruta.trace_add("write", self.activar_analizar)
-        self.ruta.trace_add("write", otra_carpeta)
+        self.ruta.trace_add("write", _otra_carpeta)
         carpeta = ctk.CTkEntry(fila, width=kv.ancho_carpeta,
                                textvariable=self.ruta)
         carpeta.pack(side="left", fill="x", expand=True, padx=(kv.margen, 0))
@@ -291,18 +427,19 @@ class Ventana(ctk.CTk):
     #
 
     def caja_cam(self) -> None:
+        # --- Abreviar escritura
         kv = self.KV
 
-        # --- La caja se construye la primera vez que se pulsa Analizar,
-        #     encima de la carpeta: todos los datos en una línea
-        def construir_caja() -> None:
+        # --- La caja se construye al elegir carpeta, encima de la
+        #     carpeta: todos los datos en una línea
+        def _construir_caja() -> None:
 
             # --- Añade «nombre valor» a la derecha de los que ya hay y
             #     devuelve la etiqueta del valor, para rellenarla. El
             #     primero va pegado al borde; los demás, separados
-            def nuevo_dato(nombre: dict) -> ctk.CTkLabel:
+            def _nuevo_dato(nombre: dict) -> ctk.CTkLabel:
                 hueco = kv.sep_datos if grupo.winfo_children() else 0
-                self.traducible(ctk.CTkLabel(grupo), nombre).pack(
+                self.ApuntarTexto(ctk.CTkLabel(grupo), nombre).pack(
                     side="left", padx=(hueco, 0))
                 valor = ctk.CTkLabel(grupo, text="")
                 valor.pack(side="left", padx=(kv.margen, 0))
@@ -310,68 +447,68 @@ class Ventana(ctk.CTk):
 
             # --- Los datos van en un grupo que no se estira: así queda
             #     centrado en la caja
-            interior = self.nueva_caja(kv.txt_fase_cam, self.reiniciar_cam)
+            interior = self.CrearCaja(kv.txt_fase_cam, self.ReiniciarCam)
             self.propias_cam = len(self.cajas)
             grupo = ctk.CTkFrame(interior, fg_color="transparent")
             grupo.pack()
 
-            self.val_archivo = nuevo_dato(kv.txt_archivo)
-            self.val_marca = nuevo_dato(kv.txt_marca)
-            self.val_modelo = nuevo_dato(kv.txt_modelo)
-            self.val_f = nuevo_dato(kv.txt_f)
-            self.val_exp = nuevo_dato(kv.txt_exp)
-            self.val_iso = nuevo_dato(kv.txt_iso)
+            self.val_archivo = _nuevo_dato(kv.txt_archivo)
+            self.val_fecha = _nuevo_dato(kv.txt_fecha)
+            self.val_modelo = _nuevo_dato(kv.txt_modelo)
+
+            # --- Exposición: f, Tv e ISO en un solo texto, centrado en su
+            #     hueco
+            self.val_exp = ctk.CTkLabel(grupo, text="")
+            self.val_exp.pack(side="left", padx=(kv.sep_datos, 0))
 
             # --- Pone los textos nuevos y hace crecer la ventana
-            self.traducir()
+            self.Traducir()
 
-        if self.val_archivo is None:
-            construir_caja()
-        self.analizada = self.carpeta_escrita()
+        # --- Siempre es nueva: al cambiar de carpeta se quita la anterior
+        _construir_caja()
 
-        # --- Se vacían los datos de la vez anterior y se quitan las cajas
-        #     de encima (la serie): si esta carpeta falla, no deben quedar
-        #     a la vista
-        for valor in (self.val_marca, self.val_modelo, self.val_exp,
-                      self.val_f, self.val_iso):
-            self.poner(valor, "")                               # type: ignore
-        self.quitar_cajas(self.propias_cam)
-
-        carpeta = self.analizada
-        if not carpeta.is_dir():
-            self.poner(self.val_archivo, kv.txt_sin_carpeta)    # type: ignore
+        # --- Fase 1 de la serie: la carpeta, sus RAW y la exposición de
+        #     la primera. Se guarda para Preparar (y su carpeta, para no
+        #     rehacer la caja si se vuelve a elegir la misma)
+        OECF = self.OECF = biboecf.OECF(self.carpetaEscrita)
+        if not OECF.esCarpeta:
+            self.Poner(self.val_archivo, kv.txt_sin_carpeta)    # type: ignore
             return
 
-        raws = biboecf.buscar_raw(carpeta)
-        if not raws:
-            self.poner(self.val_archivo, kv.txt_sin_raw)        # type: ignore
+        if not OECF.raws:
+            self.Poner(self.val_archivo, kv.txt_sin_raw)        # type: ignore
             return
 
-        archivo = raws[0]
-        self.poner(self.val_archivo, archivo.name)              # type: ignore
+        self.Poner(self.val_archivo, OECF.primera)              # type: ignore
 
-        # --- Marca y modelo tal como vienen en el archivo
-        cam = biboecf.leer_cam(archivo)
-        if cam is None:
-            self.poner(self.val_modelo, kv.txt_no_read)         # type: ignore
+        # --- Fecha y hora de disparo, en el formato de cada idioma
+        fecha = OECF.fecha
+        if fecha is None:
+            self.Poner(self.val_fecha, kv.txt_no_read)          # type: ignore
         else:
-            marca, modelo = cam
-            self.poner(self.val_marca, marca)                   # type: ignore
-            self.poner(self.val_modelo, modelo)                 # type: ignore
+            self.Poner(self.val_fecha,                          # type: ignore
+                       lambda: fecha.strftime(K.tr(kv.formato_fecha)))
 
-        # --- Tv, f e ISO salen juntos: si no se leen, se avisa en Tv
-        exp = biboecf.leer_exp(archivo)
+        # --- Marca y modelo juntos, sin repetir la marca
+        cam = OECF.cam
+        self.Poner(self.val_modelo,                             # type: ignore
+                   kv.txt_no_read if cam is None else cam.nombre)
+
+        # --- f, Tv e ISO salen juntos, en un solo texto: «f/9 · Tv 1/125 s
+        #     · ISO 100». Si no se leen, se avisa ahí
+        exp = OECF.ZV
         if exp is None:
-            self.poner(self.val_exp, kv.txt_no_read)            # type: ignore
+            self.Poner(self.val_exp, kv.txt_no_read)            # type: ignore
         else:
-            segundos, diafragma, iso = exp
-            tv = biboecf.texto_exp(segundos)
-            self.poner(self.val_exp, tv)                        # type: ignore
-            self.poner(self.val_f, biboecf.texto_f(diafragma))  # type: ignore
-            self.poner(self.val_iso, biboecf.texto_iso(iso))    # type: ignore
+            def _str_exp() -> str:
+                return kv.sep_resumen.join((
+                    K.tr(kv.txt_f) + biboecf.OECF.TextoF(exp.f),
+                    f"{K.tr(kv.txt_exp)} {biboecf.OECF.TextoTV(exp.tv)}",
+                    f"{K.tr(kv.txt_iso)} {biboecf.OECF.TextoISO(exp.iso)}"))
+            self.Poner(self.val_exp, _str_exp)                   # type: ignore
 
-        # --- El resto de la serie; la primera ya está leída
-        self.caja_serie(raws, exp)
+        # --- Con RAW, ya se puede preparar
+        self.ActivarCarpeta()
 
     #
     # --- Caja --- Serie
@@ -381,15 +518,12 @@ class Ventana(ctk.CTk):
     #     barra de progreso, rejilla y botón de incidencias. Lee la serie
     #     una imagen cada vez (la exposición de la primera ya se tiene),
     #     para que la ventana no se congele y vaya mostrando el progreso
-    def caja_serie(self, raws: list[Path],
-                   exp_primera: tuple[float, float, float] | None) -> None:
+    def caja_serie(self, OECF: biboecf.OECF) -> None:
         kv = self.KV
-
-        # --- Exposición de cada imagen (None si no se pudo leer)
-        exps = [exp_primera]
+        raws = OECF.raws
 
         # --- Abre (o trae delante) la ventana con todas las incidencias
-        def ver_incidencias() -> None:
+        def _ver_incidencias() -> None:
             if not self.incidencias_abiertas():
                 ventana = ctk.CTkToplevel(self)
                 ventana.geometry(kv.tamano_incidencias)
@@ -401,127 +535,133 @@ class Ventana(ctk.CTk):
             self.rellenar_incidencias()
             self.ventana_incidencias.lift()                     # type: ignore
 
-        # --- Lee la siguiente imagen y se vuelve a programar. Antes de
-        #     leer se pinta el progreso: la lectura bloquea la ventana un
-        #     momento
-        def leer_toma() -> None:
+        # --- Lee la siguiente toma (la lee OECF) y se vuelve a programar.
+        #     Antes de leer se pinta el progreso: la lectura bloquea la
+        #     ventana un momento
+        def _leer_toma() -> None:
             self.tarea = None
-            if len(exps) == len(raws):
-                fin_serie()
+            if self.OECF.esRead:                                # type: ignore
+                _fin_serie()
                 return
 
-            self.poner(val_serie, kv.txt_leyendo,
-                       n=len(exps) + 1, total=len(raws))
+            leidas = len(self.OECF.tomas)                       # type: ignore
+            self.Poner(val_serie, kv.txt_leyendo,
+                       n=leidas + 1, total=len(raws))
             self.update_idletasks()
 
-            exps.append(biboecf.leer_exp(raws[len(exps)]))
-            barra.set(len(exps) / len(raws))
+            next(self.lectura)                                  # type: ignore
+            barra.set(len(self.OECF.tomas) / len(raws))         # type: ignore
 
             # --- after (y no un bucle): entre imagen e imagen, la ventana
             #     atiende al ratón y se repinta
-            self.tarea = self.after(kv.pausa_lectura, leer_toma)
+            self.tarea = self.after(kv.pausa_lectura, _leer_toma)
 
         # --- Calcula la zona de cada imagen y muestra el resumen.
         #     PROVISIONAL: la referencia es la primera imagen leída (sin
         #     tapadas todavía)
-        def fin_serie() -> None:
+        def _fin_serie() -> None:
             self.leyendo = False
-            self.activar_analizar()
+            self.ActivarCarpeta()
             barra.pack_forget()
 
-            relativas = [biboecf.exp_relativa(*e) if e else None
-                         for e in exps]
-            leidas = [e for e in relativas if e is not None]
+            # --- La serie, leída y repartida por OECF: el tercioEV de
+            #     cada archivo, en su orden (None si no se leyó)
+            serie: biboecf.OECF = self.OECF                     # type: ignore
+            leidas = [t for t in serie.tercioEVs if t is not None]
             if not leidas:
-                self.poner(val_serie, kv.txt_no_read)
-                self.ajustar()
+                self.Poner(val_serie, kv.txt_no_read)
+                self.Ajustar()
                 return
 
-            # --- k de cada archivo, en su orden (None si no se leyó)
-            ks_todas = [None if e is None else
-                        biboecf.calcular_k(e, leidas[0]) for e in relativas]
+            # --- Rango «de … a …»: solo las tomas que van a la rejilla
+            #     (sin tapadas, balances de cámara ni Z-V iniciales de más)
+            en_rejilla = [t for t, va in zip(serie.tercioEVs, serie.enRejilla)
+                          if va and t is not None]
 
-            # --- Partes de la secuencia. Las tapadas y los balances de
-            #     cámara no van a la rejilla ni al rango «de … a …»
-            tapadas = [e is not None and biboecf.es_tapada(raw, e[0])
-                       for raw, e in zip(raws, exps)]
-            sec = biboecf.secuencia(ks_todas, tapadas)
-            quitar = [tapada or i in sec.balances
-                      for i, tapada in enumerate(tapadas)]
-            ks = [k for k, q in zip(ks_todas, quitar)
-                  if k is not None and not q]
-            desde = biboecf.texto_zona(min(ks))
-            hasta = biboecf.texto_zona(max(ks))
+            desde = biboecf.texto_zona(min(en_rejilla))
+            hasta = biboecf.texto_zona(max(en_rejilla))
             sin_leer = len(raws) - len(leidas)
 
             # --- Resumen en dos trozos (el segundo, solo si falta
             #     alguna): se rehace entero al cambiar de idioma
-            def resumen() -> str:
+            def _resumen() -> str:
                 texto = K.tr_n(kv.txt_resumen, len(raws)).format(
                     total=len(raws), desde=desde, hasta=hasta)
                 if sin_leer:
                     texto += K.tr(kv.txt_sin_leer).format(n=sin_leer)
                 return texto
 
-            balance = biboecf.balance_personalizado(ks_todas)
-            self.poner(val_serie, resumen)
-            mostrar_rejilla(ks_todas, balance, tapadas, sec, quitar)
-            self.ajustar()
+            self.Poner(val_serie, _resumen)
+            _mostrar_rejilla()
+            self.Ajustar()
 
-            # --- TEMPORAL: los datos del análisis, en un JSON en la carpeta
-            grabar_json(raws[0].parent, raws, exps, ks_todas, balance,
-                        tapadas, sec, quitar)
+            # --- Copias de las tomas que sirven, en la carpeta OECF de la
+            #     serie, y allí los datos de la preparación, en un JSON
+            destino = serie.Copiar()
+            if destino is not None:
+                grabar_json(serie)
 
-        # --- TEMPORAL: rejilla de zonas y tercios, su resumen debajo
-        #     (centrado bajo las celdas de las zonas) y el botón de
-        #     incidencias, que dice cuántas hay y las muestra todas. Sin
-        #     ninguna, queda inactivo y lo dice
-        def mostrar_rejilla(ks: list[int | None], balance: bool | None,
-                            tapadas: list[bool], sec: biboecf.Secuencia,
-                            quitar: list[bool]) -> None:
-            celdas, fuera = Rejilla.repartir(*Rejilla.sin(raws, ks, quitar))
-            n_tapadas = sum(tapadas)
-            rejilla.mostrar(celdas)
-            self.poner(val_rejilla, lambda: "\n".join((
-                kv.sep_resumen.join(Rejilla.resumen(celdas)),
+                # --- Las incidencias, como en su ventana (o que no hay)
+                incidencias = (self.incidencias()
+                               or [K.tr(kv.txt_sin_incidencias)])
+                try:
+                    (destino / kv.archivo_incidencias).write_text(
+                        kv.sep_incidencias.join(incidencias)
+                        + kv.sep_incidencias, encoding="utf-8")
+                except OSError:
+                    pass
+            self.ActivarCarpeta()
+
+        # --- Rejilla de zonas y tercios y su pie: el resumen, el botón
+        #     de incidencias, que dice cuántas hay y las muestra todas (sin
+        #     ninguna, queda inactivo y lo dice), y Analizar, activo solo
+        #     si la serie sirve
+        def _mostrar_rejilla() -> None:
+            serie: biboecf.OECF = self.OECF                     # type: ignore
+            rejilla.mostrar(serie)
+            self.Poner(val_rejilla, lambda: "\n".join((
+                Rejilla.resumen(serie),
                 kv.sep_resumen.join((
-                    Rejilla.linea_balance(balance),
-                    Rejilla.linea_balances(len(sec.balances)))),
-                Rejilla.linea_tapadas(n_tapadas))))
+                    Rejilla.linea_balance(serie.balancePersonalizado),
+                    Rejilla.linea_balances(len(serie.WBs)))),
+                Rejilla.linea_tapadas(len(serie.tapadas)))))
             rejilla.pack(fill="x", pady=(kv.margen, 0))
-            val_rejilla.pack(padx=(Rejilla.KR.ancho_etiquetas, 0))
+            rejilla.dibujar()
 
-            self.incidencias = lambda: Rejilla.incidencias(
-                celdas, fuera, balance, n_tapadas, sec, raws)
+            self.incidencias = lambda: Rejilla.incidencias(serie)
             n = len(self.incidencias())
             if n:
-                self.poner(boton_incidencias, kv.txt_incidencias, n=n)
+                self.Poner(boton_incidencias, kv.txt_incidencias, n=n)
             else:
-                self.poner(boton_incidencias, kv.txt_sin_incidencias)
+                self.Poner(boton_incidencias, kv.txt_sin_incidencias)
             boton_incidencias.configure(state="normal" if n else "disabled")
+            boton_analizar.configure(state="normal" if serie.esAnalizable
+                                     else "disabled")
 
         # --- La caja. La rejilla y el resumen se muestran al terminar
-        interior = self.nueva_caja(kv.txt_fase_serie, self.reiniciar_serie)
+        interior = self.CrearCaja(kv.txt_fase_serie, self.ReiniciarSerie)
         val_serie = ctk.CTkLabel(interior, text="")
         val_serie.pack()
         barra = ctk.CTkProgressBar(interior)
         rejilla = self.rejilla = Rejilla(interior)
-        val_rejilla = ctk.CTkLabel(interior, text="")
+        # --- Pie de la rejilla: Incidencias bajo la Z0, el resumen y
+        #     Analizar bajo la ZX. Son hijos de la rejilla, que los coloca.
+        #     PENDIENTE: lo que hace Analizar
+        val_rejilla = ctk.CTkLabel(rejilla, text="")
+        boton_incidencias = ctk.CTkButton(rejilla, command=_ver_incidencias)
+        boton_analizar = ctk.CTkButton(rejilla, state="disabled")
+        self.ApuntarTexto(boton_analizar, kv.txt_analizar)
+        rejilla.poner_pie(boton_incidencias, val_rejilla, boton_analizar)
+        self.Traducir()
 
-        # --- Botón de incidencias: hijo de la rejilla, que lo coloca en
-        #     su hueco de ZX 2/3. Letra de las celdas: dos líneas
-        boton_incidencias = ctk.CTkButton(rejilla, command=ver_incidencias,
-                                          font=Rejilla.KR.fuente)
-        rejilla.poner_boton(boton_incidencias)
-        self.traducir()
-
-        # --- A leer: Analizar queda inactivo hasta el final
+        # --- A leer: Preparar queda inactivo hasta el final
         self.leyendo = True
-        self.activar_analizar()
-        barra.set(len(exps) / len(raws))
+        self.ActivarCarpeta()
+        self.lectura = OECF.Leer()
+        barra.set(len(OECF.tomas) / len(raws))
         barra.pack(fill="x", pady=(kv.margen, 0))
-        self.ajustar()
-        leer_toma()
+        self.Ajustar()
+        _leer_toma()
 
     # --- ¿Está abierta la ventana de incidencias?
     def incidencias_abiertas(self) -> bool:
@@ -533,12 +673,14 @@ class Ventana(ctk.CTk):
     def rellenar_incidencias(self) -> None:
         if not self.incidencias_abiertas():
             return
+
         texto = self.texto_incidencias
         self.ventana_incidencias.title(                         # type: ignore
             K.tr(self.KV.txt_titulo_incidencias))
         texto.configure(state="normal")                         # type: ignore
         texto.delete("1.0", "end")                              # type: ignore
-        texto.insert("1.0", "\n".join(self.incidencias()))      # type: ignore
+        texto.insert("1.0", self.KV.sep_incidencias.join(       # type: ignore
+            self.incidencias()))
         texto.configure(state="disabled")                       # type: ignore
 
     #
@@ -550,19 +692,68 @@ class Ventana(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
 
-        # --- Elementos con texto traducible.
-        #     Cada elemento guarda cómo se compone su texto, para
-        #     rehacerlo al cambiar de idioma
-        self._textos: dict[ctk.CTkBaseClass, Callable[[], str]] = {}
+        #
+        # --- Variables de instancia: TODAS aquí, con su tipo, antes de
+        #     cualquier lógica. Las que no llevan valor lo toman después:
+        #     las de las cajas fijas y los iconos, al crearse; las de las
+        #     cajas Cámara y Serie, en ReiniciarCam y ReiniciarSerie (al
+        #     arrancar y cada vez que se quitan esas cajas)
+        #
+        # region Variables de instancia
 
         # --- Cajas (su fila y cómo reiniciar sus atributos), en el orden
         #     en que se crean: de abajo arriba. Las de encima de una caja
-        #     se quitan con quitar_cajas, sean las que sean
+        #     se quitan con QuitarCajas, sean las que sean
         self.cajas: list[tuple[ctk.CTkFrame, Callable[[], None] | None]] = []
 
-        # --- Atributos de las cajas que se crean al analizar
-        self.reiniciar_cam()
-        self.reiniciar_serie()
+        # --- Cuerpo: el marco que contiene todas las cajas
+        self.cuerpo: ctk.CTkFrame
+
+        # --- Elementos con texto traducible: cada uno guarda cómo se
+        #     compone su texto, para rehacerlo al cambiar de idioma
+        self._textos: dict[ctk.CTkBaseClass, Callable[[], str]] = {}
+
+        # --- Caja Carpeta (caja_carpeta): los botones Preparar y Abrir
+        #     OECF (los activa y desactiva ActivarCarpeta) y la variable
+        #     de la casilla
+        self.boton_oecf: ctk.CTkButton
+        self.boton_preparar: ctk.CTkButton
+        self.ruta: ctk.StringVar
+
+        # --- Imágenes de los iconos (SOicon y caja_cabecera): se guardan
+        #     para que Python no las borre, o el icono desaparece
+        self.icono: tk.PhotoImage
+        self.icono_cabecera: tk.PhotoImage
+
+        # --- Caja Cámara (ReiniciarCam): la serie de la carpeta (fase 1),
+        #     para Preparar; cuántas cajas hay hasta la de la cámara
+        #     (incluida), porque las de encima se quitan en cada análisis;
+        #     y las etiquetas de sus valores
+        self.OECF: biboecf.OECF | None
+        self.propias_cam: int
+        self.val_archivo: ctk.CTkLabel | None
+        self.val_exp: ctk.CTkLabel | None
+        self.val_fecha: ctk.CTkLabel | None
+        self.val_modelo: ctk.CTkLabel | None
+
+        # --- Caja Serie (ReiniciarSerie), lo que se usa desde fuera de
+        #     ella: cómo se componen las incidencias, la lectura en marcha
+        #     de la serie (OECF.Leer), si se está leyendo,
+        #     la rejilla (se redibuja al traducir), la siguiente lectura
+        #     pendiente y la ventana de incidencias con su texto
+        self.incidencias: Callable[[], list[str]]
+        self.lectura: Iterator[int] | None
+        self.leyendo: bool
+        self.rejilla: Rejilla | None
+        self.tarea: str | None
+        self.texto_incidencias: ctk.CTkTextbox | None
+        self.ventana_incidencias: ctk.CTkToplevel | None
+
+        # endregion Variables de instancia
+
+        # --- Valores iniciales de las cajas Cámara y Serie
+        self.ReiniciarCam()
+        self.ReiniciarSerie()
 
         # --- Cuerpo: pone el margen de arriba y el de los lados; cada fila
         #     pone el suyo por debajo
@@ -570,52 +761,43 @@ class Ventana(ctk.CTk):
         self.cuerpo.pack(fill="both", expand=True, padx=self.KV.margen,
                          pady=(self.KV.margen, 0))
 
-        # --- Filas, de abajo hacia arriba
+        # --- Cabecera, fija arriba del todo; las demás filas, de abajo
+        #     hacia arriba, por debajo de ella
+        self.caja_cabecera()
         self.caja_ayuda()
         self.caja_carpeta()
 
         # --- Textos en el idioma activo; tamaño justo para el contenido,
         #     centrada en horizontal y arriba en la pantalla
-        self.traducir()
-        self.centrar()
-        self.poner_icono()
-        self.after(self.KV.retraso_icono, self.poner_icono)
+        self.Traducir()
+        self.Centrar()
+        self.SOicon()
 
-    # --- Atributos de la caja Cámara: no existen hasta que se analiza
-    #     una carpeta, y vuelven a no existir al quitar la caja
-    def reiniciar_cam(self) -> None:
-
-        # --- Carpeta analizada: si se vuelve a elegir, no se quita nada
-        self.analizada: Path | None = None
-
-        # --- Cajas hasta la de la cámara (incluida): las de encima se
-        #     quitan en cada análisis
+    # --- Valores iniciales de las variables de la caja Cámara (se
+    #     declaran en el __init__): al arrancar y al quitar la caja
+    def ReiniciarCam(self) -> None:
+        self.OECF = None
         self.propias_cam = 0
+        self.val_archivo = None
+        self.val_exp = None
+        self.val_fecha = None
+        self.val_modelo = None
 
-        # --- Valores de la caja
-        self.val_archivo: ctk.CTkLabel | None = None
-        self.val_marca: ctk.CTkLabel | None = None
-        self.val_modelo: ctk.CTkLabel | None = None
-        self.val_exp: ctk.CTkLabel | None = None
-        self.val_f: ctk.CTkLabel | None = None
-        self.val_iso: ctk.CTkLabel | None = None
-
-    # --- Atributos de la caja Serie que se usan desde fuera de ella: la
-    #     rejilla (se redibuja al traducir), la lectura (leyendo y la
-    #     siguiente pendiente) y la ventana de incidencias y cómo se
-    #     componen
-    def reiniciar_serie(self) -> None:
-        self.rejilla: Rejilla | None = None
+    # --- Valores iniciales de las variables de la caja Serie (se
+    #     declaran en el __init__): al arrancar y al quitar la caja
+    def ReiniciarSerie(self) -> None:
+        self.incidencias = list
+        self.lectura = None
         self.leyendo = False
-        self.tarea: str | None = None
-        self.ventana_incidencias: ctk.CTkToplevel | None = None
-        self.texto_incidencias: ctk.CTkTextbox | None = None
-        self.incidencias: Callable[[], list[str]] = list
+        self.rejilla = None
+        self.tarea = None
+        self.texto_incidencias = None
+        self.ventana_incidencias = None
 
     # --- Quita las cajas desde la posición «desde» (las de encima) y lo
     #     que depende de ellas: la lectura en marcha, la ventana de
     #     incidencias, sus textos traducibles y sus atributos
-    def quitar_cajas(self, desde: int) -> None:
+    def QuitarCajas(self, desde: int) -> None:
         if len(self.cajas) <= desde:
             return
 
@@ -631,28 +813,34 @@ class Ventana(ctk.CTk):
         self._textos = {elemento: componer for elemento, componer
                         in self._textos.items() if elemento.winfo_exists()}
 
-        self.activar_analizar()
-        self.ajustar()
+        self.ActivarCarpeta()
+        self.Ajustar()
 
-    # --- Icono de la ventana según el tema: negro en el claro y blanco en
-    #     el oscuro. Se guarda la imagen: si no, Python la borra y el
-    #     icono desaparece. Si falta el archivo, la ventana sigue sin él
-    def poner_icono(self) -> None:
-        oscuro = ctk.get_appearance_mode() == "Dark"
-        nombre = K.icono_tema_oscuro if oscuro else K.icono_tema_claro
+    # --- Icono de la ventana. En Windows, el .ico del programa con
+    #     iconbitmap(): así customtkinter no pone el suyo a los 200 ms. En
+    #     los demás, según el tema: negro en el claro y blanco en el
+    #     oscuro (se guarda la imagen: si no, Python la borra y el icono
+    #     desaparece). Si falta el archivo, la ventana sigue sin él
+    def SOicon(self) -> None:
+        carpeta = K.path / K.carpeta_recursos
         try:
-            self.icono = tk.PhotoImage(
-                file=K.path / K.carpeta_recursos / nombre)
+            if sys.platform.startswith(self.KV.plataforma_windows):
+                self.iconbitmap(str(carpeta / K.icono_ico))
+                return
+
+            oscuro = ctk.get_appearance_mode() == "Dark"
+            nombre = K.icono_tema_oscuro if oscuro else K.icono_tema_claro
+            self.icono = tk.PhotoImage(file=carpeta / nombre)
             self.iconphoto(True, self.icono)
         except tk.TclError:
             pass
 
-    # --- Abre la ayuda en el navegador
-    def ayuda(self) -> None:
-        webbrowser.open(K.url_help)
-
-    # --- Al cerrar, se cancela la lectura pendiente: si no, Tk avisa de
-    #     un error al intentar seguir con una ventana que ya no existe
+    # --- Cierra la ventana. Sustituye al destroy() de Tk: el nombre es
+    #     OBLIGATORIO (no sigue las normas de nombres) porque lo llaman Tk
+    #     al pulsar la X de la ventana y el botón Salir. Antes de cerrar
+    #     se cancela la lectura pendiente de la serie (self.tarea): si no,
+    #     Tk avisa de un error al intentar seguir con una ventana que ya
+    #     no existe. super().destroy() es el de Tk, el que cierra de verdad
     def destroy(self) -> None:
         if self.tarea is not None:
             self.after_cancel(self.tarea)
@@ -666,59 +854,95 @@ class Ventana(ctk.CTk):
     # region Posicionamiento y tamaño de la ventana
 
     # --- Ajusta la ventana al contenido (llamar tras añadir filas)
-    def ajustar(self) -> None:
-        # --- customtkinter no admite geometry(""): se pide a tkinter
+    def Ajustar(self) -> None:
+
+        # --- Tamaño que pide el contenido, ya calculado
+        self.update_idletasks()
+        ancho, alto = self.winfo_reqwidth(), self.winfo_reqheight()
+
+        # --- Se pide con números concretos: con Tk bajo XWayland (GNOME en
+        #     Wayland), el gestor de ventanas a veces se salta el «tamaño
+        #     natural» (geometry("")) y la ventana queda cortada o sin
+        #     repintar. Después se vuelve al tamaño natural, para que siga
+        #     creciendo sola. customtkinter no admite geometry(""): ambas
+        #     se piden a tkinter
+        tk.Tk.geometry(self, f"{ancho}x{alto}")
+        self.update_idletasks()
         tk.Tk.geometry(self, "")
         self.update_idletasks()
 
+        # --- Repintado forzado, un momento después: se pide a cada
+        #     elemento de la ventana que se vuelva a dibujar. Bajo
+        #     XWayland, a veces se pierde el aviso de redibujar lo que se
+        #     mueve a la zona nueva de la ventana (Tk sí lo tiene
+        #     colocado) y queda en blanco hasta que se cambia el tamaño a
+        #     mano
+        #     La zona a redibujar es el elemento entero: sin ella, mide
+        #     0 × 0, y los lienzos (botones y marcos de customtkinter) solo
+        #     repintan esa zona, es decir, nada
+        def _repintar() -> None:
+            pendientes: list[tk.Misc] = [self]
+            while pendientes:
+                elemento = pendientes.pop()
+                elemento.event_generate(
+                    self.KV.tk_redibujar, x=0, y=0,
+                    width=elemento.winfo_width(),
+                    height=elemento.winfo_height())
+                pendientes.extend(elemento.winfo_children())
+
+        for espera in self.KV.esperas_repintado:
+            self.after(espera, _repintar)
+
     # --- Coloca la ventana centrada en horizontal y arriba del monitor
     #     principal: al añadir filas crece hacia abajo sin salirse
-    def centrar(self) -> None:
-        x, y, ancho, _ = self.monitor_principal()
-        x += (ancho - self.winfo_width()) // 2
-        y += self.KV.arriba
-        self.geometry(f"+{x}+{y}")
+    def Centrar(self) -> None:
 
-    # --- Posición y tamaño del monitor principal: (x, y, ancho, alto).
-    #     Si no se pueden leer los monitores, toda la pantalla de Tk
-    def monitor_principal(self) -> tuple[int, int, int, int]:
+        # --- Posición y ancho del monitor principal (Tk ve todos los
+        #     monitores como una sola pantalla). Si no se pueden leer los
+        #     monitores, toda la pantalla de Tk
         try:
             monitores = screeninfo.get_monitors()
         except screeninfo.ScreenInfoError:
             monitores = []
-        if not monitores:
-            return 0, 0, self.winfo_screenwidth(), self.winfo_screenheight()
+        if monitores:
+            principal = next((m for m in monitores if m.is_primary),
+                             monitores[0])
+            x, y, ancho = principal.x, principal.y, principal.width
+        else:
+            x, y, ancho = 0, 0, self.winfo_screenwidth()
 
-        principal = next((m for m in monitores if m.is_primary), monitores[0])
-        return principal.x, principal.y, principal.width, principal.height
+        # --- Centrada en horizontal y arriba de ese monitor
+        x += (ancho - self.winfo_width()) // 2
+        y += self.KV.arriba
+        self.geometry(f"+{x}+{y}")
 
-    # --- Crea una fila vacía encima de las que ya hay
-    def nueva_fila(self) -> ctk.CTkFrame:
-        fila = ctk.CTkFrame(self.cuerpo, fg_color="transparent")
-        fila.pack(side="bottom", fill="x", pady=(0, self.KV.margen))
-        return fila
-
-    # --- Crea una caja con borde encima de las filas que ya hay (una por
+    # --- Crea una caja con marco encima de las filas que ya hay (una por
     #     fase) y devuelve su interior, donde van los elementos. El título
     #     es opcional y va montado a mitad de la línea de arriba. reiniciar:
-    #     cómo dejar sus atributos al quitarla (si tiene)
-    def nueva_caja(self, titulo: dict | None = None,
-                   reiniciar: Callable[[], None] | None = None
-                   ) -> ctk.CTkFrame:
-        fila = self.nueva_fila()
+    #     cómo dejar sus atributos al quitarla (si tiene). fija: arriba del
+    #     todo, por encima de las que vengan después (la cabecera). marco:
+    #     si se dibuja (la cabecera y la de Ayuda van sin él)
+    def CrearCaja(self, titulo: dict | None = None,
+                  reiniciar: Callable[[], None] | None = None,
+                  fija: bool = False, marco: bool = True) -> ctk.CTkFrame:
+
+        # --- La fila, vacía, encima de las que ya hay (o arriba del todo)
+        fila = ctk.CTkFrame(self.cuerpo, fg_color="transparent")
+        fila.pack(side="top" if fija else "bottom", fill="x",
+                  pady=(0, self.KV.margen))
         self.cajas.append((fila, reiniciar))
 
-        # --- Caja solo con borde: transparente, para que el fondo del
+        # --- Caja solo con marco: transparente, para que el fondo del
         #     título tape la línea sin que se note
         caja = ctk.CTkFrame(fila, fg_color="transparent",
-                            border_width=self.KV.borde_caja)
+                            border_width=self.KV.grosor_marco if marco else 0)
 
         # --- Con título, la caja baja media altura del título y este se
         #     coloca encima (lift), centrado en la línea
         arriba = 0
         hueco = self.KV.margen
         if titulo:
-            etiqueta = self.traducible(
+            etiqueta = self.ApuntarTexto(
                 ctk.CTkLabel(fila, padx=self.KV.relleno_titulo), titulo)
             arriba = etiqueta.winfo_reqheight() // 2
             etiqueta.place(x=self.KV.margen, y=arriba, anchor="w")
@@ -726,7 +950,7 @@ class Ventana(ctk.CTk):
             hueco = arriba + self.KV.separador_superior
         caja.pack(fill="x", pady=(arriba, 0))
 
-        # --- Dentro, el margen separa el contenido del borde. Arriba, con
+        # --- Dentro, el margen separa el contenido del marco. Arriba, con
         #     título, el hueco es la media altura del título que queda
         #     dentro de la caja más el separador_superior
         interior = ctk.CTkFrame(caja, fg_color="transparent")
@@ -734,17 +958,43 @@ class Ventana(ctk.CTk):
                       pady=(hueco, self.KV.margen))
         return interior
 
-    # --- Carpeta escrita en la casilla, como ruta: así «/a/b» y «/a/b/»
-    #     son la misma. «~» es la carpeta del usuario, también a mano
-    def carpeta_escrita(self) -> Path:
+    # --- Se calcula cada vez a partir de la casilla (self.ruta), así que
+    #     siempre está al día
+    @property
+    def carpetaEscrita(self) -> Path:
+        """ Saber la carpeta escrita en la casilla, como ruta: así «/a/b» y
+            «/a/b/» son la misma, y «~» es la carpeta del usuario. """
         return Path(self.ruta.get().strip()).expanduser()
 
-    # --- Analizar solo está activo cuando hay ruta y no se está leyendo
-    #     una serie. Los argumentos los pone trace_add y no se usan
-    def activar_analizar(self, *_) -> None:
-        activo = self.ruta.get().strip() and not self.leyendo
-        estado = "normal" if activo else "disabled"
-        self.boton_analizar.configure(state=estado)
+    # --- Preparar: lanza la serie de la carpeta elegida, quitando antes
+    #     la del análisis anterior
+    def Preparar(self) -> None:
+        self.QuitarCajas(self.propias_cam)
+        self.caja_serie(self.OECF)                              # type: ignore
+
+    # --- Botones de la caja Carpeta, sin estar leyendo una serie:
+    #     Preparar, activo si la carpeta tiene RAW; Abrir OECF, solo si
+    #     ya se prepararon las copias de esta carpeta
+    def ActivarCarpeta(self) -> None:
+        libre = self.OECF is not None and not self.leyendo
+        preparar = libre and bool(self.OECF.raws)               # type: ignore
+        oecf = libre and bool(self.OECF.copias)                 # type: ignore
+        self.boton_preparar.configure(
+            state="normal" if preparar else "disabled")
+        self.boton_oecf.configure(state="normal" if oecf else "disabled")
+
+    # --- Abre la carpeta OECF de la serie en el explorador de archivos
+    #     del sistema
+    def AbrirOECF(self) -> None:
+        if self.OECF is None:
+            return
+        carpeta = self.OECF.carpeta
+        if sys.platform.startswith(self.KV.plataforma_windows):
+            os.startfile(carpeta)                               # type: ignore
+        elif sys.platform == self.KV.plataforma_mac:
+            subprocess.Popen([self.KV.abrir_mac, carpeta])
+        else:
+            subprocess.Popen([self.KV.abrir_linux, carpeta])
 
     # endregion Posicionamiento y tamaño de la ventana
 
@@ -755,8 +1005,8 @@ class Ventana(ctk.CTk):
 
     # --- Apunta un elemento para traducirlo y lo devuelve
     #     Los {campos} del texto se rellenan con datos
-    def traducible(self, elemento: ctk.CTkBaseClass, texto: dict,
-                   **datos: object) -> ctk.CTkBaseClass:
+    def ApuntarTexto(self, elemento: ctk.CTkBaseClass, texto: dict,
+                     **datos: object) -> ctk.CTkBaseClass:
         self._textos[elemento] = lambda: K.tr(texto).format(**datos)
         return elemento
 
@@ -764,7 +1014,7 @@ class Ventana(ctk.CTk):
     #       str      fijo (un nombre de archivo): no se traduce
     #       dict     {idioma: texto}, con sus {campos} en datos
     #       función  que compone el texto en el idioma activo
-    def poner(self, elemento: ctk.CTkBaseClass,
+    def Poner(self, elemento: ctk.CTkBaseClass,
               texto: str | dict | Callable[[], str], **datos: object) -> None:
         if isinstance(texto, str):
             self._textos.pop(elemento, None)
@@ -772,7 +1022,7 @@ class Ventana(ctk.CTk):
             return
 
         if isinstance(texto, dict):
-            self.traducible(elemento, texto, **datos)
+            self.ApuntarTexto(elemento, texto, **datos)
 
         else:
             self._textos[elemento] = texto
@@ -780,7 +1030,7 @@ class Ventana(ctk.CTk):
         elemento.configure(text=self._textos[elemento]())
 
     # --- Pone el título y los textos en el idioma activo
-    def traducir(self) -> None:
+    def Traducir(self) -> None:
         self.title(f"{K.nombre} - {K.tr(self.KV.txt_version)} {K.version}")
         for elemento, componer in self._textos.items():
             elemento.configure(text=componer())
@@ -789,13 +1039,13 @@ class Ventana(ctk.CTk):
         if self.rejilla is not None:
             self.rejilla.dibujar()
         self.rellenar_incidencias()
-        self.ajustar()
+        self.Ajustar()
 
     # --- Cambia el idioma activo al elegido en la lista
-    def cambiar_idioma(self, nombre: str) -> None:
+    def CambiarIdioma(self, nombre: str) -> None:
         for codigo, nombre_idioma in K.idiomas.items():
             if nombre_idioma == nombre:
                 K.idioma = codigo
-        self.traducir()
+        self.Traducir()
 
     # endregion Gestión del idioma

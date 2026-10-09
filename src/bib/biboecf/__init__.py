@@ -8,27 +8,22 @@
         ``from bib import biboecf``
 
     :Autor:     Tony Diana
-    :Versión:   26.10.06
+    :Versión:   26.10.07
 """
 
 # cSpell:ignore biboecf
 
-__all__ = ["KC", "leer_cam",
-           "KT", "es_tapada", "leer_exp", "texto_exp", "texto_f", "texto_iso",
-           "KS", "Secuencia", "balance_personalizado", "buscar_raw",
-           "secuencia",
-           "KP", "calcular_k", "exp_relativa", "texto_zona", "zona"]
+__all__ = ["Cam", "Exp", "KS", "OECF", "Secuencia", "texto_zona", "Toma",
+           "zona_tercio"]
 
 #
-# --- raw (temporal)
+# --- OECF: la serie de tomas de una carpeta, con lo que se lee de ella
 #
-from .src.temporal.raw import KC, leer_cam
-from .src.temporal.raw import (KT, es_tapada, leer_exp, texto_exp, texto_f,
-                               texto_iso)
+from .src.cam import Cam
+from .src.kernel import Exp, OECF, Toma
 
 #
-# --- serie (temporal)
+# --- Protocolo y partes de la serie, y nombres de las zonas
 #
-from .src.temporal.serie import (KS, Secuencia, balance_personalizado,
-                                 buscar_raw, secuencia)
-from .src.temporal.serie import KP, calcular_k, exp_relativa, texto_zona, zona
+from .src.secuencia import KS, Secuencia
+from .src.zonas import texto_zona, zona_tercio

@@ -1,25 +1,24 @@
 # -*- coding: utf-8 *-*
 """
-    :Propósito: Marca y modelo de la cámara de un RAW, con un lector propio
-                sin dependencias (rawpy no los da)
+    :Propósito: Marca y modelo de la cámara de un RAW.
     :Autor:     Tony Diana
-    :Versión:   26.10.06
+    :Versión:   26.10.09
 """
 
-# cSpell:ignore desplaz
+# cSpell:ignore desplaz, fujifilmccd,
 
-__all__ = ["KC", "leer_cam"]
+__all__ = ["Cam", "KC", "leer_cam"]
 
 # --- Bibliotecas estándar Python
 import struct
 from pathlib import Path
+from typing import NamedTuple
 
 # --- Bibliotecas internas
 from bib import std
 
 
 #
-# --- Constantes del lector de cámara
 class KC(std.EnumMutable):
     """ Constantes del lector de marca y modelo. """
 
@@ -42,11 +41,33 @@ class KC(std.EnumMutable):
     modelo_raf = slice(28, 60)
 
 
-# --- Marca y modelo de la cámara, o None si no se encuentran
-def leer_cam(archivo: Path) -> tuple[str, str] | None:
+#
+class Cam(NamedTuple):
+    """ Cámara de una toma: marca y modelo tal como los guarda el RAW. """
+    marca: str
+    modelo: str
+
+    #
+    @property
+    def nombre(self) -> str:
+        """
+        Saber el nombre de la cámara, para mostrarlo: el modelo, que ya
+        suele llevar la marca («Canon EOS 70D», «NIKON D750»); si no la
+        lleva, marca y modelo («SONY ZV-E10»).
+        """
+        palabra = (self.marca.split() or [""])[0]
+        if self.modelo.upper().startswith(palabra.upper()):
+            return self.modelo
+        return f"{self.marca} {self.modelo}"
+
+
+#
+def leer_cam(archivo: Path) -> Cam | None:
+    """ Marca y modelo de la cámara, o None si no se encuentran. """
     with open(archivo, "rb") as f:
         datos = f.read(KC.bytes_cabecera)
-    return _cam_raf(datos) or _cam_tiff(datos)
+    encontrada = _cam_raf(datos) or _cam_tiff(datos)
+    return Cam(*encontrada) if encontrada else None
 
 
 # --- Los RAF llevan el modelo en una cadena fija tras la firma
@@ -60,14 +81,19 @@ def _cam_raf(datos: bytes) -> tuple[str, str] | None:
 def _cam_tiff(datos: bytes) -> tuple[str, str] | None:
     for firma, orden in KC.firmas_tiff:
         pos = datos.find(firma)
+
         while pos != -1:
             try:
                 encontrado = _directorio_tiff(datos, pos, orden)
+
             except struct.error:
                 encontrado = None
+
             if encontrado:
                 return encontrado
+
             pos = datos.find(firma, pos + 1)
+
     return None
 
 
@@ -80,10 +106,11 @@ def _directorio_tiff(datos: bytes, pos: int,
     if not 1 <= n < KC.max_entradas:
         return None
 
-    leidas = {}
+    reads = {}
     for i in range(n):
         tag, tipo, cuenta, valor = struct.unpack_from(
             orden + "HHI4s", datos, inicio + 2 + KC.bytes_entrada * i)
+
         if (tag in (KC.etiqueta_marca, KC.etiqueta_modelo)
                 and tipo == KC.tipo_ascii):
             if cuenta <= KC.bytes_en_entrada:
@@ -91,11 +118,12 @@ def _directorio_tiff(datos: bytes, pos: int,
             else:
                 o = struct.unpack(orden + "I", valor)[0]
                 bruto = datos[pos + o:pos + o + cuenta]
-            leidas[tag] = _texto(bruto)
+            reads[tag] = _texto(bruto)
 
-    if KC.etiqueta_modelo not in leidas:
+    if KC.etiqueta_modelo not in reads:
         return None
-    return leidas.get(KC.etiqueta_marca, ""), leidas[KC.etiqueta_modelo]
+
+    return reads.get(KC.etiqueta_marca, ""), reads[KC.etiqueta_modelo]
 
 
 # --- Cadena ASCII terminada en cero, sin espacios sobrantes

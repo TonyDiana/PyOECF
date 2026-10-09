@@ -34,11 +34,13 @@ ES_MAC = sys.platform == "darwin"
 
 # --- Datos que no son código y deben ir dentro:
 #     - el archivo de versión (K.archivo_version)
-#     - los iconos de la ventana (K.iconos), en su carpeta de recursos
+#     - los iconos de la ventana (K.iconos), en su carpeta de recursos,
+#       el .ico, que la ventana usa en Windows, y el PNG de la cabecera
 #     - temas de customtkinter: sin ellos la ventana falla al abrir
 DATOS = [(str(RAIZ / K.archivo_version), ".")]
-DATOS += [(str(RAIZ / K.carpeta_recursos / icono), K.carpeta_recursos)
-          for icono in K.iconos]
+REC = RAIZ / K.carpeta_recursos
+DATOS += [(str(REC / icono), K.carpeta_recursos)
+          for icono in (*K.iconos, K.icono_ico, K.icono_png)]
 DATOS += collect_data_files("customtkinter")
 
 a = Analysis([str(PUNTO_ENTRADA)], datas=DATOS)
@@ -48,8 +50,9 @@ if ES_MAC:
     exe = EXE(pyz, a.scripts, [], exclude_binaries=True,
               name=NOMBRE, console=False)
     coll = COLLECT(exe, a.binaries, a.datas, name=NOMBRE)
-    app = BUNDLE(coll, name=f"{NOMBRE}.app")
+    app = BUNDLE(coll, name=f"{NOMBRE}.app",
+                 icon=str(REC / K.icono_icns))
 
 else:
     exe = EXE(pyz, a.scripts, a.binaries, a.datas, [],
-              name=NOMBRE, console=False)
+              name=NOMBRE, console=False, icon=str(REC / K.icono_ico))

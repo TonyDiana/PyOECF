@@ -1,24 +1,21 @@
 # -*- coding: utf-8 *-*
 """
-    :Propósito: Busca los RAW de la carpeta de una serie y los ordena.
-                De momento, por nombre; el orden definitivo es por
-                (fecha, número del nombre)
+    :Propósito: El protocolo de la serie (KS) y su reparto en partes:
+                iniciales, lados, cambio, balances de cámara, sobrantes y
+                saltos. También, si se hizo el balance personalizado
     :Autor:     Tony Diana
     :Versión:   26.10.06
 """
 
 # cSpell:ignore
 
-__all__ = ["KS", "Secuencia", "balance_personalizado", "buscar_raw",
-           "secuencia"]
+__all__ = ["KS", "Secuencia", "balance_personalizado", "secuencia"]
 
 # --- Bibliotecas estándar Python
-from pathlib import Path
-from typing import Callable, NamedTuple
+from typing import NamedTuple
 
 # --- Bibliotecas internas
 from bib import std
-from ..raw import KT
 
 
 #
@@ -40,7 +37,8 @@ class KS(std.EnumMutable):
 
 #
 # --- Partes de una serie: índices de sus tomas (en el orden de la lista
-#     que se analizó) y los saltos de cada lado: (índice, k esperado, k)
+#     que se repartió) y los saltos de cada lado: (índice, tercioEV
+#     esperado, tercioEV)
 class Secuencia(NamedTuple):
     iniciales: list[int]
     lados: list[list[int]]
@@ -50,47 +48,46 @@ class Secuencia(NamedTuple):
     saltos: list[tuple[int, int, int]]
 
 
-# --- RAW de la carpeta, ordenados por nombre (lista vacía si no hay)
-def buscar_raw(carpeta: Path) -> list[Path]:
-    return sorted(p for p in carpeta.iterdir()
-                  if p.is_file() and p.suffix.lower() in KT.extensiones)
-
-
-# --- ¿Se hizo el balance de blancos personalizado inicial? En la
-#     secuencia, la toma 1 es la Z-V (la referencia: k = 0) y la 2 es la
-#     Z-V con el balance personalizado, con la misma exposición. Si la
-#     segunda ya es de un lado (un tercio más o menos), se empezó sin él.
-#     None si no se puede saber. ks: k de cada toma, en su orden (None si
-#     no se pudo leer). No sirve comparar el balance de las dos tomas: en
-#     series reales la Z-V inicial ya lleva a veces el personalizado
-def balance_personalizado(ks: list[int | None]) -> bool | None:
-    if len(ks) < 2 or ks[1] is None:
+# --- ¿Se hizo el balance de blancos personalizado inicial? Las dos
+#     primeras tomas deben ser Z-V (tercioEV = 0) con balances
+#     distintos: la 1.ª con el que tenga la cámara y la 2.ª con el
+#     personalizado. False si la 2.ª ya es de un lado (un tercio más o
+#     menos) o si las dos tienen el mismo balance; None si no se puede
+#     saber. tercioEVs: el de cada toma, en su orden (None si no se pudo
+#     leer). balances: balance de blancos de las dos primeras (None si no
+#     se pudo leer)
+def balance_personalizado(tercioEVs: list[int | None],
+                          balances: list[tuple[float, ...] | None]
+                          ) -> bool | None:
+    if len(tercioEVs) < KS.iniciales or tercioEVs[1] is None:
         return None
-    if ks[1] == 0:
-        return True
-    if abs(ks[1]) == 1:
-        return False
-    return None
+    if tercioEVs[1] != 0:
+        return False if abs(tercioEVs[1]) == 1 else None
+    if None in balances:
+        return None
+    return balances[0] != balances[1]
 
 
 # --- Reparte la serie en sus partes. Las tomas se agrupan en rachas
-#     seguidas de k = 0 (Z-V) o de k del mismo signo (un lado). Los dos
-#     lados son las dos rachas más largas de signo contrario (la primera
-#     si empatan): así, un intento suelto o una serie repetida no se
-#     toman por un lado. Las Z-V del principio son las iniciales; las
-#     de entre los dos lados, las de cambio; las de justo después del
-#     segundo lado, los balances de cámara. En cada lado, k debe avanzar
-#     de uno en uno desde ±1: lo que no, es un salto (repetida, saltada o
-#     fuera de orden), y lo que pasa de ±tercios_lado sobra. Las tapadas
-#     y las que no se pudieron leer no cuentan
-def secuencia(ks: list[int | None], tapadas: list[bool]) -> Secuencia:
-    tomas = [(i, k) for i, (k, tapada) in enumerate(zip(ks, tapadas))
-             if k is not None and not tapada]
+#     seguidas de tercioEV = 0 (Z-V) o de tercioEV del mismo signo (un
+#     lado). Los dos lados son las dos rachas más largas de signo
+#     contrario (la primera si empatan): así, un intento suelto o una
+#     serie repetida no se toman por un lado. Las Z-V del principio son
+#     las iniciales; las de entre los dos lados, las de cambio; las de
+#     justo después del segundo lado, los balances de cámara. En cada
+#     lado, el tercioEV debe avanzar de uno en uno desde ±1: lo que no,
+#     es un salto (repetida, saltada o fuera de orden), y lo que pasa de
+#     ±tercios_lado sobra. Las tapadas y las que no se pudieron leer no
+#     cuentan
+def secuencia(tercioEVs: list[int | None], tapadas: list[bool]) -> Secuencia:
+    tomas = [(i, tercioEV) for i, (tercioEV, tapada)
+             in enumerate(zip(tercioEVs, tapadas))
+             if tercioEV is not None and not tapada]
 
     # --- Rachas: (signo: 0, 1 o -1, índices de sus tomas)
     rachas: list[tuple[int, list[int]]] = []
-    for i, k in tomas:
-        signo = (k > 0) - (k < 0)
+    for i, tercioEV in tomas:
+        signo = (tercioEV > 0) - (tercioEV < 0)
         if rachas and rachas[-1][0] == signo:
             rachas[-1][1].append(i)
         else:
@@ -116,15 +113,15 @@ def secuencia(ks: list[int | None], tapadas: list[bool]) -> Secuencia:
     usadas = set()
     for n in elegidas:
         signo, indices = rachas[n]
-        lado = [i for i in indices if abs(ks[i]) <= KS.tercios_lado]
+        lado = [i for i in indices if abs(tercioEVs[i]) <= KS.tercios_lado]
         lados.append(lado)
         usadas.update(lado)
         anterior = 0
         for i in lado:
             esperado = anterior + signo
-            if ks[i] != esperado:
-                saltos.append((i, esperado, ks[i]))             # type: ignore
-            anterior = ks[i]                                    # type: ignore
+            if tercioEVs[i] != esperado:
+                saltos.append((i, esperado, tercioEVs[i]))      # type: ignore
+            anterior = tercioEVs[i]                             # type: ignore
 
     # --- Z-V: iniciales (racha del principio), de cambio (entre los
     #     lados) y balances (racha justo después del segundo lado)

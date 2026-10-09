@@ -5,7 +5,7 @@
     :Versión:   26.10.05
 """
 
-# cSpell:ignore meipass
+# cSpell:ignore anni, annus, meipass, primus, ultimus
 
 __all__ = ["K"]
 
@@ -46,6 +46,22 @@ class K(std.EnumMutable):
     # --- Identidad del proyecto
     nombre = "PyOECF"
     url_help = "https://tonydiana.github.io/PyOECF/"
+
+    # --- Autor y años del copyright: el primero y el de la última
+    #     publicación. Al publicar en un año nuevo, cambiar annus_ultimus
+    #     (no se toma del reloj: el año del copyright es el de publicación)
+    autor = "Tony Diana"
+    annus_primus = 2026
+    annus_ultimus = 2026
+
+    # --- «© 2026 Tony Diana», o «© 2026–2027 Tony Diana» si hay varios
+    #     años
+    @std.classproperty
+    def derechos(cls) -> str:
+        anni = str(cls.annus_primus)
+        if cls.annus_ultimus != cls.annus_primus:
+            anni += f"–{cls.annus_ultimus}"
+        return f"© {anni} {cls.autor}"
 
     # --- Idiomas: código y nombre en su propio idioma. Cada texto
     #     traducible es un dict {código: texto}
@@ -88,6 +104,15 @@ class K(std.EnumMutable):
     icono_tema_claro = "logo_n.png"         # --- Negro, sobre fondo claro
     icono_tema_oscuro = "logo_b.png"        # --- Blanco, sobre fondo oscuro
     iconos = (icono_tema_claro, icono_tema_oscuro)
+
+    # --- Icono del programa: el del .exe de Windows y el del .app de
+    #     macOS (barra de tareas, Dock). Diana negra sobre gris 18 %, el
+    #     de la carta de gris. El .ico va también en la ventana de Windows
+    icono_ico = "PyOECF.ico"
+    icono_icns = "PyOECF.icns"
+
+    # --- El mismo icono en PNG, a su tamaño, para la cabecera de la ventana
+    icono_png = "PyOECF.png"
 
     @std.classproperty
     def version(cls) -> str:

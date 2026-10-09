@@ -1,18 +1,19 @@
 # -*- coding: utf-8 *-*
 """
-    :Propósito: TEMPORAL. Rejilla de la serie por zonas y tercios (pieza 2):
-                qué posiciones tienen foto y cuáles no. Cuenta y dibujo en
-                el mismo módulo hasta decidir la estructura
+    :Propósito: Rejilla de la serie por zonas y tercios: qué posiciones
+                tienen foto y cuáles no, con su resumen, sus incidencias y
+                los botones de su pie
     :Autor:     Tony Diana
-    :Versión:   26.10.06
+    :Versión:   26.10.09
 """
 
-# cSpell:ignore customtkinter, idents
+# cSpell:ignore analisis, biboecf, customtkinter, exito, idents
+
 # --- Valenciano
-# cSpell:ignore anàlisi, buit, corba, esperaven, graella, posicions, preses
-# cSpell:ignore Sèrie, Balanços, canvi, costat, costats, esperava, Només
-# cSpell:ignore principi, seqüència, Seqüència, Sobren, tapades, trencada
-# cSpell:ignore enllà, esperat, teòriques
+# cSpell:ignore Balanços, canvi, costat, costats, enllà, esperat, esperava
+# cSpell:ignore esperaven, Falten, graella, Només, posició, posicions, preses
+# cSpell:ignore principi, seqüència, Seqüència, Sèrie, Sobren, tapades
+# cSpell:ignore teòriques, trencada
 
 __all__ = ["Rejilla"]
 
@@ -26,7 +27,7 @@ import customtkinter as ctk
 
 # --- Bibliotecas internas
 from bib import biboecf, std
-from ..constantes import K
+from .constantes import K
 
 
 #
@@ -42,19 +43,20 @@ class Rejilla(tk.Canvas):
         tercios_lado = biboecf.KS.tercios_lado
         zonas = 11
         tercios = 3
-        posiciones = 31
 
         # --- Cabeceras de columna y de fila
         cabeceras = ("0", "1", "2", "3", "4", "V", "6", "7", "8", "9", "X")
-        filas = ("+0", "+1/3", "+2/3")
+        filas = ("+0", "+.3", "+.7")
 
         # --- Z-V de anclaje esperadas en la celda ZV (iniciales y de
         #     cambio de lado) y tomas tapadas esperadas: las del protocolo
         anclas = biboecf.KS.iniciales + biboecf.KS.cambios
         tapadas = biboecf.KS.tapadas
 
-        # --- Hueco de ZX 2/3 (no existe): ahí va el botón de incidencias
-        pos_boton = (zonas - 1, tercios - 1)
+        # --- Pie, debajo de las celdas: un botón bajo la columna Z0, otro
+        #     bajo la ZX y el resumen entre los dos, todo centrado en
+        #     vertical con el resumen
+        columnas_pie = (0, zonas - 1)
 
         # --- Medidas (píxeles): celda mínima, hueco, columna de
         #     etiquetas, alto de la fila de cabeceras y de cada línea
@@ -82,9 +84,6 @@ class Rejilla(tk.Canvas):
                      K.ca: "falta"}
         txt_n_zv = {K.es: "{n} Z-V", K.en: "{n} Z-V",
                     K.ca: "{n} Z-V"}
-        txt_contador = {K.es: "{n} de {total} posiciones",
-                        K.en: "{n} of {total} positions",
-                        K.ca: "{n} de {total} posicions"}
         txt_sin_toma = {K.es: "No hay toma en {zona}.",
                         K.en: "No shot in {zona}.",
                         K.ca: "No hi ha cap presa en {zona}."}
@@ -103,12 +102,13 @@ class Rejilla(tk.Canvas):
                             "teòriques.",
                             "Hi ha {n} preses més enllà de les zones "
                             "teòriques.")}
-        txt_completa = {K.es: "Serie completa en las {total} posiciones.",
-                        K.en: "Series complete in all {total} positions.",
-                        K.ca: "Sèrie completa en les {total} posicions."}
-        txt_hueco = {K.es: "El análisis continúa, con un hueco en la curva.",
-                     K.en: "The analysis goes on, with a gap in the curve.",
-                     K.ca: "L'anàlisi continua, amb un buit en la corba."}
+        # --- Resumen bajo la rejilla: completa, o cuántas posiciones
+        #     faltan (con número: singular y plural, ver K.tr_n)
+        txt_completa = {K.es: "Serie completa", K.en: "Complete series",
+                        K.ca: "Sèrie completa"}
+        txt_faltan = {K.es: ("Falta {n} posición", "Faltan {n} posiciones"),
+                      K.en: ("{n} position missing", "{n} positions missing"),
+                      K.ca: ("Falta {n} posició", "Falten {n} posicions")}
 
         # --- Balance de blancos personalizado inicial (toma 2): línea bajo
         #     las posiciones, con sí, no o no se sabe, e incidencia si no
@@ -135,7 +135,7 @@ class Rejilla(tk.Canvas):
                             K.en: "There are no camera white balances.",
                             K.ca: "No hi ha balanços de càmera."}
 
-        # --- Secuencia de tomas (ver biboecf.secuencia)
+        # --- Secuencia de tomas (ver OECF.secuencia)
         txt_iniciales_sobran = {
             K.es: ("Sobra {n} Z-V al principio.",
                    "Sobran {n} Z-V al principio."),
@@ -182,6 +182,13 @@ class Rejilla(tk.Canvas):
             K.es: "No se hizo el balance de blancos personalizado inicial.",
             K.en: "The initial custom white balance was not taken.",
             K.ca: "No es va fer el balanç de blancs personalitzat inicial."}
+        txt_mismo_balance = {
+            K.es: "Las dos primeras Z-V tienen el mismo balance de blancos: "
+                  "no se hizo el personalizado.",
+            K.en: "The first two Z-V have the same white balance: the "
+                  "custom one was not taken.",
+            K.ca: "Les dues primeres Z-V tenen el mateix balanç de blancs: "
+                  "no es va fer el personalitzat."}
 
         # --- Identificador corto: número final del nombre del archivo
         patron_ident = r"(\d+)$"
@@ -189,39 +196,19 @@ class Rejilla(tk.Canvas):
     #
     def __init__(self, master: ctk.CTkBaseClass) -> None:
         super().__init__(master, highlightthickness=0,
-                         height=self._alto())
+                         height=self._alto(),
+                         bg=self._color(ctk.ThemeManager.theme["CTk"]
+                                        ["fg_color"]))
         self.celdas: dict[tuple[int, int], list[str]] = {}
-        self.boton: tk.Misc | None = None
+
+        # --- Pie: (botón izquierdo, resumen, botón derecho), o None
+        self.pie: tuple[ctk.CTkButton, ctk.CTkLabel,
+                        ctk.CTkButton] | None = None
         self.bind("<Configure>", lambda _: self.dibujar())
 
     #
     # --- Cuenta (función pura)
     #
-
-    # --- Reparte las tomas en celdas {(zona, tercio): [identificadores]}
-    #     y devuelve también las que caen fuera. ks: k de cada archivo
-    #     (None si no se pudo leer)
-    @classmethod
-    def repartir(cls, archivos: list[Path], ks: list[int | None]
-                 ) -> tuple[dict[tuple[int, int], list[str]], list[str]]:
-        celdas: dict[tuple[int, int], list[str]] = {}
-        fuera = []
-        for archivo, k in zip(archivos, ks):
-            ident = cls.ident(archivo, archivos)
-            if k is None or abs(k) > cls.KR.tercios_lado:
-                fuera.append(ident)
-                continue
-            posicion = divmod(cls.KR.tercios_lado + k, cls.KR.tercios)
-            celdas.setdefault(posicion, []).append(ident)
-        return celdas, fuera
-
-    # --- Archivos y k sin las tomas que no van a la rejilla (tapadas y
-    #     balances de cámara): quitar dice cuáles
-    @staticmethod
-    def sin(archivos: list[Path], ks: list[int | None],
-            quitar: list[bool]) -> tuple[list[Path], list[int | None]]:
-        quedan = [(a, k) for a, k, q in zip(archivos, ks, quitar) if not q]
-        return [a for a, _ in quedan], [k for _, k in quedan]
 
     # --- Identificador corto: número final del nombre o, si no tiene,
     #     el orden en la serie (contando desde 1)
@@ -241,28 +228,14 @@ class Rejilla(tk.Canvas):
         return [divmod(i, cls.KR.tercios)
                 for i in range(2 * cls.KR.tercios_lado + 1)]
 
-    # --- Nombre de la zona de una posición: Z8 1/3
+    # --- Línea de debajo de la rejilla: «Serie completa» o cuántas
+    #     posiciones faltan
     @classmethod
-    def nombre(cls, posicion: tuple[int, int]) -> str:
-        zona, tercio = posicion
-        return biboecf.texto_zona(zona * cls.KR.tercios + tercio
-                                  - cls.KR.tercios_lado)
-
-    # --- Posiciones sin ninguna toma
-    @classmethod
-    def vacias(cls, celdas: dict[tuple[int, int], list[str]]
-               ) -> list[tuple[int, int]]:
-        return [p for p in cls.posiciones() if not celdas.get(p)]
-
-    # --- Líneas de debajo de la rejilla: contador y conclusión
-    @classmethod
-    def resumen(cls, celdas: dict[tuple[int, int], list[str]]) -> list[str]:
-        vacias = cls.vacias(celdas)
-        conclusion = cls.KR.txt_hueco if vacias else cls.KR.txt_completa
-        return [K.tr(cls.KR.txt_contador).format(
-                    n=cls.KR.posiciones - len(vacias),
-                    total=cls.KR.posiciones),
-                K.tr(conclusion).format(total=cls.KR.posiciones)]
+    def resumen(cls, OECF: biboecf.OECF) -> str:
+        n = len(OECF.vacias)
+        if not n:
+            return K.tr(cls.KR.txt_completa)
+        return K.tr_n(cls.KR.txt_faltan, n).format(n=n)
 
     # --- Línea del balance de blancos personalizado inicial. balance:
     #     True (se hizo), False (no) o None (no se sabe)
@@ -286,36 +259,40 @@ class Rejilla(tk.Canvas):
     # --- Todas las incidencias, una por línea: se muestran aparte, en
     #     su propia ventana, para que la principal no crezca con ellas
     @classmethod
-    def incidencias(cls, celdas: dict[tuple[int, int], list[str]],
-                    fuera: list[str], balance: bool | None,
-                    tapadas: int, sec: biboecf.Secuencia,
-                    archivos: list[Path]) -> list[str]:
+    def incidencias(cls, OECF: biboecf.OECF) -> list[str]:
+        balance = OECF.balancePersonalizado
+        sec: biboecf.Secuencia = OECF.secuencia                 # type: ignore
+        tapadas = len(OECF.tapadas)
         incidencias = []
+
+        # --- Sin balance personalizado: si las dos primeras son Z-V, es
+        #     que tienen el mismo balance; si no, la 2.ª ya es de un lado
         if balance is False:
-            incidencias.append(K.tr(cls.KR.txt_sin_balance))
-        incidencias += cls.incidencias_secuencia(sec, archivos)
+            mismo = len(sec.iniciales) >= biboecf.KS.iniciales
+            incidencias.append(K.tr(cls.KR.txt_mismo_balance if mismo
+                                    else cls.KR.txt_sin_balance))
+        incidencias += cls.incidencias_secuencia(sec, OECF.raws)
         if tapadas != cls.KR.tapadas:
             incidencias.append(K.tr_n(cls.KR.txt_tapadas_mal, tapadas).format(
                 n=tapadas, esperadas=cls.KR.tapadas))
         if not sec.balances:
             incidencias.append(K.tr(cls.KR.txt_sin_balances))
 
-        incidencias += [K.tr(cls.KR.txt_sin_toma).format(zona=cls.nombre(p))
-                        for p in cls.vacias(celdas)]
+        incidencias += [K.tr(cls.KR.txt_sin_toma).format(
+            zona=biboecf.texto_zona(t)) for t in OECF.vacias]
 
         # --- Repetidas (fuera de ZV)
         incidencias += [K.tr(cls.KR.txt_repetida).format(
-            n=len(celdas[p]), zona=cls.nombre(p))
-            for p in cls.posiciones() if p != cls.pos_zv()
-            and len(celdas.get(p, [])) > 1]
+            n=len(indices), zona=biboecf.texto_zona(t))
+            for t, indices in OECF.repetidas.items()]
 
-        if fuera:
-            incidencias.append(K.tr_n(cls.KR.txt_fuera, len(fuera)).format(
-                n=len(fuera)))
+        n = len(OECF.fuera)
+        if n:
+            incidencias.append(K.tr_n(cls.KR.txt_fuera, n).format(n=n))
         return incidencias
 
     # --- Incidencias de la secuencia de tomas, en su orden. archivos: los
-    #     de la serie, en el orden en que se analizó
+    #     de la serie, en el orden en que se leyó
     @classmethod
     def incidencias_secuencia(cls, sec: biboecf.Secuencia,
                               archivos: list[Path]) -> list[str]:
@@ -339,7 +316,8 @@ class Rejilla(tk.Canvas):
         incidencias += [K.tr(cls.KR.txt_salto).format(
             ident=cls.ident(archivos[i], archivos),
             esperada=biboecf.texto_zona(esperado),
-            real=biboecf.texto_zona(k)) for i, esperado, k in sec.saltos]
+            real=biboecf.texto_zona(tercioEV))
+            for i, esperado, tercioEV in sec.saltos]
 
         if sec.sobrantes:
             idents = cls.KR.sep_idents.join(
@@ -353,9 +331,13 @@ class Rejilla(tk.Canvas):
     # --- Dibujo
     #
 
-    # --- Muestra unas celdas nuevas
-    def mostrar(self, celdas: dict[tuple[int, int], list[str]]) -> None:
-        self.celdas = celdas
+    # --- Muestra las celdas de una serie: las posiciones de OECF, como
+    #     (zona, tercio), con el identificador corto de cada toma
+    def mostrar(self, OECF: biboecf.OECF) -> None:
+        raws = OECF.raws
+        self.celdas = {biboecf.zona_tercio(t): [self.ident(raws[i], raws)
+                                               for i in indices]
+                       for t, indices in OECF.celdas.items()}
         self.dibujar()
 
     # --- Dibuja cabeceras y celdas con el ancho actual del Canvas
@@ -381,26 +363,47 @@ class Rejilla(tk.Canvas):
             self.create_text(kr.ancho_etiquetas / 2, y, text=fila,
                              fill=texto)
 
-        # --- Celdas: las que no existen (X +1/3 y X +2/3) no se dibujan
+        # --- Celdas: las que no existen (X +.3 y X +.7) no se dibujan
         for posicion in self.posiciones():
             zona, tercio = posicion
             x = kr.ancho_etiquetas + zona * paso_x
             y = kr.alto_cabecera + tercio * paso_y
             self._celda(posicion, x, y, ancho)
 
-        # --- Botón (si lo hay) en su hueco, del tamaño de una celda.
-        #     delete("all") lo quita del Canvas: se vuelve a colocar
-        if self.boton is not None:
-            zona, tercio = kr.pos_boton
-            self.boton.configure(width=ancho, height=kr.celda)
-            self.create_window(kr.ancho_etiquetas + zona * paso_x,
-                               kr.alto_cabecera + tercio * paso_y,
-                               window=self.boton, anchor="nw")
+        # --- Pie (si lo hay), bajo las celdas: los botones, como los de
+        #     la ventana, alineados con el borde izquierdo de la Z0 y el
+        #     derecho de la ZX, y el resumen en medio, todo centrado en
+        #     vertical. Su alto es el del más alto. delete("all") lo quita
+        #     del Canvas: se vuelve a colocar
+        if self.pie is not None:
+            izquierdo, resumen, derecho = self.pie
+            fondo = self.cget("bg")
+            arriba = kr.alto_cabecera + kr.tercios * paso_y + kr.hueco
+            alto_pie = max(w.winfo_reqheight() for w in self.pie)
+            centro_y = arriba + alto_pie / 2
+            primera, ultima = kr.columnas_pie
+            for w in self.pie:
+                w.configure(bg_color=fondo)
+            self.create_window(kr.ancho_etiquetas + primera * paso_x,
+                               centro_y, window=izquierdo, anchor="w")
+            self.create_window(kr.ancho_etiquetas + ultima * paso_x + ancho,
+                               centro_y, window=derecho, anchor="e")
+            self.create_window(
+                kr.ancho_etiquetas + (kr.zonas * paso_x - kr.hueco) / 2,
+                centro_y, window=resumen, anchor="center")
 
-    # --- Coloca un botón en el hueco de ZX 2/3. Tiene que ser hijo de
-    #     la rejilla (Tk no deja meter en un Canvas widgets de otro sitio)
-    def poner_boton(self, boton: tk.Misc) -> None:
-        self.boton = boton
+            # --- El Canvas crece con el pie (solo si cambia: configurar
+            #     el alto lo vuelve a dibujar)
+            alto = round(arriba + alto_pie)
+            if int(self.cget("height")) != alto:
+                self.configure(height=alto)
+
+    # --- Coloca el pie: dos botones y el resumen entre ellos. Tienen que
+    #     ser hijos de la rejilla (Tk no deja meter en un Canvas widgets
+    #     de otro sitio)
+    def poner_pie(self, izquierdo: ctk.CTkButton, resumen: ctk.CTkLabel,
+                  derecho: ctk.CTkButton) -> None:
+        self.pie = (izquierdo, resumen, derecho)
         self.dibujar()
 
     # --- Una celda: estado según cuántas tomas tenga
