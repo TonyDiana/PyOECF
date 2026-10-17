@@ -1,0 +1,1035 @@
+# -*- coding: utf-8 *-*
+"""
+    :Propósito: El objeto OECF, entrada de la biblioteca BibOECF: la serie
+                de tomas de una carpeta
+    :Autor:     Tony Diana
+    :Versión:   26.10.14
+"""
+
+# cSpell:ignore biboecf, imread, kcom, rawpy, whitebalance
+
+__all__ = ["Exp", "Toma", "OECF"]
+
+# --- Bibliotecas estándar Python
+import math
+import os
+import re
+import shutil
+from collections.abc import Iterator
+from datetime import datetime
+from pathlib import Path
+from typing import NamedTuple
+
+# --- Bibliotecas externas
+import numpy as np
+import rawpy
+
+# --- Bibliotecas internas
+from bib import clases
+from .cam import Cam, leer_cam
+from .constantes import COM as KCOM
+from .marcas import leer_balance, leer_kelvin
+from .secuencia import KS, Secuencia, balance_personalizado, secuencia
+from .analisis import Analisis, BalanceMedido, ZonaMedida
+from .teselas import (KTE, Seleccion, Ventana, buscar_pano, exceso_negro,
+                      fraccion_recortada, matriz_color, medir_teselas,
+                      medir_toma, oscuridad, restar_exceso, ruido_temporal,
+                      seleccionar, temperatura)
+from .transferencia import ajustar_transferencia
+from .zonas import (KP, calcular_tercio_exacto, exp_relativa,
+                    zona_tercio)
+
+
+#
+class Exp(NamedTuple):
+    """ Exposición de una toma. El orden es siempre f, Tv e ISO. """
+    f: float
+    tv: float
+    iso: float
+
+
+#
+class Toma(NamedTuple):
+    """
+    Datos de una toma, leídos de su RAW de una sola vez. Cada dato es None
+    si no se pudo leer. La ruta no va aquí: la toma i es la de raws[i].
+    WB: multiplicadores del balance de blancos (todas las marcas);
+    nombreWB: su nombre, en inglés y mayúsculas (SUNNY, DAYLIGHT,
+    5600K…). bits: profundidad de bits del RAW (12, 14…). kelvin:
+    temperatura de color con que se hizo (Canon y Sony, en todas las
+    tomas; Nikon y Fujifilm, solo con el balance por Kelvin). oscura: a
+    1/160 y casi negra; es una tapada solo si va tras la Z-V final (ver
+    secuencia).
+    """
+    exp: Exp | None
+    fecha: datetime | None
+    WB: tuple[float, ...] | None
+    oscura: bool
+    nombreWB: str | None
+    bits: int | None
+    kelvin: int | None
+
+
+#
+class OECF(object):
+    """ Serie de tomas de una carpeta. Al crearlo lee de una vez la cámara
+        y los datos de la serie, y los ofrece. Cada carpeta tiene su
+        objeto, así que puede haber varios a la vez. """
+
+    __slots__ = ["__analisis", "__balancePersonalizado", "__cam",
+                 "__celdas", "__copias", "__desviadas", "__desvios",
+                 "__errorCopia",
+                 "__enRejilla", "__esCarpeta", "__esLegible", "__fuera",
+                 "__isoDistintos", "__isoSerie", "__pano", "__partes",
+                 "__path", "__raws", "__secuencia", "__seleccion",
+                 "__tapadas", "__tapadasOtroISO",
+                 "__tercioEVs", "__tomas", "__WBs", "__zonas"]
+
+    #
+    # --- Constantes de la toma
+    class KT(clases.EnumMutable):
+        """ Constantes de la lectura de una toma. """
+
+        # --- Unidad del tiempo de exposición al mostrarlo
+        SEGUNDOS = "s"
+
+        # --- Decimales del diafragma: rawpy lo da en coma flotante de 32
+        #     bits
+        DECIMALES_F = 1
+
+        # --- Tomas tapadas (tapa puesta y visor cubierto): se disparan a
+        #     este tiempo y quedan casi en negro (la toma es «oscura»; es
+        #     tapada si va tras la Z-V final). Brillo: media del RAW
+        #     sobre el nivel de negro, en tanto por uno del rango útil. En
+        #     series reales, una tapada da 0.0003 y una toma normal, de
+        #     0.02 a 0.06
+        TV_TAPADA = 1 / 160
+        BRILLO_TAPADA = 0.005
+
+        # --- Balance de blancos: canal verde (R, G, B, G2), con el que se
+        #     dividen los multiplicadores, y sus decimales
+        CANAL_VERDE = 1
+        DECIMALES_WB = 4
+
+        # --- Copias de la serie: carpeta dentro de la de la serie y
+        #     nombres de cada copia (llevan la extensión de su RAW). Zonas:
+        #     Z00 a Z10, con -3 y -7 en los tercios (Z05 es la ZV);
+        #     tapadas: DARK-1, DARK-2; balances de cámara: WB-01, WB-02…
+        #     con el nombre del balance si la cámara lo guarda
+        #     (WB-03-INCANDESCENT, WB-07-NATURAL-AUTO): en mayúsculas y
+        #     con un guion en lugar de lo que no sea letra o número
+        CARPETA = "OECF"
+        CIFRAS_ZONA = 2
+        TERCIOS_ZONA = ("", "-3", "-7")
+        NOMBRE_TAPADA = "DARK"
+        PREFIJO_TAPADA = f"{NOMBRE_TAPADA}-"
+        PREFIJO_BALANCE = "WB-"
+        CIFRAS_BALANCE = 2
+        SEP_NOMBRE = "-"
+        NO_VALIDO_NOMBRE = r"[^A-Z0-9]+"
+
+        # --- Parte de la serie de cada toma (ver la property partes). La
+        #     de los lados lleva su número: lado1, lado2
+        PARTE_INICIAL = "inicial"
+        PARTE_LADO = "lado"
+        PARTE_CAMBIO = "cambio"
+        PARTE_FINAL = "final"
+        PARTE_TAPADA = "tapada"
+        PARTE_BALANCE = "balance"
+        PARTE_SOBRANTE = "sobrante"
+
+        # --- Z-V iniciales de más (desde la tercera): no van a la
+        #     rejilla, pero son Z-V de control (entran en la media de las
+        #     Z-V si la luz no cambió); el JSON lo dice (2026-10-16)
+        PARTE_CONTROL = "control"
+
+        # --- Para analizar, de Z1 a Z9 (con sus tercios) ninguna zona
+        #     puede quedar sin toma. Las repetidas no impiden analizar
+        ZONA_MIN_ANALISIS = 1
+        ZONA_MAX_ANALISIS = 9
+
+    #
+    # --- Si la carpeta no existe o no tiene RAW, no falla.
+    #
+    def __init__(self, path: Path) -> None:
+        self.__path = path
+        self.__esCarpeta = path.is_dir()
+
+        # --- Leer los RAW, en orden ([] si no hay o si no hay permiso
+        #     para leer la carpeta)
+        self.__esLegible: bool = self.esCarpeta
+        self.__raws: list[Path] = []
+        if self.esCarpeta:
+            try:
+                self.__raws = self.__buscar_raw()
+            except OSError:
+                self.__esLegible = False
+
+        # --- Cámara: marca y modelo de la primera toma (None si no hay RAW
+        #     o no se leen)
+        self.__cam: Cam | None = (leer_cam(self.raws[0]) if self.raws
+                                  else None)
+
+        # --- Tomas leídas, en el orden de raws. Ahora, solo la primera,
+        #     la Z-V: referencia de la serie ([] si no hay RAW)
+        self.__tomas: list[Toma] = ([self.__leer_toma(self.raws[0])]
+                                    if self.raws else [])
+
+        # --- Reparto de la serie: se calcula al terminar de leerla (vacío
+        #     hasta entonces). Si solo hay una toma, ya está leída
+        self.__tercioEVs: list[int | None] = []
+        self.__desvios: list[float | None] = []
+        self.__secuencia: Secuencia | None = None
+        self.__tapadas: list[Path] = []
+        self.__WBs: list[Path] = []
+        self.__zonas: dict[int, Path | None] = {}
+        self.__balancePersonalizado: bool | None = None
+        self.__partes: list[str | None] = []
+        self.__enRejilla: list[bool] = []
+        self.__celdas: dict[int, list[int]] = {}
+        self.__fuera: list[int] = []
+        self.__desviadas: list[int] = []
+        self.__isoSerie: float | None = None
+        self.__isoDistintos: list[int] = []
+        self.__tapadasOtroISO: list[int] = []
+        if self.raws and self.esRead:
+            self.__repartir()
+
+        # --- Copias en la carpeta OECF: las hace Copiar ({} hasta entonces)
+        self.__copias: dict[Path, Path] = {}
+        self.__errorCopia: OSError | None = None
+
+        # --- Teselas de la Z-V: las calcula Seleccionar (None hasta
+        #     entonces). Paño: su ventana o por qué no se encontró (KTE)
+        self.__pano: Ventana | str | None = None
+        self.__seleccion: Seleccion | None = None
+
+        # --- Lo medido en los RAW: lo calcula Medir (None hasta entonces)
+        self.__analisis: Analisis | None = None
+
+    #
+    # --- Propiedades públicas
+    #
+    # region Propiedades públicas
+
+    #
+    @property
+    def path(self) -> Path:
+        """ Carpeta de la serie. """
+        return self.__path
+
+    #
+    @property
+    def esCarpeta(self) -> bool:
+        """ Saber si la carpeta existe. """
+        return self.__esCarpeta
+
+    #
+    @property
+    def esLegible(self) -> bool:
+        """ Saber si la carpeta existe y hay permiso para leerla. """
+        return self.__esLegible
+
+    #
+    @property
+    def esEscribible(self) -> bool:
+        """
+        Saber si hay permiso para escribir en la carpeta (para la carpeta
+        OECF). En Windows no siempre se sabe de antemano: si falla al
+        copiar, copias queda vacío.
+        """
+        return self.esCarpeta and os.access(self.path, os.W_OK)
+
+    #
+    @property
+    def raws(self) -> list[Path]:
+        """
+        RAW's de la carpeta ([] si no hay). Ordenados por nombre hasta
+        leer la serie; después, por fecha de disparo (a igual fecha, por
+        nombre; los que no tienen fecha, al final).
+        """
+        return self.__raws
+
+    #
+    @property
+    def primera(self) -> str:
+        """ Nombre del primer RAW de la carpeta (ver raws). """
+        return self.__raws[0].name if self.__raws else ""
+
+    #
+    @property
+    def cam(self) -> Cam | None:
+        """ Saber la cámara: marca y modelo (None si no se leyó). """
+        return self.__cam
+
+    #
+    @property
+    def tomas(self) -> list[Toma]:
+        """ Saber las tomas leídas, en el orden de raws ([] si ninguna). """
+        return self.__tomas
+
+    #
+    @property
+    def tercioEVs(self) -> list[int | None]:
+        """
+        Saber el tercioEV de cada toma: tercios de paso respecto a la Z-V,
+        en el orden de raws (None si no se pudo leer; [] hasta leer la
+        serie).
+        """
+        return self.__tercioEVs
+
+    #
+    @property
+    def desvios(self) -> list[float | None]:
+        """
+        Saber el desvío de cada toma, en tercios: su posición exacta menos
+        su tercioEV (None si no se leyó). Es el desvío de los tiempos que
+        rotula la cámara, no el del obturador, que solo se ve en el RAW.
+        """
+        return self.__desvios
+
+    #
+    @property
+    def secuencia(self) -> Secuencia | None:
+        """
+        Saber las partes de la serie según el protocolo: iniciales, lados,
+        cambio, balances, sobrantes y saltos (None hasta leer la serie).
+        """
+        return self.__secuencia
+
+    #
+    @property
+    def zonas(self) -> dict[int, Path | None]:
+        """
+        Saber el RAW de cada zona, de la más oscura a la más clara: las 31,
+        con su tercioEV como clave (None si no hay toma; {} hasta leer la
+        serie).
+        En la ZV, la Z-V del balance personalizado o, si no hay, la
+        primera; en las demás, la última que se hizo.
+        """
+        return self.__zonas
+
+    #
+    @property
+    def tapadas(self) -> list[Path]:
+        """ Saber los RAW de las tomas tapadas, en orden de disparo. """
+        return self.__tapadas
+
+    #
+    @property
+    def WBs(self) -> list[Path]:
+        """
+        Saber los RAW de los balances de cámara (WB), en orden de disparo.
+        """
+        return self.__WBs
+
+    #
+    @property
+    def balancePersonalizado(self) -> bool | None:
+        """
+        Saber si se hizo el balance de blancos personalizado inicial: las
+        dos primeras tomas, Z-V con balances distintos. None si no se
+        puede saber o hasta leer la serie.
+        """
+        return self.__balancePersonalizado
+
+    #
+    @property
+    def partes(self) -> list[str | None]:
+        """
+        Saber la parte de la serie de cada toma, en el orden de raws:
+        inicial, control (las Z-V iniciales de más), lado1, cambio, lado2,
+        final, tapada, balance o sobrante (None si no se pudo leer; [] hasta
+        leer la serie).
+        """
+        return self.__partes
+
+    #
+    @property
+    def enRejilla(self) -> list[bool]:
+        """
+        Saber qué tomas van a la rejilla, en el orden de raws: todas menos
+        las tapadas, los balances de cámara y las Z-V iniciales de más
+        ([] hasta leer la serie).
+        """
+        return self.__enRejilla
+
+    #
+    @property
+    def celdas(self) -> dict[int, list[int]]:
+        """
+        Saber las tomas de cada posición de la rejilla: {tercioEV: [índices
+        en raws]}, solo las posiciones con alguna toma ({} hasta leer la
+        serie).
+        """
+        return self.__celdas
+
+    #
+    @property
+    def fuera(self) -> list[int]:
+        """
+        Saber las tomas de la rejilla que no caben en ninguna posición:
+        más allá de Z0 o ZX, o que no se pudieron leer (índices en raws).
+        """
+        return self.__fuera
+
+    #
+    @property
+    def vacias(self) -> list[int]:
+        """
+        Saber las posiciones de la rejilla sin ninguna toma (sus tercioEV,
+        de la más oscura a la más clara).
+        """
+        return [t for t in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1)
+                if t not in self.celdas]
+
+    #
+    @property
+    def repetidas(self) -> dict[int, list[int]]:
+        """
+        Saber las posiciones con más de una toma, sin contar la ZV, donde
+        se esperan varias: {tercioEV: [índices en raws]}.
+        """
+        return {t: tomas for t, tomas in sorted(self.celdas.items())
+                if t != 0 and len(tomas) > 1}
+
+    #
+    @property
+    def isoSerie(self) -> float | None:
+        """
+        Saber el ISO de la serie: el de la ZV (None si no se leyó o hasta
+        leer la serie).
+        """
+        return self.__isoSerie
+
+    #
+    @property
+    def isoDistintos(self) -> list[int]:
+        """
+        Saber las tomas de la serie (iniciales, lados, cambio y final) con
+        un ISO distinto del de la ZV (índices en raws). Si hay alguna, no
+        se puede analizar.
+        """
+        return self.__isoDistintos
+
+    #
+    @property
+    def tapadasOtroISO(self) -> list[int]:
+        """
+        Saber las tomas tapadas con un ISO distinto del de la ZV (índices
+        en raws). No impiden analizar.
+        """
+        return self.__tapadasOtroISO
+
+    #
+    @property
+    def desviadas(self) -> list[int]:
+        """
+        Saber las tomas de la rejilla cuyo desvío pasa de KP.DESVIO_MAXIMO
+        (índices en raws). No impiden analizar.
+        """
+        return self.__desviadas
+
+    #
+    @property
+    def pano(self) -> Ventana | str | None:
+        """
+        Saber la ventana del paño en la Z-V o, si no se encontró, por qué
+        (KTE). None hasta Seleccionar.
+        """
+        return self.__pano
+
+    #
+    @property
+    def seleccion(self) -> Seleccion | None:
+        """
+        Saber las teselas de tarjeta de la Z-V: buenas y rechazadas, con
+        su motivo (valen para toda la serie). None hasta Seleccionar.
+        """
+        return self.__seleccion
+
+    #
+    @property
+    def exportaciones(self) -> dict[int, Path]:
+        """
+        Saber las exportaciones del revelador que hay en la carpeta OECF:
+        las TIFF con el nombre de una zona (ver NombreZona), {tercioEV:
+        ruta}. No hace falta haber leído la serie.
+        """
+        if not self.carpeta.is_dir():
+            return {}
+        por_nombre = {p.stem.upper(): p for p in self.carpeta.iterdir()
+                      if p.suffix.lower() in KCOM.EXTENSIONES_TIFF}
+        exportaciones = {}
+        for tercioEV in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1):
+            ruta = por_nombre.get(self.NombreZona(tercioEV).upper())
+            if ruta is not None:
+                exportaciones[tercioEV] = ruta
+        return exportaciones
+
+    #
+    @property
+    def analisis(self) -> Analisis | None:
+        """
+        Saber lo medido en los RAW de la serie: teselas, paño, negro,
+        ruido y cada zona (ver Analisis). None hasta Medir.
+        """
+        return self.__analisis
+
+    #
+    @property
+    def esAnalizable(self) -> bool:
+        """
+        Saber si la serie se puede analizar: de Z1 a Z9, ninguna zona sin
+        toma (las de zonas, que son las que se copian), y el mismo ISO en
+        toda la serie. Las repetidas no lo impiden.
+        """
+        if not self.zonas or self.isoDistintos:
+            return False
+        return all(self.zonas[t] is not None for t in self.zonas
+                   if self.EsNecesaria(t))
+
+    #
+    @property
+    def carpeta(self) -> Path:
+        """
+        Saber la carpeta de las copias de la serie: OECF, dentro de la de
+        la serie.
+        """
+        return self.path / self.KT.CARPETA
+
+    #
+    @property
+    def copias(self) -> dict[Path, Path]:
+        """
+        Saber la copia de cada RAW que se copió a la carpeta OECF:
+        {original: copia} ({} hasta copiar o si la copia falló).
+        """
+        return self.__copias
+
+    #
+    @property
+    def errorCopia(self) -> OSError | None:
+        """
+        Saber el error del sistema que paró la última copia (None si no
+        hubo): borrar la carpeta OECF anterior, crearla o copiar un RAW.
+        """
+        return self.__errorCopia
+
+    #
+    @property
+    def esRead(self) -> bool:
+        """ Saber si ya están leídas todas las tomas de la serie. """
+        return len(self.tomas) == len(self.raws)
+
+    #
+    @property
+    def ZV(self) -> Exp | None:
+        """
+        Saber la exposición de la Z-V, la referencia de la serie
+        (None si no se leyó).
+        """
+        return self.tomas[0].exp if self.tomas else None
+
+    #
+    @property
+    def bits(self) -> int | None:
+        """
+        Saber la profundidad de bits de los RAW de la serie: la de la Z-V
+        (12, 14…; None si no se leyó).
+        """
+        return self.tomas[0].bits if self.tomas else None
+
+    #
+    @property
+    def fecha(self) -> datetime | None:
+        """ Saber la fecha y hora de disparo de la Z-V (None si no se leyó).
+        """
+        return self.tomas[0].fecha if self.tomas else None
+
+    # endregion Propiedades públicas
+
+    #
+    # --- Métodos públicos
+    #
+    # region Métodos públicos
+
+    #
+    def EsNecesaria(self, tercioEV: int) -> bool:
+        """
+        Saber si una posición (tercioEV) es necesaria para analizar: de
+        Z1 a Z9, con sus tercios.
+        """
+        kt = self.KT
+        desde = (kt.ZONA_MIN_ANALISIS - KP.ZONA_REF) * KP.TERCIOS
+        hasta = (kt.ZONA_MAX_ANALISIS - KP.ZONA_REF) * KP.TERCIOS
+        return desde <= tercioEV <= hasta
+
+    #
+    def Leer(self) -> Iterator[int]:
+        """
+        Lee las tomas que faltan, una cada vez y abriendo cada RAW una sola
+        vez (la primera ya se leyó al crear el objeto). Tras cada una dice
+        cuántas lleva: se pueden ir pidiendo con next() para mostrar el
+        progreso sin congelarse, o leerlas todas seguidas con un for. Si
+        ya están todas, no lee nada. Al terminar, ordena raws y tomas por
+        fecha de disparo y reparte la serie.
+        """
+        # --- Al leer la última, se ordena y se reparte la serie ANTES de
+        #     su yield: quien lee con next() deja de pedir cuando ya están
+        #     todas, y lo que fuera detrás del último yield no se
+        #     ejecutaría nunca
+        for raw in self.raws[len(self.tomas):]:
+            self.__tomas.append(self.__leer_toma(raw))
+            if self.esRead:
+                self.__ordenar()
+                self.__repartir()
+            yield len(self.tomas)
+
+    #
+    def Seleccionar(self) -> None:
+        """
+        Mide las teselas de la Z-V: busca el paño y elige las teselas
+        buenas de la tarjeta (ver pano y seleccion). Sin Z-V, sin paño ni
+        tarjeta.
+        """
+        zv = self.zonas.get(0)
+        if zv is None:
+            self.__pano = KTE.SIN_PANO
+            self.__seleccion = None
+            return
+        teselas = medir_teselas(zv)
+        self.__pano = buscar_pano(teselas)
+        self.__seleccion = seleccionar(
+            teselas, self.__pano if isinstance(self.__pano, Ventana)
+            else None)
+
+    #
+    def Medir(self) -> Iterator[tuple[int, int]]:
+        """
+        Mide la serie en los RAW, una toma cada vez: las 31 zonas y las
+        demás Z-V, en las teselas buenas de la Z-V (antes, Seleccionar,
+        si no se hizo). Dice cuántas lleva y cuántas son (para el
+        progreso), empezando por (0, total) antes de medir nada (ver
+        Copiar), y después tras cada una. Al terminar, el resultado en
+        analisis.
+        """
+        if self.seleccion is None:
+            self.Seleccionar()
+        seleccion, zv = self.seleccion, self.zonas.get(0)
+        if seleccion is None or zv is None:
+            return
+        pano = self.pano if isinstance(self.pano, Ventana) else None
+
+        # --- Z-V de control: las demás Z-V de la serie. Con dos iniciales,
+        #     la primera no: es la del balance personalizado, solo tarjeta
+        #     y con otro encuadre (sus teselas caerían en otro sitio)
+        sec: Secuencia = self.secuencia                         # type: ignore
+        solo_tarjeta = (sec.iniciales[:1]
+                        if len(sec.iniciales) >= KS.INICIALES else [])
+        otras = [self.raws[i]
+                 for i in sec.iniciales + sec.cambios + sec.finales
+                 if self.raws[i] != zv and i not in solo_tarjeta]
+        tomas = [(t, raw) for t, raw in sorted(self.zonas.items())
+                 if raw is not None] + [(0, raw) for raw in otras]
+
+        # --- Primero, cuántas son; luego, el negro, el ruido y la matriz
+        #     de la Z-V (que también tardan) y cada toma
+        yield 0, len(tomas)
+        oscuro = oscuridad(zv, self.tapadas)
+        matriz = matriz_color(zv)
+
+        # --- Cada toma: la tarjeta, su paño (con su histograma, para
+        #     contar los recortados al final) y la temperatura
+        medidas = []
+        for hechas, (tercio_ev, raw) in enumerate(tomas, 1):
+            medidas.append((tercio_ev, raw, medir_toma(
+                raw, seleccion, oscuro.negro, pano)))
+            if hechas < len(tomas):
+                yield hechas, len(tomas)
+
+        # --- Sin tapadas, el negro declarado puede quedarse corto: lo que
+        #     le falta se estima en las sombras de la serie y se resta
+        if oscuro.origen_negro == KTE.ORIGEN_DECLARADO:
+            exceso = exceso_negro([(t, m) for t, _, m
+                                   in medidas[:len(medidas) - len(otras)]])
+            if exceso is not None:
+                negro = list(oscuro.negro)
+                for c, e in zip(medidas[0][2].canales, exceso):
+                    negro[int(c[1:])] += e
+                oscuro = oscuro._replace(negro=tuple(negro),
+                                         origen_negro=KTE.ORIGEN_SOMBRAS)
+                medidas = [(t, raw, restar_exceso(m, exceso))
+                           for t, raw, m in medidas]
+
+        # --- Recortados en el paño: los que llegan a UMBRAL_RECORTE del
+        #     máximo de la tarjeta de su canal en la serie
+        maximos = {c: max(m.nivel[i] for _, _, m in medidas)
+                   for i, c in enumerate(medidas[0][2].canales)}
+        zonas: dict[int, ZonaMedida] = {}
+        control: list[ZonaMedida] = []
+        for n, (tercio_ev, raw, m) in enumerate(medidas):
+            nivel = dict(zip(m.canales, m.nivel))
+            recortado = {} if m.pano is None else {
+                c: fraccion_recortada(h, oscuro.negro[int(c[1:])]
+                                      + KTE.UMBRAL_RECORTE * maximos[c])
+                for c, h in zip(m.canales, m.pano.histograma)}
+            copia = self.copias.get(raw)
+            zona = ZonaMedida(
+                tercio_ev, raw.name, copia.name if copia else None, nivel,
+                dict(zip(m.canales, m.dispersion)),
+                {} if m.pano is None else dict(zip(m.canales,
+                                                   m.pano.nivel)),
+                {} if m.pano is None else dict(zip(m.canales,
+                                                   m.pano.dispersion)),
+                recortado, tuple(float(x) for x in m.desviacion_rechazadas))
+            if n < len(medidas) - len(otras):
+                zonas[tercio_ev] = zona
+            else:
+                control.append(zona)
+
+        # --- Curva de transferencia del ruido, con las zonas. Si el ruido
+        #     de lectura no se midió (sin borde ni tapadas), sale de ella
+        curvas = ajustar_transferencia(list(zonas.values()))
+        if oscuro.ruido is None:
+            lecturas = [math.nan] * len(oscuro.negro)
+            for canal, curva in curvas.items():
+                lecturas[int(canal[1:])] = curva.lectura
+            if not all(math.isnan(x) for x in lecturas):
+                oscuro = oscuro._replace(ruido=tuple(lecturas),
+                                         origen_ruido=KTE.ORIGEN_CURVA)
+
+        # --- Ruido aleatorio en la Z-V, con la primera Z-V de control de
+        #     su misma luz (la que no se desvía: ver
+        #     Analisis.controlesDesviados)
+        zona_zv = zonas.get(0)
+        pareja = next((
+            raw for raw, z in zip(otras, control)
+            if zona_zv and zona_zv.nivelRGB[1] > 0 and z.nivelRGB[1] > 0
+            and abs(math.log2(z.nivelRGB[1] / zona_zv.nivelRGB[1]))
+            <= KP.TOLERANCIA_LINEAL), None)
+        aleatorio = (ruido_temporal(zv, pareja, seleccion, oscuro.negro)
+                     if pareja else None)
+
+        # --- Tomas de balance de la cámara: los Kelvin que guarda y los
+        #     que de verdad aplica (la luz que sus multiplicadores dejan
+        #     neutra: la inversa de cada uno)
+        indices = {raw: i for i, raw in enumerate(self.raws)}
+        balances = []
+        for raw in self.WBs:
+            toma = self.tomas[indices[raw]]
+            wb = toma.WB
+            balances.append(BalanceMedido(
+                raw.name, toma.nombreWB, toma.kelvin,
+                temperatura(*(1 / x for x in wb[:KTE.CANALES_MATRIZ]),
+                            matriz) if wb else None,
+                tuple(float(x) for x in wb) if wb else None))
+
+        self.__analisis = Analisis(
+            KTE.LADO, *(self.__tamano(zv)), seleccion.motivo, self.pano,
+            oscuro.negro, oscuro.origen_negro, oscuro.ruido,
+            oscuro.origen_ruido, oscuro.ruido_borde, oscuro.ruido_tapadas,
+            oscuro.difieren, tuple(tuple(float(x) for x in fila)
+                                   for fila in matriz),
+            tuple(zonas.get(t) for t in sorted(self.zonas)), tuple(control),
+            self.cam.nombre if self.cam else "",
+            self.fecha.isoformat() if self.fecha else None,
+            *((self.ZV.iso, self.ZV.tv, self.ZV.f) if self.ZV
+              else (None, None, None)), tuple(balances), bits=self.bits,
+            transferencia=curvas or None, aleatorio=aleatorio)
+        yield len(tomas), len(tomas)
+
+    #
+    @staticmethod
+    def NombreZona(tercioEV: int) -> str:
+        """
+        Nombre de la copia de una zona, sin extensión: Z00, Z00-3, Z00-7,
+        … Z05 (la ZV) … Z10. Las exportaciones del revelador se llaman
+        igual.
+        """
+        kt = OECF.KT
+        ev, tercio = zona_tercio(tercioEV)
+        return (f"{KP.PREFIJO}{ev:0{kt.CIFRAS_ZONA}d}"
+                f"{kt.TERCIOS_ZONA[tercio]}")
+
+    #
+    def Copiar(self) -> Iterator[tuple[int, int]]:
+        """
+        Copia a la carpeta OECF las tomas que sirven, con su nombre: una
+        por zona, las tapadas y los balances de cámara. Solo el RAW, copia
+        exacta: los originales no se tocan. Antes vacía la carpeta OECF
+        anterior, si la hay, salvo las exportaciones del revelador y las
+        subcarpetas (ver Vaciar). Copia una cada vez y dice cuántas lleva y
+        cuántas son, (hechas, total), empezando por (0, total): se pueden
+        ir pidiendo con next() para mostrar el progreso sin congelarse, o
+        copiarlas todas seguidas con un for. Al terminar, copias dice la
+        copia de cada RAW; si la serie aún no está leída o algo falla, se
+        para y copias queda vacío (y, si fue el sistema, errorCopia dice
+        por qué).
+        """
+        self.__copias = {}
+        self.__errorCopia = None
+        if not self.raws or not self.esRead:
+            return
+        kt = self.KT
+
+        # --- Nombre de cada copia, sin extensión: {RAW: nombre}
+        nombres: dict[Path, str] = {}
+        for tercioEV, raw in self.zonas.items():
+            if raw is not None:
+                nombres[raw] = self.NombreZona(tercioEV)
+        for n, raw in enumerate(self.tapadas, 1):
+            nombres[raw] = f"{kt.PREFIJO_TAPADA}{n}"
+        for n, i in enumerate(self.secuencia.balances, 1):      # type: ignore
+            raw = self.raws[i]
+            nombre = f"{kt.PREFIJO_BALANCE}{n:0{kt.CIFRAS_BALANCE}d}"
+            balance = self.tomas[i].nombreWB
+            if balance:
+                limpio = re.sub(kt.NO_VALIDO_NOMBRE, kt.SEP_NOMBRE,
+                                balance.upper()).strip(kt.SEP_NOMBRE)
+                nombre = f"{nombre}{kt.SEP_NOMBRE}{limpio}"
+            nombres[raw] = nombre
+
+        copias = {raw: self.carpeta / f"{nombre}{raw.suffix}"
+                  for raw, nombre in nombres.items()}
+        total = len(copias)
+        try:
+            if self.carpeta.is_dir():
+                self.Vaciar()
+            else:
+                self.carpeta.mkdir()
+        except OSError as e:
+            self.__errorCopia = e
+            return
+        yield 0, total
+
+        # --- Las copias se apuntan solo si se hicieron todas, y ANTES del
+        #     último yield (ver Leer)
+        for hechas, (raw, copia) in enumerate(copias.items(), 1):
+            try:
+                shutil.copy2(raw, copia)
+            except OSError as e:
+                self.__errorCopia = e
+                return
+            if hechas == total:
+                self.__copias = copias
+            yield hechas, total
+
+    #
+    def Vaciar(self) -> None:
+        """
+        Vacía la carpeta OECF para prepararla de nuevo: borra lo que hizo
+        el programa (copias, JSON, incidencias, libro, ficha, láminas) y
+        conserva las TIFF (las exportaciones del revelador: Tony,
+        2026-10-16) y las subcarpetas (el programa no las crea: son del
+        usuario).
+        """
+        for ruta in self.carpeta.iterdir():
+            if (ruta.is_dir()
+                    or ruta.suffix.lower() in KCOM.EXTENSIONES_TIFF):
+                continue
+            ruta.unlink()
+
+    #
+    @staticmethod
+    def TextoF(diafragma: float) -> str:
+        """ Diafragma como texto, sin ceros sobrantes: 9, 5.6. """
+        return f"{round(diafragma, OECF.KT.DECIMALES_F):g}"
+
+    #
+    @staticmethod
+    def TextoTV(segundos: float) -> str:
+        """ Tiempo como lo marca la cámara: 1/125 s, o 2 s si pasa del
+            segundo. """
+        if segundos < 1:
+            return f"1/{round(1 / segundos)} {OECF.KT.SEGUNDOS}"
+        return f"{segundos:g} {OECF.KT.SEGUNDOS}"
+
+    #
+    @staticmethod
+    def TextoISO(iso: float) -> str:
+        """ ISO como texto, en número entero: 100. """
+        return str(round(iso))
+
+    # endregion Métodos públicos
+
+    #
+    # --- Métodos privados
+    #
+    # region Métodos privados
+
+    # --- RAW de la carpeta, ordenados por nombre (lista vacía si no hay).
+    #     El definitivo, por fecha, lo pone __ordenar al leer la serie
+    def __buscar_raw(self) -> list[Path]:
+        return sorted(p for p in self.path.iterdir()
+                      if p.is_file() and p.suffix.lower() in KCOM.EXTENSIONES)
+
+    #
+    # --- Con la serie leída, ordena raws y tomas por fecha de disparo: el
+    #     nombre puede engañar (el contador de la cámara da la vuelta en
+    #     9999, archivos renombrados, dos tarjetas). Ver __clave_orden
+    def __ordenar(self) -> None:
+        pares = sorted(zip(self.raws, self.tomas), key=OECF.__clave_orden)
+        self.__raws = [raw for raw, _ in pares]
+        self.__tomas = [toma for _, toma in pares]
+
+    #
+    # --- Clave del orden de una toma: primero las que tienen fecha, por
+    #     fecha; a igual fecha (resolución de 1 s), por nombre
+    @staticmethod
+    def __clave_orden(par: tuple[Path, Toma]) -> tuple[bool, datetime, str]:
+        raw, toma = par
+        return toma.fecha is None, toma.fecha or datetime.min, raw.name
+
+    #
+    # --- Alto y ancho visibles del sensor (los de las teselas)
+    @staticmethod
+    def __tamano(archivo: Path) -> tuple[int, int]:
+        with rawpy.imread(str(archivo)) as raw:
+            return raw.sizes.height, raw.sizes.width
+
+    #
+    # --- Lee una toma abriendo su RAW una sola vez: exposición, fecha de
+    #     disparo y balance de blancos y, solo si es al tiempo de las
+    #     tapadas, si está tapada (mirar la imagen es lo lento). Si el RAW
+    #     no se puede leer, todo None y no tapada
+    @staticmethod
+    def __leer_toma(archivo: Path) -> Toma:
+        try:
+            with rawpy.imread(str(archivo)) as raw:
+                otros = raw.other
+                exp = Exp(float(otros.aperture), float(otros.shutter_speed),
+                          float(otros.iso_speed))
+                # --- Balance de blancos: multiplicadores con el verde a 1,
+                #     para comparar marcas (Canon los da en bruto)
+                bruto = [float(m) for m in raw.camera_whitebalance]
+                verde = bruto[OECF.KT.CANAL_VERDE] or 1
+                wb = tuple(round(m / verde, OECF.KT.DECIMALES_WB)
+                           for m in bruto)
+
+                # --- Brillo: media del RAW sobre el nivel de negro, en tanto
+                #     por uno del rango útil
+                oscura = False
+                if math.isclose(exp.tv, OECF.KT.TV_TAPADA,
+                                rel_tol=KCOM.MARGEN_TV):
+                    negro = sum(raw.black_level_per_channel) / len(
+                        raw.black_level_per_channel)
+                    brillo = ((raw.raw_image_visible.mean() - negro)
+                              / (raw.white_level - negro))
+                    oscura = bool(brillo < OECF.KT.BRILLO_TAPADA)
+
+                fecha = otros.timestamp
+
+                # --- Profundidad de bits: los que hacen falta para el
+                #     nivel de blanco (16383 → 14), menos los últimos que
+                #     no usa ningún valor: algunas cámaras (Sony) guardan
+                #     12 bits reescalados a 14, todos múltiplos de 4
+                usados = int(np.bitwise_or.reduce(
+                    raw.raw_image_visible, axis=None))
+                sobran = ((usados & -usados).bit_length() - 1
+                          if usados else 0)
+                bits = int(raw.white_level).bit_length() - sobran
+        except (rawpy.LibRawError, OSError):                    # type: ignore
+            return Toma(None, None, None, False, None, None, None)
+        return Toma(exp, fecha, wb, oscura, leer_balance(archivo), bits,
+                    leer_kelvin(archivo))
+
+    #
+    # --- Reparte la serie ya leída: el tercioEV de cada toma respecto a la
+    #     primera que se pudo leer (la Z-V), sus partes según el protocolo,
+    #     las tapadas, los WB y una toma por zona (ver la property zonas).
+    #     La Z-V de cambio de lado y las sobrantes no van a ninguna zona
+    def __repartir(self) -> None:
+        relativas = [exp_relativa(t.exp.tv, t.exp.f, t.exp.iso) if t.exp
+                     else None for t in self.tomas]
+        reads = [e for e in relativas if e is not None]
+        exactos = [calcular_tercio_exacto(e, reads[0]) if e is not None
+                   else None for e in relativas]
+        self.__tercioEVs = [round(x) if x is not None else None
+                            for x in exactos]
+        self.__desvios = [x - t if x is not None and t is not None else None
+                          for x, t in zip(exactos, self.tercioEVs)]
+
+        partes = self.__secuencia = secuencia(
+            self.tercioEVs, [t.oscura for t in self.tomas])
+        self.__tapadas = [self.raws[i] for i in partes.tapadas]
+        self.__WBs = [self.raws[i] for i in partes.balances]
+
+        # --- Las 31 zonas, vacías; la ZV y, después, los lados en orden de
+        #     disparo: si una zona se repite, queda la última
+        zonas: dict[int, Path | None] = {
+            tercioEV: None
+            for tercioEV in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1)}
+        iniciales = partes.iniciales
+        zv: int | None = None
+        if iniciales:
+            zv = (iniciales[KS.INICIALES - 1]
+                  if len(iniciales) >= KS.INICIALES else iniciales[0])
+            zonas[0] = self.raws[zv]
+        for lado in partes.lados:
+            for i in lado:
+                zonas[self.tercioEVs[i]] = self.raws[i]         # type: ignore
+        self.__zonas = zonas
+
+        # --- Balance personalizado: el de las Z-V iniciales del protocolo
+        self.__balancePersonalizado = balance_personalizado(
+            self.tercioEVs, [t.WB for t in self.tomas[:KS.INICIALES]])
+
+        # --- Parte de cada toma. Si una toma está en varias, gana la
+        #     última de esta lista
+        kt = self.KT
+        de_mas = set(partes.iniciales[KS.INICIALES:])
+        nombres: dict[int, str] = {
+            i: kt.PARTE_CONTROL if i in de_mas else kt.PARTE_INICIAL
+            for i in partes.iniciales}
+        for n, lado in enumerate(partes.lados, 1):
+            nombres.update({i: f"{kt.PARTE_LADO}{n}" for i in lado})
+        nombres.update({i: kt.PARTE_CAMBIO for i in partes.cambios})
+        nombres.update({i: kt.PARTE_FINAL for i in partes.finales})
+        nombres.update({i: kt.PARTE_TAPADA for i in partes.tapadas})
+        nombres.update({i: kt.PARTE_BALANCE for i in partes.balances})
+        nombres.update({i: kt.PARTE_SOBRANTE for i in partes.sobrantes})
+        self.__partes = [nombres.get(i) for i in range(len(self.tomas))]
+
+        # --- A la rejilla, todas menos tapadas, balances de cámara y Z-V
+        #     iniciales de más; en cada posición, sus tomas en orden de
+        #     disparo, y fuera, las que no caben o no se leyeron
+        quitar = set(partes.balances) | set(partes.tapadas) | de_mas
+        self.__enRejilla = [i not in quitar for i in range(len(self.tomas))]
+        celdas: dict[int, list[int]] = {}
+        fuera: list[int] = []
+        for i, (tercioEV, va) in enumerate(zip(self.tercioEVs,
+                                               self.enRejilla)):
+            if not va:
+                continue
+            if tercioEV is None or abs(tercioEV) > KS.TERCIOS_LADO:
+                fuera.append(i)
+            else:
+                celdas.setdefault(tercioEV, []).append(i)
+        self.__celdas = celdas
+        self.__fuera = fuera
+
+        # --- Desviadas: las de la rejilla que se apartan de su tercio
+        self.__desviadas = [i for i, (d, va) in enumerate(
+            zip(self.desvios, self.enRejilla))
+            if va and d is not None and abs(d) > KP.DESVIO_MAXIMO]
+
+        # --- ISO: el de la ZV. Las tomas de la serie con otro ISO impiden
+        #     analizar; las tapadas con otro, solo se avisan
+        exp_zv = self.tomas[zv].exp if zv is not None else None
+        iso = self.__isoSerie = exp_zv.iso if exp_zv else None
+        serie = sorted(set(partes.iniciales) | set(partes.cambios)
+                       | set(partes.finales)
+                       | {i for lado in partes.lados for i in lado})
+        self.__isoDistintos = [i for i in serie if iso is not None
+                               and self.__otro_iso(i, iso)]
+        self.__tapadasOtroISO = [i for i in partes.tapadas if iso is not None
+                                 and self.__otro_iso(i, iso)]
+
+    #
+    # --- ¿La toma i tiene un ISO distinto de iso? (No, si no se leyó)
+    def __otro_iso(self, i: int, iso: float) -> bool:
+        exp = self.tomas[i].exp
+        return exp is not None and round(exp.iso) != round(iso)
+
+    # endregion Métodos privados
