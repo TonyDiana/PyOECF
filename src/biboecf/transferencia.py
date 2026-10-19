@@ -6,13 +6,13 @@
                 con las zonas medidas; y lo que da el modelo: la
                 señal/ruido de una señal y la señal de una señal/ruido
     :Autor:     Tony Diana
-    :Versión:   26.10.14
+    :Versión:   26.10.18
 """
 
-# cSpell:ignore analisis, biboecf
+# cSpell:ignore biboecf, kcom, linalg, lstsq, rcond
 
 __all__ = ["KTR", "Transferencia", "ajustar_transferencia", "snr_modelo",
-           "senal_para_snr", "escala_mpx"]
+           "signal_para_snr", "escala_mpx"]
 
 # --- Bibliotecas estándar Python
 import math
@@ -23,18 +23,18 @@ from typing import TYPE_CHECKING, NamedTuple
 import numpy as np
 
 # --- Bibliotecas internas
-from bib import clases
-from .teselas import KTE
+from bib import std
+from .constantes import COM as KCOM
 
 if TYPE_CHECKING:
-    from .analisis import ZonaMedida
+    from .review import ZonaMedida
 
 
 #
-class KTR(clases.EnumMutable):
+class KTR(std.EnumMutable):
     """ Constantes de la curva de transferencia. """
 
-    # --- Modelo: ruido² = lectura² + señal / ganancia + (proporcional ×
+    # --- Modelo: ruido² = lectura² + (señal / ganancia) + (proporcional ×
     #     señal)², en niveles del RAW (sobre el negro). Lectura: el de la
     #     electrónica; ganancia: electrones por nivel (los fotones dan un
     #     ruido de raíz de los electrones); proporcional: lo que crece con
@@ -43,14 +43,14 @@ class KTR(clases.EnumMutable):
     #
     # --- Zonas que entran: con señal, sin ningún píxel recortado en el
     #     paño (más de MAX_RECORTADO) y por debajo del umbral de recorte
-    #     de la tarjeta (KTE.UMBRAL_RECORTE del máximo de su canal). Con
+    #     de la tarjeta (KCOM.UMBRAL_RECORTE del máximo de su canal). Con
     #     menos de MIN_ZONAS, no hay curva
     MAX_RECORTADO = 0.001
     MIN_ZONAS = 6
 
     # --- Píxeles por megapíxel (para normalizar la señal/ruido a un
     #     tamaño de referencia)
-    PIXELES_MPX = 1e6
+    PX_MPX = 1e6
 
 
 #
@@ -81,19 +81,20 @@ def ajustar_transferencia(zonas: Sequence["ZonaMedida | None"]
         return {}
     curvas = {}
     for canal in medidas[0].nivel:
-        maximo = max(z.nivel[canal] for z in medidas)
-        senal, ruido2 = [], []
+        _max = max(z.nivel[canal] for z in medidas)
+        signal, ruido2 = [], []
         for z in medidas:
-            nivel, dispersion = z.nivel[canal], z.dispersion[canal]
-            if (nivel > 0 and 0 < dispersion < math.inf
-                    and z.pano_recortado.get(canal, 0.0)
-                    <= KTR.MAX_RECORTADO
-                    and nivel < KTE.UMBRAL_RECORTE * maximo):
-                senal.append(nivel)
-                ruido2.append((dispersion * nivel) ** 2)
-        if len(senal) < KTR.MIN_ZONAS:
+            nivel, disp = z.nivel[canal], z.disp[canal]
+            if ((nivel > 0)
+                    and (0 < disp < math.inf)
+                    and (z.tela_recortado.get(canal, 0.0)
+                         <= KTR.MAX_RECORTADO)
+                    and (nivel < (KCOM.UMBRAL_RECORTE * _max))):
+                signal.append(nivel)
+                ruido2.append((disp * nivel) ** 2)
+        if len(signal) < KTR.MIN_ZONAS:
             continue
-        s, v = np.array(senal), np.array(ruido2)
+        s, v = np.array(signal), np.array(ruido2)
         peso = 1 / v
         matriz = np.column_stack((np.ones_like(s), s, s ** 2))
         lectura2, inversa, proporcional2 = np.linalg.lstsq(
@@ -101,9 +102,10 @@ def ajustar_transferencia(zonas: Sequence["ZonaMedida | None"]
         if inversa <= 0:
             continue
         curvas[canal] = Transferencia(
-            math.sqrt(lectura2) if lectura2 > 0 else math.nan,
-            float(1 / inversa),
-            math.sqrt(proporcional2) if proporcional2 > 0 else 0.0)
+            lectura=math.sqrt(lectura2) if (lectura2 > 0) else math.nan,
+            ganancia=float(1 / inversa),
+            proporcional=(math.sqrt(proporcional2) if (proporcional2 > 0)
+                          else 0.0))
     return curvas
 
 
@@ -114,29 +116,31 @@ def escala_mpx(alto: int, ancho: int, referencia: float) -> float:
     sensor de referencia megapíxeles (la raíz del cociente de píxeles:
     al juntar píxeles, el ruido se promedia).
     """
-    return math.sqrt(alto * ancho / (referencia * KTR.PIXELES_MPX))
+    return math.sqrt((alto * ancho) / (referencia * KTR.PX_MPX))
 
 
 #
-def snr_modelo(curva: Transferencia, senal: float) -> float:
+def snr_modelo(curva: Transferencia, signal: float) -> float:
     """ Señal/ruido de un píxel con esta señal (niveles), según la curva. """
     lectura = 0.0 if math.isnan(curva.lectura) else curva.lectura
-    return senal / math.sqrt(lectura ** 2 + senal / curva.ganancia
-                             + (curva.proporcional * senal) ** 2)
+    return signal / math.sqrt((lectura ** 2)
+                              + (signal / curva.ganancia)
+                              + ((curva.proporcional * signal) ** 2))
 
 
 #
-def senal_para_snr(curva: Transferencia, snr: float) -> float | None:
+def signal_para_snr(curva: Transferencia, snr: float) -> float | None:
     """
     Señal (niveles) a la que un píxel llega a esta señal/ruido, según la
-    curva: la raíz positiva de (1 − snr²·p²)·S² − (snr²/g)·S − snr²·l² =
-    0. None si no se llega nunca (la parte proporcional la frena antes).
+    curva: la raíz positiva de
+    ((1 − (snr²·p²))·S²) − ((snr²/g)·S) − (snr²·l²) = 0.
+    None si no se llega nunca (la parte proporcional la frena antes).
     """
     lectura = 0.0 if math.isnan(curva.lectura) else curva.lectura
     t2 = snr ** 2
-    a = 1 - t2 * curva.proporcional ** 2
+    a = 1 - (t2 * (curva.proporcional ** 2))
     if a <= 0:
         return None
     b = t2 / curva.ganancia
-    c = t2 * lectura ** 2
-    return (b + math.sqrt(b ** 2 + 4 * a * c)) / (2 * a)
+    c = t2 * (lectura ** 2)
+    return (b + math.sqrt((b ** 2) + (4 * a * c))) / (2 * a)

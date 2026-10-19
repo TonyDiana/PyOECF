@@ -51,8 +51,8 @@ Los colores del texto significan: **azul** = dato leído de los RAW;
 | **Análisis** | Cámara, fecha, profundidad RAW, exposición de la Z‑V; **latitud de texturas** (apreciable y recomendada: sombras, altas luces y latitud, en tercios); ruido de lectura y negro; balances de blancos (Kelvin anotado frente a medido); sugerencia de revelado (puntos de la curva de Lightroom, 0–255); tabla por zona con el **L\* leído** (lo escribe el usuario o el programa), la diferencia del sensor y la del revelador. Lo estimado, en otro color. |
 | **Gráficos** | 1 curva tonal en L\*; 2 diferencia en L\*; 3 esperado y obtenido; 4 y 5 desviación (tramo lineal y rango completo); 6 señal/ruido normalizada a 8 Mpx, en escala logarítmica, con el modelo del verde y los umbrales 1, 10 y 40. Leen de Cálculo. Identifícalas por su título, no por su número: el orden puede cambiar. |
 | **Datos** | Lo leído de los RAW, sin cálculos salvo la media de las Z‑V y los tercios estimados: serie por zonas (archivo, nivel y dispersión por canal), Z‑V de control y su media, ruido de lectura y su origen, negro y su origen, la **curva de transferencia** (lectura, ganancia, proporcional; aleatorio y fijo de la Z‑V; megapíxeles del sensor), balances de blancos, **paño por zona** (dispersión y fracción recortada de la ventana del paño, por canal) y L\* del revelador por zona: el L\* leído de Análisis y, en un tercio sin él, el estimado. |
-| **Constantes** | Cada constante del método con nombre, valor, unidad y qué es, por orden alfabético. Las fórmulas usan esos nombres. Incluye la nota sobre `SNRMinima` y `SNRExcelente` (ISO 12232) y `MpxReferencia`. |
-| **Cálculo** | Bloque 1, por canal: techo, suelo (`RelacionSR`), rango, último punto lineal, primer punto recortado, suelo sugerido (`SNRMinima`), suelo excelente (`SNRExcelente`) y latitud sugerida. Bloque 2, por tercio: esperado, obtenido, desviación, recortado y señal/ruido por canal (por píxel y a 8 Mpx), y el modelo del verde. Bloque 3, curva tonal por zona: luz y L\* esperados, del sensor y del revelador, sus diferencias, y entrada y salida de la curva. Bloque 4, **latitud de texturas** (verde): arriba los límites; debajo, por zona, textura del paño, textura/ruido, textura conservada, paño recortado y si cumple cada criterio. |
+| **Constantes** | Cada constante del método con nombre, valor, unidad y qué es, por orden alfabético. Las fórmulas usan esos nombres. Incluye la nota sobre `{snr_minima}` y `{snr_excelente}` (ISO 12232) y `{mpx_referencia}`. |
+| **Cálculo** | Bloque 1, por canal: techo, suelo (`{ratio_sr}`), rango, último punto lineal, primer punto recortado, suelo sugerido (`{snr_minima}`), suelo excelente (`{snr_excelente}`) y latitud sugerida. Bloque 2, por tercio: esperado, obtenido, desviación, recortado y señal/ruido por canal (por píxel y a 8 Mpx), y el modelo del verde. Bloque 3, curva tonal por zona: luz y L\* esperados, del sensor y del revelador, sus diferencias, y entrada y salida de la curva. Bloque 4, **latitud de texturas** (verde): arriba los límites; debajo, por zona, textura del paño, textura/ruido, textura conservada, paño recortado y si cumple cada criterio. |
 | **Rechazadas** | Teselas de tarjeta que los filtros dejaron fuera: recuento, porcentaje, motivo y desviación. Solo cuentan teselas de tarjeta: no el paño, su margen ni las oscuras. |
 
 Si una celda está **en blanco**, falta el dato (zona sin toma, toma sin
@@ -67,35 +67,35 @@ de recalcular, escribe qué columna es cuál.
 ## 3. Definiciones para recalcular
 
 Los valores definitivos están en la hoja **Constantes**; si algo difiere
-de lo que sigue, **manda la hoja**. Valores por defecto: `ZonaZV` = 5,
-`TercioPorZona` = 3, `FactorZona` = 2, `LZV` = 50, `LPorZona` = 10,
-`RelacionSR` = 1, `SNRMinima` = 10, `SNRExcelente` = 40,
-`MpxReferencia` = 8, `ToleranciaLineal` = 0,1,
-`UmbralRecorte` = 0,995, `EscalaCurva` = 255, `RoseTextura` = 5,
-`TexturaConservada` = 0,5, `PanoRecortadoMax` = 0,1, `MargenSombras` = 1,
-`AnchoZona` = 1. CIELAB: 116, 16, 0,008856 y
+de lo que sigue, **manda la hoja**. Valores por defecto: `{zona_zv}` = 5,
+`{tercio_por_zona}` = 3, `{factor_zona}` = 2, `{lzv}` = 50, `{l_por_zona}` = 10,
+`{ratio_sr}` = 1, `{snr_minima}` = 10, `{snr_excelente}` = 40,
+`{mpx_referencia}` = 8, `{tolerancia_lineal}` = 0,1,
+`{umbral_recorte}` = 0,995, `{escala_curva}` = 255, `{rose_textura}` = 5,
+`{textura_conservada}` = 0,5, `{tela_recortado_max}` = 0,1, `{margen_sombras}` = 1,
+`{ancho_zona}` = 1. CIELAB: 116, 16, 0,008856 y
 903,3. sRGB: 0,0031308, 12,92, 1,055, 2,4 y 0,055.
 
 ### Primera fase (RAW, por canal)
 
 | Magnitud | Definición |
 |---|---|
-| Esperado (zona) | `ZonaZV + tercios / TercioPorZona` |
-| Obtenido (zona equivalente) | `ZonaZV + log_FactorZona(nivel / Z‑V media)` |
+| Esperado (zona) | `{zona_zv} + tercios / {tercio_por_zona}` |
+| Obtenido (zona equivalente) | `{zona_zv} + log_FactorZona(nivel / Z‑V media)` |
 | Desviación | obtenido − esperado, en zonas |
-| Recortado | `nivel ≥ UmbralRecorte × máximo del canal` |
-| **Techo** | `ZonaZV + log(máximo del canal / Z‑V media)`. **El máximo de un canal recortado es la saturación del sensor: es el techo.** |
+| Recortado | `nivel ≥ {umbral_recorte} × máximo del canal` |
+| **Techo** | `{zona_zv} + log(máximo del canal / Z‑V media)`. **El máximo de un canal recortado es la saturación del sensor: es el techo.** |
 | Curva de transferencia (Datos) | `ruido² = lectura² + señal / ganancia + (proporcional × señal)²`, en niveles, ajustada por mínimos cuadrados (peso relativo) con las zonas **sin ningún píxel recortado**. Ruido de cada zona = dispersión × nivel |
 | Aleatorio y fijo de la Z‑V (Datos) | Aleatorio: la Z‑V menos una Z‑V de control de la misma exposición, igualadas en nivel, dentro de cada tesela (lo fijo se va). Fijo: `√(dispersión media de las Z‑V² − aleatorio²)` |
-| Escala a 8 Mpx | `√(megapíxeles del sensor / MpxReferencia)`: al juntar píxeles, el ruido se promedia |
-| Suelo, suelo sugerido, suelo excelente | Zona donde la señal/ruido **normalizada** llega a `RelacionSR`, `SNRMinima` y `SNRExcelente`, según la curva: con `T` = umbral / escala (la de un píxel), la raíz positiva de `(1 − T²·p²)·S² − (T²/g)·S − T²·l² = 0`, y `ZonaZV + log(S / Z‑V media)`. **Extrapolado por el modelo**: puede caer por debajo de Z0. «No alcanzado» si la parte proporcional lo impide |
+| Escala a 8 Mpx | `√(megapíxeles del sensor / {mpx_referencia})`: al juntar píxeles, el ruido se promedia |
+| Suelo, suelo sugerido, suelo excelente | Zona donde la señal/ruido **normalizada** llega a `{ratio_sr}`, `{snr_minima}` y `{snr_excelente}`, según la curva: con `T` = umbral / escala (la de un píxel), la raíz positiva de `(1 − T²·p²)·S² − (T²/g)·S − T²·l² = 0`, y `{zona_zv} + log(S / Z‑V media)`. **Extrapolado por el modelo**: puede caer por debajo de Z0. «No alcanzado» si la parte proporcional lo impide |
 | Rango | techo − suelo |
-| Último punto lineal | mayor zona con `|desviación| ≤ ToleranciaLineal` y sin recorte |
+| Último punto lineal | mayor zona con `|desviación| ≤ {tolerancia_lineal}` y sin recorte |
 | Primer punto recortado | primera zona marcada como recortada, o «no alcanzado» |
 | Señal/ruido | `1 / dispersión relativa` de la tesela (la de **un píxel**); «saturado» si la dispersión es 0 |
 | Señal/ruido (8 Mpx) | señal/ruido × escala a 8 Mpx. **Esta sí se compara entre cámaras** |
-| Modelo verde (8 Mpx) | la señal/ruido de la curva en la señal esperada de la zona (Z‑V media × `FactorZona^(tercios / TercioPorZona)`), normalizada; hasta el máximo del canal |
-| Latitud sugerida | último punto lineal − suelo sugerido + `AnchoZona`, en **zonas**: cuenta las zonas que caben, con las dos puntas (de Z3 a Z8, 6 zonas) |
+| Modelo verde (8 Mpx) | la señal/ruido de la curva en la señal esperada de la zona (Z‑V media × `{factor_zona}^(tercios / {tercio_por_zona})`), normalizada; hasta el máximo del canal |
+| Latitud sugerida | último punto lineal − suelo sugerido + `{ancho_zona}`, en **zonas**: cuenta las zonas que caben, con las dos puntas (de Z3 a Z8, 6 zonas) |
 
 ### Latitud de texturas (paño, canal verde)
 
@@ -108,11 +108,11 @@ ZV, y ningún límite cae en él.
 | Textura del paño | `√(dispersión del paño² − dispersión de la tarjeta²)`, las dos relativas y por píxel |
 | Textura/ruido | textura del paño / dispersión de la tarjeta |
 | Textura conservada | textura del paño / textura del paño en la ZV |
-| Sombras apreciables | La primera zona desde la que textura/ruido ≥ `RoseTextura` **sin volver a bajar hasta la ZV**; entre ese tercio y el de debajo, interpolada en recta y llevada al tercio más próximo |
-| Sombras recomendadas | apreciables + `MargenSombras` / `TercioPorZona` |
-| Luces apreciables | La última zona, subiendo **sin cortes** desde la ZV, con textura conservada ≥ `TexturaConservada` |
-| Luces recomendadas | La última, subiendo sin cortes desde la ZV, con paño recortado ≤ `PanoRecortadoMax`; nunca por encima de las apreciables |
-| Latitud de texturas | luces − sombras + `AnchoZona`, en **zonas** (apreciable y recomendada), contando las dos puntas |
+| Sombras apreciables | La primera zona desde la que textura/ruido ≥ `{rose_textura}` **sin volver a bajar hasta la ZV**; entre ese tercio y el de debajo, interpolada en recta y llevada al tercio más próximo |
+| Sombras recomendadas | apreciables + `{margen_sombras}` / `{tercio_por_zona}` |
+| Luces apreciables | La última zona, subiendo **sin cortes** desde la ZV, con textura conservada ≥ `{textura_conservada}` |
+| Luces recomendadas | La última, subiendo sin cortes desde la ZV, con paño recortado ≤ `{tela_recortado_max}`; nunca por encima de las apreciables |
+| Latitud de texturas | luces − sombras + `{ancho_zona}`, en **zonas** (apreciable y recomendada), contando las dos puntas |
 
 ### Segunda fase y curva tonal (L\*, por zona y tercio)
 
@@ -123,22 +123,22 @@ leído. **Se identifican por su rótulo.**
 
 | Rótulo del libro | Definición |
 |---|---|
-| Luz esperada | `MIN(1, LuzZV × FactorZona^(tercios / TercioPorZona))`, con `LuzZV` la luz de L\* = `LZV` |
+| Luz esperada | `MIN(1, {luz_zv} × {factor_zona}^(tercios / {tercio_por_zona}))`, con `{luz_zv}` la luz de L\* = `{lzv}` |
 | Esperado (L\*) | CIELAB de la luz esperada. **Un paso de luz por zona, recortado a 100** (el blanco se alcanza en la zona 7,44) |
-| Objetivo (L\*) | `LPorZona × zona`. Solo referencia |
-| Luz del sensor | `MIN(1, LuzZV × nivel verde / Z‑V media verde)`; en blanco si el nivel no es mayor que 0 |
+| Objetivo (L\*) | `{l_por_zona} × zona`. Solo referencia |
+| Luz del sensor | `MIN(1, {luz_zv} × nivel verde / Z‑V media verde)`; en blanco si el nivel no es mayor que 0 |
 | Sensor (L\*) | CIELAB de la luz del sensor |
 | Dif. sensor | Sensor (L\*) − Esperado (L\*) |
 | Revelador (L\*) | De la hoja Datos («L\* del revelador, por zona»): el **L\* leído** de Análisis, que mide el programa en las exportaciones (las 31) o escribe el usuario a mano (normalmente solo las 11 zonas enteras). Un **tercio sin L\* leído se estima**: la diferencia con el esperado de las dos zonas enteras vecinas, repartida en recta y sumada al esperado del tercio, sin salirse de los L\* de esas dos zonas (`MEDIAN`; cerca del blanco el esperado se recorta a 100); si falta una de las dos, en blanco |
 | Luz del revelador | Inversa de CIELAB de Revelador (L\*) |
 | Dif. revelador | Revelador (L\*) − Esperado (L\*) |
 | Falta / Sobra | `MAX(0, Esperado − Revelador)` y `MAX(0, Revelador − Esperado)` |
-| Entrada (0‑255) | `ROUND(EscalaCurva × sRGB(luz del revelador))` |
-| Salida (0‑255) | `ROUND(EscalaCurva × sRGB(luz esperada))` |
+| Entrada (0‑255) | `ROUND({escala_curva} × sRGB(luz del revelador))` |
+| Salida (0‑255) | `ROUND({escala_curva} × sRGB(luz esperada))` |
 | Punto de la curva | ● en las zonas enteras |
 
 **Comprobaciones universales en la fila de la ZV:** la **salida** vale
-119 con `LZV` = 50 y la curva sRGB (solo depende del esperado); la
+119 con `{lzv}` = 50 y la curva sRGB (solo depende del esperado); la
 **diferencia del sensor** es ≈ 0; y la **entrada** vale 119 solo si el
 revelador deja la ZV en L\* 50.
 
@@ -157,7 +157,7 @@ razón, pero no es un fallo de cálculo.
    píxeles). Cuánto pesa lo fijo se mide en la Z‑V (Datos: aleatorio y
    fijo). La de **un píxel** depende del tamaño del píxel: para comparar
    cámaras, usa la normalizada a 8 Mpx.
-4. `SNRMinima` = 10 y `SNRExcelente` = 40 son **sugerencias** (ISO 12232:
+4. `{snr_minima}` = 10 y `{snr_excelente}` = 40 son **sugerencias** (ISO 12232:
    10:1 «aceptable», 40:1 «excelente»), sobre la señal/ruido normalizada a
    8 Mpx. Son el criterio del método: nadie los cambia en el libro (para
    estudiar otro, se usa una copia).
@@ -184,7 +184,7 @@ razón, pero no es un fallo de cálculo.
     señal/ruido de la tarjeta; la de texturas, de **dónde se aprecia la
     textura del paño**, y por eso es más estrecha. Las dos son correctas:
     miden cosas distintas.
-13. `RoseTextura` = 5 viene del **criterio de Rose** (Rose 1948; Burgess
+13. `{rose_textura}` = 5 viene del **criterio de Rose** (Rose 1948; Burgess
     1999), pero se aplica **por píxel** a la textura del paño frente al
     ruido de la tarjeta: no es el criterio de Rose tal cual (que integra
     el área del objeto). El valor está **validado con la vista** del
@@ -221,8 +221,8 @@ muestra.
 |---|---|---|
 | 7 | El libro calcula la OECF «según la norma ISO 14524 / ISO 12232». | A medias. La OECF es de la **ISO 14524**. La **ISO 12232** (sensibilidad) solo se cita para el criterio de señal/ruido. La norma de L\* es **ISO/CIE 11664‑4:2019**. |
 | 8 | «85 filas de muestras desde Z0 a ZX». | Son **31 posiciones**. |
-| 9 | El suelo sugerido usa una señal/ruido «de valor 2 en rojo y azul y 1,33 en verde». | Esos números son **zonas** donde cae el suelo sugerido. El umbral de señal/ruido es `SNRMinima`. |
-| 10 | «Latitud útil de ~7,3 EV». | Se habla en **zonas**, no en EV. Y una latitud cuenta las zonas que caben, con las dos puntas (`AnchoZona`): no es la simple resta de los límites. |
+| 9 | El suelo sugerido usa una señal/ruido «de valor 2 en rojo y azul y 1,33 en verde». | Esos números son **zonas** donde cae el suelo sugerido. El umbral de señal/ruido es `{snr_minima}`. |
+| 10 | «Latitud útil de ~7,3 EV». | Se habla en **zonas**, no en EV. Y una latitud cuenta las zonas que caben, con las dos puntas (`{ancho_zona}`): no es la simple resta de los límites. |
 
 ### Lo que sí acertaron (tómalo en serio)
 
@@ -280,7 +280,7 @@ la columna) de lo que digas.
 ### 6.3 Interpretar
 
 - ¿Cuánto rango dinámico útil tiene la cámara (por encima y por debajo
-  de la Z‑V), con el criterio de `SNRMinima` y con otros criterios
+  de la Z‑V), con el criterio de `{snr_minima}` y con otros criterios
   razonables? **En zonas.**
 - ¿Dónde se aparta el revelador de lo esperado (sombras, medios, altas
   luces) y cuánto, en L\*?

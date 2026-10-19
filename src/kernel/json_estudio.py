@@ -5,13 +5,13 @@
                 traducidos. JSON y no YAML: viene con Python, sin
                 dependencias
     :Autor:     Tony Diana
-    :Versión:   26.10.12
+    :Versión:   26.10.17
 """
 
-# cSpell:ignore biboecf, camara, ocupadas, pyoecf, timespec, vacias
+# cSpell:ignore analisis, biboecf, camara, ocupadas, pyoecf, timespec
 
-__all__ = ["grabar_json", "hay_analisis", "leer_analisis",
-           "grabar_analisis"]
+__all__ = ["grabar_json", "hay_review", "leer_review",
+           "grabar_review"]
 
 # --- Bibliotecas estándar Python
 import json
@@ -20,13 +20,13 @@ from pathlib import Path
 
 # --- Bibliotecas internas
 import biboecf
-from bib import clases
+from bib import std
 from .constantes import K
 
 
 #
 # --- Constantes de los datos
-class KD(clases.EnumMutable):
+class KD(std.EnumMutable):
     """ Constantes del JSON de la serie. """
 
     # --- Nombre del archivo, en la carpeta OECF de la serie
@@ -38,47 +38,56 @@ class KD(clases.EnumMutable):
     # --- Fecha del análisis, sin microsegundos
     FORMATO_FECHA = "seconds"
 
-    # --- Lo medido en los RAW (biboecf.Analisis), tras Generar: lo que
+    # --- Lo medido en los RAW (biboecf.Review), tras Generar: lo que
     #     necesita la segunda parte (las exportaciones del revelador)
-    ANALISIS = "analisis"
+    REVIEW = "analisis"
 
     # --- Las incidencias de la serie, como códigos (biboecf.Incidencia,
     #     con los archivos en vez de índices): sin frases, las traduce
-    #     quien las lea. Y los resultados del análisis (biboecf.Libro.
+    #     quien las lea. Y los resultados del análisis (biboecf.Excel.
     #     resultados), tras Generar y Analizar revelado: lo que lee
     #     FotoEstación, que no lleva biboecf (sin constantes)
     INCIDENCIAS = "incidencias"
     RESULTADOS = "resultados"
 
 
-# --- ¿El JSON de esta carpeta OECF tiene ya el análisis (tras Generar)?
-#     No, si no existe o no se puede leer
-def hay_analisis(carpeta: Path) -> bool:
+#
+def hay_review(carpeta: Path) -> bool:
+    """
+    ¿El JSON de esta carpeta OECF tiene ya el análisis (tras Generar)? No, si
+    no existe o no se puede leer.
+    """
     try:
         datos = json.loads((carpeta / KD.ARCHIVO).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return False
-    return bool(datos.get(KD.ANALISIS))
+    return bool(datos.get(KD.REVIEW))
 
 
-# --- El análisis guardado en el JSON de esta carpeta OECF (None si no lo
-#     hay o no se puede leer)
-def leer_analisis(carpeta: Path) -> biboecf.Analisis | None:
+#
+def leer_review(carpeta: Path) -> biboecf.Review | None:
+    """
+    El análisis guardado en el JSON de esta carpeta OECF (None si no lo hay o
+    no se puede leer)
+    """
     try:
         datos = json.loads((carpeta / KD.ARCHIVO).read_text(encoding="utf-8"))
-        analisis = datos.get(KD.ANALISIS)
-        return biboecf.analisis_de_dict(analisis) if analisis else None
+        review = datos.get(KD.REVIEW)
+        return biboecf.review_de_dict(review) if review else None
     except (OSError, ValueError, KeyError, TypeError):
         return None
 
 
-# --- Sustituye el análisis del JSON de esta carpeta OECF (lo demás, como
-#     estaba). False si no se puede leer o escribir
-def grabar_analisis(carpeta: Path, analisis: biboecf.Analisis) -> bool:
+#
+def grabar_review(carpeta: Path, review: biboecf.Review) -> bool:
+    """
+    Sustituye el análisis del JSON de esta carpeta OECF (lo demás, como
+    estaba). False si no se puede leer o escribir.
+    """
     ruta = carpeta / KD.ARCHIVO
     try:
         datos = json.loads(ruta.read_text(encoding="utf-8"))
-        datos[KD.ANALISIS] = biboecf.analisis_a_dict(analisis)
+        datos[KD.REVIEW] = biboecf.review_a_dict(review)
         ruta.write_text(json.dumps(datos, ensure_ascii=False,
                                    indent=KD.SANGRIA), encoding="utf-8")
     except (OSError, ValueError):
@@ -86,9 +95,12 @@ def grabar_analisis(carpeta: Path, analisis: biboecf.Analisis) -> bool:
     return True
 
 
-# --- Los resultados del análisis guardados en el JSON de esta carpeta
-#     OECF (None si no los hay o no se puede leer)
+#
 def leer_resultados(carpeta: Path) -> dict | None:
+    """
+    Los resultados del análisis guardados en el JSON de esta carpeta OECF (None
+    si no los hay o no se puede leer)
+    """
     try:
         datos = json.loads((carpeta / KD.ARCHIVO).read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -96,10 +108,12 @@ def leer_resultados(carpeta: Path) -> dict | None:
     return datos.get(KD.RESULTADOS)
 
 
-# --- Añade (o sustituye) los resultados del análisis en el JSON de esta
-#     carpeta OECF (lo demás, como estaba). False si no se puede leer o
-#     escribir
+#
 def grabar_resultados(carpeta: Path, resultados: dict) -> bool:
+    """
+    Añade (o sustituye) los resultados del análisis en el JSON de esta carpeta
+    OECF (lo demás, como estaba). False si no se puede leer o escribir.
+    """
     ruta = carpeta / KD.ARCHIVO
     try:
         datos = json.loads(ruta.read_text(encoding="utf-8"))
@@ -111,12 +125,15 @@ def grabar_resultados(carpeta: Path, resultados: dict) -> bool:
     return True
 
 
-# --- Graba el JSON en la carpeta OECF de la serie, con lo que ya tiene
-#     OECF (leído, repartido y copiado), y devuelve su ruta, o None si no
-#     se pudo escribir (no impide el análisis). Las copias van relativas
-#     a la carpeta de la serie y con «/» en cualquier sistema (None si no
-#     se copió); las tomas de la rejilla, por el nombre de su archivo
+#
 def grabar_json(OECF: biboecf.OECF) -> Path | None:
+    """
+    Graba el JSON en la carpeta OECF de la serie, con lo que ya tiene OECF
+    (leído, repartido y copiado), y devuelve su ruta, o None si no se pudo
+    escribir (no impide el análisis). Las copias van relativas a la carpeta de
+    la serie y con «/» en cualquier sistema (None si no se copió); las tomas de
+    la rejilla, por el nombre de su archivo.
+    """
     raws = OECF.raws
     cam = OECF.cam
 
@@ -138,12 +155,12 @@ def grabar_json(OECF: biboecf.OECF) -> Path | None:
             "kelvin": toma.kelvin,
             "bits": toma.bits,
             "zona": (OECF.KT.NOMBRE_TAPADA
-                     if parte == OECF.KT.PARTE_TAPADA
-                     else None if tercioEV is None
-                     else biboecf.texto_zona(tercioEV)),
+                     if (parte == OECF.KT.PARTE_TAPADA)
+                     else (None if (tercioEV is None)
+                           else biboecf.texto_zona(tercioEV))),
             "parte": parte})
 
-    posiciones = biboecf.KS.LADOS * biboecf.KS.TERCIOS_LADO + 1
+    posiciones = (biboecf.KS.LADOS * biboecf.KS.TERCIOS_LADO) + 1
     datos = {
         "pyoecf": K.version,
         "fecha": datetime.now().isoformat(timespec=KD.FORMATO_FECHA),
@@ -151,7 +168,7 @@ def grabar_json(OECF: biboecf.OECF) -> Path | None:
         "camara": {"marca": cam.marca, "modelo": cam.modelo} if cam else None,
         "balance_personalizado": OECF.balancePersonalizado,
         "tapadas": len(OECF.tapadas),
-        "iso": (round(OECF.isoSerie) if OECF.isoSerie is not None
+        "iso": (round(OECF.isoSerie) if (OECF.isoSerie is not None)
                 else None),
         "balances_camara": len(OECF.WBs),
         "saltos": [{"archivo": raws[i].name, "tercioEV_esperado": esperado,
@@ -161,18 +178,18 @@ def grabar_json(OECF: biboecf.OECF) -> Path | None:
         "tomas": tomas,
         "rejilla": {
             "posiciones": posiciones,
-            "ocupadas": posiciones - len(OECF.vacias),
-            "vacias": [biboecf.texto_zona(t) for t in OECF.vacias],
+            "ocupadas": posiciones - len(OECF.huecos),
+            "huecos": [biboecf.texto_zona(t) for t in OECF.huecos],
             "repetidas": {biboecf.texto_zona(t): [raws[i].name
-                                                  for i in indices]
-                          for t, indices in OECF.repetidas.items()},
+                                                  for i in idxs]
+                          for t, idxs in OECF.repetidas.items()},
             "fuera": [raws[i].name for i in OECF.fuera]},
         "analizable": OECF.esAnalizable,
         KD.INCIDENCIAS: [
             i._replace(tomas=tuple(raws[t].name for t in i.tomas))._asdict()
             for i in biboecf.incidencias(OECF)],
-        KD.ANALISIS: (biboecf.analisis_a_dict(OECF.analisis)
-                      if OECF.analisis else None)}
+        KD.REVIEW: (biboecf.review_a_dict(OECF.review)
+                    if OECF.review else None)}
 
     # --- Se compone entero antes de escribir: si algo falla, no queda
     #     un archivo a medias

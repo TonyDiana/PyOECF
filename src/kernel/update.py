@@ -4,7 +4,7 @@
                 instalada: lee el archivo VERSION publicado en GitHub.
                 Solo con la biblioteca estándar, sin dependencias
     :Autor:     Tony Diana
-    :Versión:   26.10.10
+    :Versión:   26.10.17
 """
 
 # cSpell:ignore github, numeros
@@ -16,13 +16,13 @@ import re
 import urllib.request
 
 # --- Bibliotecas internas
-from bib import clases
+from bib import std
 from .constantes import K
 
 
 #
 # --- Constantes de la actualización
-class KA(clases.EnumMutable):
+class KA(std.EnumMutable):
     """ Constantes de la comprobación de versión. """
 
     # --- Repositorio público (el de K) y rama publicada. OJO:
@@ -35,6 +35,7 @@ class KA(clases.EnumMutable):
     URL_VERSION = (f"https://raw.githubusercontent.com/{REPO}/"
                    f"{RAMA_PUBLICADA}/{K.ARCHIVO_VERSION}")
     URL_RELEASES = f"https://github.com/{REPO}/releases"
+    """ Página de descargas de las versiones publicadas. """
 
     # --- Segundos como mucho para la respuesta de GitHub
     ESPERA = 3

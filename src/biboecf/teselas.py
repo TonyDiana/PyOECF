@@ -4,16 +4,18 @@
                 se mide con ellas: dónde está el paño en la Z-V, qué
                 tamaños de lámina caben y el recorte del paño
     :Autor:     Tony Diana
-    :Versión:   26.10.14
+    :Versión:   26.10.18
 """
 
-# cSpell:ignore postprocess, rawpy, teselas
+# cSpell:ignore asim, bincount, errstate, imread, kcom, linalg
+# cSpell:ignore lstsq, mccamy, nanargmax, nanmax, otsu, postprocess, rawpy
+# cSpell:ignore rcond, teselas
 
-__all__ = ["KTE", "Teselas", "Ventana", "Seleccion", "medir_teselas",
-           "buscar_pano", "seleccionar", "porcentaje", "Oscuridad",
-           "oscuridad", "Pano",
+__all__ = ["KTE", "Teselas", "Ventana", "Select", "medir_teselas",
+           "buscar_tela", "seleccionar", "porcentaje", "Oscuridad",
+           "oscuridad", "Tela",
            "Medida", "medir_toma", "exceso_negro", "restar_exceso",
-           "ruido_temporal", "fraccion_recortada", "matriz_color",
+           "ruido_temporal", "part_recortada", "matriz_color",
            "temperatura",
            "factores", "revelar", "recorte"]
 
@@ -27,147 +29,197 @@ import numpy as np
 import rawpy
 
 # --- Bibliotecas internas
-from bib import clases
+from bib import std
 from .constantes import COM as KCOM
 from .zonas import KP
 
 
 #
-class KTE(clases.EnumMutable):
+class KTE(std.EnumMutable):
     """ Constantes de las teselas y del paño. """
 
-    # --- Lado de la tesela, en píxeles: múltiplo de 2 (Bayer) y de 6
-    #     (X-Trans), para que todas tengan los mismos colores en las
-    #     mismas posiciones (la máscara de colores de una vale para
-    #     todas). El verde, de referencia: con él se busca el paño y se
-    #     filtran las teselas
     LADO = 48
+    """Lado de la tesela, en píxeles: múltiplo de 2 (Bayer) y de 6
+    (X-Trans), para que todas tengan los mismos colores en las mismas
+    posiciones (la máscara de colores de una vale para todas)."""
+
     VERDE = "G"
+    """Canal de referencia: con él se busca el paño y se filtran las
+    teselas."""
 
-    # --- Dispersión relativa: desviación absoluta mediana, escalada para
-    #     que valga como una desviación típica, entre la mediana
     ESCALA_DAM = 1.4826
+    """Dispersión relativa: desviación absoluta mediana, escalada para
+    que valga como una desviación típica, entre la mediana."""
 
-    # --- Teselas oscuras (cartulina negra): nivel por debajo de esta
-    #     fracción de la mediana de todas. No cuentan para buscar el paño
     NIVEL_MIN = 0.3
+    """Teselas oscuras (cartulina negra): nivel por debajo de esta
+    fracción de la mediana de todas. No cuentan para buscar el paño."""
 
     # --- Paño: sus teselas tienen mucha más dispersión que las de la
     #     tarjeta. El corte entre los dos grupos lo hallan los datos de
-    #     cada foto (Otsu sobre el logaritmo de la dispersión, en estas
-    #     clases), no un número fijo, que cambiaría con cada cámara. El
-    #     histograma va de este percentil al opuesto: una tesela suelta
-    #     con una dispersión enorme no aplasta los dos grupos
+    #     cada foto (método de umbralización de Otsu sobre el logaritmo de
+    #     la dispersión, en CLASES_CORTE clases), no un número fijo, que
+    #     cambiaría con cada cámara.
     CLASES_CORTE = 128
+    """Número de clases para el histograma del método de Otsu."""
+
     PERCENTIL_CORTE = 1
+    """El histograma va de este percentil al opuesto: una tesela suelta
+    con una dispersión enorme no aplasta los dos grupos."""
 
-    # --- Comprobaciones del paño hallado. Hueco entre grupos: percentil
-    #     bajo del paño entre percentil alto de la tarjeta (R7: 3,8; una
-    #     serie sin paño: 1,2). Relleno: fracción de su rectángulo que
-    #     ocupan sus teselas. Margen: teselas que se quitan por cada lado
-    #     (los bordes del paño mezclan paño y tarjeta)
+    # --- Comprobaciones del paño hallado.
     PERCENTIL_HUECO = 5
+    """Percentil bajo del paño entre percentil alto de la tarjeta (R7:
+    3,8; una serie sin paño: 1,2)."""
+
     HUECO_MIN = 2.0
+    """Hueco mínimo entre grupos para considerar que hay paño."""
+
     RELLENO_MIN = 0.8
+    """Relleno: fracción de su rectángulo que ocupan sus teselas."""
+
     MARGEN = 1
+    """Margen: teselas que se quitan por cada lado (los bordes del paño
+    mezclan paño y tarjeta)."""
 
-    # --- Cuadro de la lámina (ancho, alto), en píxeles, y divisores del
-    #     recorte: 1 → 100 %, 2 → 50 %, 3 → 33 %, 4 → 25 %. Solo enteros,
-    #     para reducir por área (media de cada bloque, sin inventar
-    #     recortes en las luces); nunca por encima del 100 %
     CUADRO = (500, 350)
-    FACTORES = (1, 2, 3, 4)
+    """Cuadro de la lámina (ancho, alto), en píxeles."""
 
-    # --- Por qué no se encontró el paño
-    SIN_PANO = "SIN_PANO"
-    PANO_PEQUENO = "PANO_PEQUENO"
+    FACTORES = (1, 2, 3, 4)
+    """Divisores del recorte: 1 → 100 %, 2 → 50 %, 3 → 33 %, 4 → 25 %.
+    Solo enteros, para reducir por área (media de cada bloque, sin
+    inventar recortes en las luces); nunca por encima del 100 %."""
+
+    SIN_TELA = "SIN_TELA"
+    """Por qué no se encontró el paño: sin paño."""
+
+    TELA_MIN = "TELA_MIN"
+    """Por qué no se encontró el paño: paño demasiado pequeño."""
 
     # --- Teselas buenas de la tarjeta (en la Z-V; valen para toda la
-    #     serie). Rareza: una tesela es rara si su dispersión o su
-    #     asimetría se aparta de las demás de la misma foto más de estas
-    #     desviaciones típicas robustas (mediana y desviación absoluta
-    #     mediana): sin número fijo por cámara. Nivel: fuera la que recibe
-    #     más de estas zonas de luz distinta de la mediana. Mínimo de
-    #     teselas buenas: con menos, no hay tarjeta y no se analiza
+    #     serie).
     RAREZA = 3
+    """Una tesela es rara si su dispersión o su asimetría se aparta de
+    las demás de la misma foto más de estas desviaciones típicas
+    robustas (mediana y desviación absoluta mediana): sin número fijo
+    por cámara."""
+
     NIVEL_MAX_ZONAS = 1 / 3
+    """Nivel: fuera la que recibe más de estas zonas de luz distinta de
+    la mediana."""
+
     MIN_TESELAS = 100
+    """Mínimo de teselas buenas: con menos, no hay tarjeta y no se
+    analiza."""
 
     # --- Avisos de las rechazadas, uno por causa (Tony, 2026-10-16),
-    #     en fracción de las teselas de tarjeta. Tarjeta sucia: las de
-    #     dispersión o las de asimetría pasan de AVISO_SUCIA (con una
-    #     tarjeta limpia, por azar, ≈ 0,1-0,3 %). Luz desigual: las de
-    #     nivel pasan de AVISO_NIVEL; se dice el lado si al menos
-    #     AVISO_LADO de ellas caen en una mitad. El total: revisar desde
-    #     AVISO_REVISAR, repetir la serie desde AVISO_REPETIR.
-    #     Provisionales: medidos con dos series (R7 2,3 %; D750 8,9 %,
-    #     todas las de nivel a la izquierda)
+    #     en fracción de las teselas de tarjeta. Provisionales: medidos
+    #     con dos series (R7 2,3 %; D750 8,9 %).
     AVISO_SUCIA = 0.01
+    """Tarjeta sucia: las de dispersión o asimetría pasan de esta
+    fracción (con una tarjeta limpia, por azar, ≈ 0,1-0,3 %)."""
+
     AVISO_NIVEL = 0.03
+    """Luz desigual: las de nivel pasan de esta fracción."""
+
     AVISO_LADO = 0.8
+    """Se dice el lado si al menos esta fracción de las rechazadas por
+    nivel caen en una mitad."""
+
     AVISO_REVISAR = 0.03
+    """El total de rechazadas: revisar desde esta fracción."""
+
     AVISO_REPETIR = 0.10
+    """El total de rechazadas: repetir la serie desde esta fracción."""
 
-    # --- Mitades de la toma donde se agrupan las rechazadas por nivel
     LADO_IZQUIERDA = "IZQUIERDA"
+    """Mitad de la toma donde se agrupan las rechazadas por nivel."""
+
     LADO_DERECHA = "DERECHA"
+    """Mitad de la toma donde se agrupan las rechazadas por nivel."""
+
     LADO_ARRIBA = "ARRIBA"
+    """Mitad de la toma donde se agrupan las rechazadas por nivel."""
+
     LADO_ABAJO = "ABAJO"
+    """Mitad de la toma donde se agrupan las rechazadas por nivel."""
 
-    # --- Recortado: un valor llega a esta fracción del máximo de su canal
-    #     en la serie (el libro la usa también: su constante UmbralRecorte)
-    UMBRAL_RECORTE = 0.995
-
-    # --- Motivo de cada tesela: buena, no es de tarjeta (oscura, paño o
-    #     su margen) o el primer filtro que no pasa, en este orden
     BUENA = 0
+    """Motivo de cada tesela: buena."""
+
     NO_TARJETA = -1
+    """Motivo de cada tesela: no es de tarjeta (oscura, paño o su
+    margen)."""
+
     RECHAZO_NIVEL = 1
-    RECHAZO_DISPERSION = 2
-    RECHAZO_ASIMETRIA = 3
+    """Motivo de cada tesela: rechazada por nivel."""
 
-    # --- Negro y ruido de lectura. Borde tapado: la franja izquierda del
-    #     sensor (la de arriba sale más ruidosa: quizá no es negro puro),
-    #     si tiene al menos estas columnas. Atípicos (una columna
-    #     estropeada): fuera los que se apartan más de estas desviaciones
-    #     típicas robustas, antes de medir. Si hay borde y tapadas, se
-    #     avisa si sus ruidos difieren más de esta fracción
+    RECHAZO_DISP = 2
+    """Motivo de cada tesela: rechazada por dispersión."""
+
+    RECHAZO_ASIM = 3
+    """Motivo de cada tesela: rechazada por asimetría."""
+
+    # --- Negro y ruido de lectura.
+    CANALES_RAW = 4
+    """Canales que puede tener un RAW, por su índice (0 a 3; X-Trans no
+    tiene el 3)."""
+
     MIN_COLUMNAS_BORDE = 16
-    CORTE_ATIPICOS = 5
+    """Borde tapado: la franja izquierda del sensor (la de arriba sale
+    más ruidosa: quizá no es negro puro), si tiene al menos estas
+    columnas."""
+
+    CORTE_RARO = 5
+    """Atípicos (una columna estropeada): fuera los que se apartan más
+    de estas desviaciones típicas robustas, antes de medir."""
+
     DIFERENCIA_RUIDO = 0.2
+    """Si hay borde y tapadas, se avisa si sus ruidos difieren más de
+    esta fracción."""
 
-    # --- De dónde sale el negro que se resta (de las tapadas si las hay;
-    #     si no, estimado en las sombras; si no se puede, el que declara
-    #     la cámara) y el ruido (del borde tapado si lo hay; si no, de las
-    #     tapadas; si no, de la curva de transferencia; si no, de ninguna
-    #     parte)
     ORIGEN_TAPADAS = "TAPADAS"
+    """De dónde sale el negro que se resta: de las tapadas si las hay."""
+
     ORIGEN_SOMBRAS = "SOMBRAS"
+    """De dónde sale el negro que se resta: estimado en las sombras."""
+
     ORIGEN_DECLARADO = "DECLARADO"
+    """De dónde sale el negro que se resta: el que declara la cámara."""
+
     ORIGEN_BORDE = "BORDE"
+    """De dónde sale el ruido: del borde tapado si lo hay."""
+
     ORIGEN_CURVA = "CURVA"
+    """De dónde sale el ruido: de la curva de transferencia."""
 
-    # --- Ruido aleatorio con dos tomas iguales: se leen por franjas de
-    #     estas filas de teselas (dos RAW enteros en coma flotante no
-    #     caben con holgura en un portátil)
     FRANJA_TEMPORAL = 8
+    """Ruido aleatorio con dos tomas iguales: se leen por franjas de
+    estas filas de teselas (dos RAW enteros en coma flotante no caben
+    con holgura en un portátil)."""
 
-    # --- Negro estimado en las sombras: recta entre el nivel de cada zona
-    #     (sobre el negro declarado) y su luz (2 elevado a sus EV), en las
-    #     zonas de hasta SOMBRAS_HASTA tercios; su corte con luz 0 es lo
-    #     que el negro real pasa del declarado. Con menos de
-    #     MIN_ZONAS_SOMBRAS zonas, se queda el declarado
     SOMBRAS_HASTA = -3
-    MIN_ZONAS_SOMBRAS = 6
+    """Negro estimado en las sombras: recta entre el nivel de cada zona
+    (sobre el negro declarado) y su luz (2 elevado a sus EV), en las
+    zonas de hasta estos tercios."""
 
-    # --- Temperatura de la luz: de cámara a XYZ con la matriz de color
-    #     del RAW (rawpy da la de XYZ a cámara; se invierte) y de xy a
-    #     kelvin con la fórmula de McCamy: n = (x − X_E) / (Y_E − y) y
-    #     K = A·n³ + B·n² + C·n + D. Canales de la matriz: R, G, B
+    MIN_ZONAS_SOMBRAS = 6
+    """Con menos de estas zonas para estimar el negro en las sombras, se
+    queda el declarado."""
+
     MCCAMY_X_E = 0.3320
+    """Temperatura de la luz: constante x de McCamy."""
+
     MCCAMY_Y_E = 0.1858
+    """Temperatura de la luz: constante y de McCamy."""
+
     MCCAMY = (449.0, 3525.0, 6823.3, 5520.33)
-    CANALES_MATRIZ = 3
+    """Temperatura de la luz: coeficientes de la fórmula de McCamy
+    (n = (x − X_E) / (Y_E − y) y K = A·n³ + B·n² + C·n + D)."""
+
+    # --- Vista previa
+    BITS_PANTALLA = 8
+    """Bits por canal de la toma revelada para verla en pantalla."""
 
 
 #
@@ -184,13 +236,13 @@ class Teselas(NamedTuple):
     #     B2, G3; en X-Trans, sin G3)
     canales: tuple[str, ...]
     nivel: np.ndarray
-    dispersion: np.ndarray
+    disp: np.ndarray
 
     # --- Verde: nivel, dispersión y asimetría ((media − mediana) /
     #     desviación típica: el ruido es simétrico; un defecto, no)
     nivel_verde: np.ndarray
-    dispersion_verde: np.ndarray
-    asimetria_verde: np.ndarray
+    disp_verde: np.ndarray
+    asim_verde: np.ndarray
 
 
 #
@@ -205,9 +257,22 @@ class Ventana(NamedTuple):
 
 #
 # --- Teselas de tarjeta elegidas en la Z-V, en filas × columnas
-class Seleccion(NamedTuple):
+class Select(object):
     """ Motivo de cada tesela (KTE): buena, no es de tarjeta o rechazada. """
-    motivo: np.ndarray
+
+    __slots__ = ["__motivo"]
+
+    #
+    def __init__(self, motivo: np.ndarray) -> None:
+
+        # --- Variables de instancia
+        self.__motivo: np.ndarray = motivo
+
+    #
+    @property
+    def motivo(self) -> np.ndarray:
+        """ Saber el motivo de cada tesela (KTE), en filas × columnas. """
+        return self.__motivo
 
     #
     @property
@@ -231,7 +296,8 @@ class Seleccion(NamedTuple):
     @property
     def porcentaje(self) -> float:
         """ Saber qué porcentaje de las de tarjeta son rechazadas. """
-        return 100 * self.rechazadas / self.tarjeta if self.tarjeta else 0.0
+        return (((KCOM.CIEN * self.rechazadas) / self.tarjeta)
+                if self.tarjeta else 0.0)
 
     #
     @property
@@ -240,12 +306,12 @@ class Seleccion(NamedTuple):
         return int(self.buenas.sum()) >= KTE.MIN_TESELAS
 
     #
-    def fraccion(self, motivo: int) -> float:
+    def part(self, motivo: int) -> float:
         """
         Fracción de las teselas de tarjeta rechazadas por este motivo
         (KTE.RECHAZO_*).
         """
-        return (int((self.motivo == motivo).sum()) / self.tarjeta
+        return ((int((self.motivo == motivo).sum()) / self.tarjeta)
                 if self.tarjeta else 0.0)
 
     #
@@ -263,12 +329,13 @@ class Seleccion(NamedTuple):
         alto, ancho = self.motivo.shape
         lados = []
         for mitad, primera, segunda in (
-                (columnas < ancho / 2, KTE.LADO_IZQUIERDA, KTE.LADO_DERECHA),
-                (filas < alto / 2, KTE.LADO_ARRIBA, KTE.LADO_ABAJO)):
-            parte = float(mitad.mean())
-            if parte >= KTE.AVISO_LADO:
+                (columnas < (ancho / 2), KTE.LADO_IZQUIERDA,
+                 KTE.LADO_DERECHA),
+                (filas < (alto / 2), KTE.LADO_ARRIBA, KTE.LADO_ABAJO)):
+            en_primera = float(mitad.mean())
+            if en_primera >= KTE.AVISO_LADO:
                 lados.append(primera)
-            elif 1 - parte >= KTE.AVISO_LADO:
+            elif (1 - en_primera) >= KTE.AVISO_LADO:
                 lados.append(segunda)
         return tuple(lados)
 
@@ -292,15 +359,15 @@ class Oscuridad(NamedTuple):
 
 #
 # --- El paño de una toma, por canal (en el orden de Teselas.canales)
-class Pano(NamedTuple):
+class Tela(NamedTuple):
     """
     Paño de una toma, por canal: nivel (mediana sobre el negro),
     dispersión relativa e histograma de sus valores tal como los da el
     RAW (para contar los recortados cuando se sepa el máximo de la
-    serie: ver fraccion_recortada).
+    serie: ver part_recortada).
     """
     nivel: tuple[float, ...]
-    dispersion: tuple[float, ...]
+    disp: tuple[float, ...]
     histograma: tuple[np.ndarray, ...]
 
 
@@ -314,14 +381,14 @@ class Medida(NamedTuple):
     """
     canales: tuple[str, ...]
     nivel: tuple[float, ...]
-    dispersion: tuple[float, ...]
+    disp: tuple[float, ...]
 
     # --- Rechazadas (en el orden de np.nonzero de la selección): cuánto
     #     se aparta su verde del de las buenas, en zonas (log2 del
     #     cociente), y su motivo (KTE)
-    desviacion_rechazadas: np.ndarray
+    dev_rechazadas: np.ndarray
     motivo_rechazadas: np.ndarray
-    pano: Pano | None
+    tela: Tela | None
 
     # --- Verde de las buenas (sobre el negro): la referencia de las
     #     rechazadas
@@ -329,8 +396,8 @@ class Medida(NamedTuple):
 
 
 #
-def medir_toma(archivo: Path, seleccion: Seleccion, negro: tuple[float, ...],
-               pano: Ventana | None) -> Medida:
+def medir_toma(archivo: Path, select: Select, negro: tuple[float, ...],
+               tela: Ventana | None) -> Medida:
     """
     Valor de una toma por canal: la mediana de sus teselas buenas (las
     elegidas en la Z-V), con el negro restado, y la mediana de sus
@@ -338,35 +405,38 @@ def medir_toma(archivo: Path, seleccion: Seleccion, negro: tuple[float, ...],
     """
     raw = _leer_raw(archivo)
     teselas = _teselas(raw, negro, KTE.LADO)
-    buenas = seleccion.buenas
-    medida_pano = None
-    if pano is not None:
-        trozo = raw.enteros[pano.y:pano.y + pano.alto,
-                            pano.x:pano.x + pano.ancho]
-        colores = raw.colores[pano.y:pano.y + pano.alto,
-                              pano.x:pano.x + pano.ancho]
+    buenas = select.buenas
+    medida_tela = None
+    if tela is not None:
+        trozo = raw.enteros[tela.y:(tela.y + tela.alto),
+                            tela.x:(tela.x + tela.ancho)]
+        colores = raw.colores[tela.y:(tela.y + tela.alto),
+                              tela.x:(tela.x + tela.ancho)]
         niveles, dispersiones, histogramas = [], [], []
         for nombre in teselas.canales:
-            indice = int(nombre[1:])
-            valores = trozo[colores == indice]
-            neto = valores.astype(np.float32) - negro[indice]
-            mediana, dispersion = _mediana_dispersion(neto[None, None, :])
+            idx = int(nombre[1:])
+            valores = trozo[colores == idx]
+            neto = valores.astype(np.float32) - negro[idx]
+            mediana, disp = _mediana_disp(neto[None, None, :])
             niveles.append(float(mediana[0, 0]))
-            dispersiones.append(float(dispersion[0, 0]))
+            dispersiones.append(float(disp[0, 0]))
             histogramas.append(np.bincount(valores))
-        medida_pano = Pano(tuple(niveles), tuple(dispersiones),
-                           tuple(histogramas))
-    rechazadas = (seleccion.motivo != KTE.BUENA) & (
-        seleccion.motivo != KTE.NO_TARJETA)
+        medida_tela = Tela(nivel=tuple(niveles), disp=tuple(dispersiones),
+                           histograma=tuple(histogramas))
+    rechazadas = (select.motivo != KTE.BUENA) & (
+        select.motivo != KTE.NO_TARJETA)
     verde_buenas = np.median(teselas.nivel_verde[buenas])
     with np.errstate(divide="ignore", invalid="ignore"):
-        desviacion = np.log2(teselas.nivel_verde[rechazadas] / verde_buenas)
-    return Medida(teselas.canales,
-                  tuple(float(np.median(n[buenas])) for n in teselas.nivel),
-                  tuple(float(np.median(d[buenas]))
-                        for d in teselas.dispersion),
-                  desviacion, seleccion.motivo[rechazadas], medida_pano,
-                  float(verde_buenas))
+        dev = np.log2(teselas.nivel_verde[rechazadas] / verde_buenas)
+    return Medida(
+        canales=teselas.canales,
+        nivel=tuple(float(np.median(n[buenas])) for n in teselas.nivel),
+        disp=tuple(float(np.median(d[buenas]))
+                   for d in teselas.disp),
+        dev_rechazadas=dev,
+        motivo_rechazadas=select.motivo[rechazadas],
+        tela=medida_tela,
+        verde=float(verde_buenas))
 
 
 #
@@ -397,32 +467,27 @@ def restar_exceso(medida: Medida, exceso: tuple[float, ...]) -> Medida:
     tarjeta, con su nivel típico); las rechazadas, frente al verde de las
     buenas ya corregido.
     """
-    def bajar(niveles: tuple[float, ...], dispersiones: tuple[float, ...]
-              ) -> tuple[tuple[float, ...], tuple[float, ...]]:
-        nuevos = tuple(n - e for n, e in zip(niveles, exceso))
-        relativas = tuple(d * n / m if m > 0 else np.inf
-                          for d, n, m in zip(dispersiones, niveles, nuevos))
-        return nuevos, relativas
-
-    nivel, dispersion = bajar(medida.nivel, medida.dispersion)
-    pano = medida.pano
-    if pano is not None:
-        pano = Pano(*bajar(pano.nivel, pano.dispersion), pano.histograma)
+    nivel, disp = _bajar(medida.nivel, medida.disp, exceso)
+    tela = medida.tela
+    if tela is not None:
+        nivel_tela, disp_tela = _bajar(tela.nivel, tela.disp, exceso)
+        tela = Tela(nivel=nivel_tela, disp=disp_tela,
+                    histograma=tela.histograma)
 
     # --- Rechazadas: su verde y el de las buenas bajan el exceso del verde
     exceso_verde = float(np.mean([e for c, e in zip(medida.canales, exceso)
                                   if c.startswith(KTE.VERDE)]))
     verde = medida.verde - exceso_verde
-    rechazadas = medida.verde * 2.0 ** medida.desviacion_rechazadas
+    rechazadas = medida.verde * (2.0 ** medida.dev_rechazadas)
     with np.errstate(divide="ignore", invalid="ignore"):
-        desviacion = np.log2((rechazadas - exceso_verde) / verde)
-    return medida._replace(nivel=nivel, dispersion=dispersion,
-                           desviacion_rechazadas=desviacion, pano=pano,
+        dev = np.log2((rechazadas - exceso_verde) / verde)
+    return medida._replace(nivel=nivel, disp=disp,
+                           dev_rechazadas=dev, tela=tela,
                            verde=verde)
 
 
 #
-def ruido_temporal(archivo: Path, otro: Path, seleccion: Seleccion,
+def ruido_temporal(archivo: Path, otro: Path, select: Select,
                    negro: tuple[float, ...]) -> dict[str, float]:
     """
     Ruido aleatorio de la tarjeta por canal ({canal: dispersión
@@ -436,44 +501,39 @@ def ruido_temporal(archivo: Path, otro: Path, seleccion: Seleccion,
     primera, segunda = _leer_raw(archivo), _leer_raw(otro)
     lado = KTE.LADO
     colores = primera.colores
-    patron = colores[:lado, :lado].reshape(-1)
-    indices = [int(i) for i in np.unique(patron)]
-    negro_patron = np.asarray(negro, dtype=np.float32)[patron]
-    buenas = seleccion.buenas
+    mosaico = colores[:lado, :lado].reshape(-1)
+    idxs = [int(i) for i in np.unique(mosaico)]
+    negro_mosaico = np.asarray(negro, dtype=np.float32)[mosaico]
+    buenas = select.buenas
     filas, columnas = buenas.shape
-    resultados: dict[int, list[np.ndarray]] = {i: [] for i in indices}
-
-    def bloques(enteros: np.ndarray, desde: int, hasta: int) -> np.ndarray:
-        trozo = enteros[desde * lado:hasta * lado,
-                        :columnas * lado].astype(np.float32)
-        return (trozo.reshape(hasta - desde, lado, columnas, lado)
-                .transpose(0, 2, 1, 3).reshape(hasta - desde, columnas, -1)
-                - negro_patron)
+    resultados: dict[int, list[np.ndarray]] = {i: [] for i in idxs}
 
     for desde in range(0, filas, KTE.FRANJA_TEMPORAL):
         hasta = min(filas, desde + KTE.FRANJA_TEMPORAL)
         elegidas = buenas[desde:hasta]
         if not elegidas.any():
             continue
-        a = bloques(primera.enteros, desde, hasta)[elegidas]
-        b = bloques(segunda.enteros, desde, hasta)[elegidas]
-        for i in indices:
-            pa, pb = a[:, patron == i], b[:, patron == i]
+        a = _bloques(primera.enteros, desde, hasta, lado, columnas,
+                     negro_mosaico)[elegidas]
+        b = _bloques(segunda.enteros, desde, hasta, lado, columnas,
+                     negro_mosaico)[elegidas]
+        for i in idxs:
+            pa, pb = a[:, mosaico == i], b[:, mosaico == i]
             nivel_a = np.median(pa, axis=1)
             with np.errstate(divide="ignore", invalid="ignore"):
                 k = nivel_a / np.median(pb, axis=1)
-                diferencia = pa - k[:, None] * pb
+                diferencia = pa - (k[:, None] * pb)
                 dam = np.median(np.abs(diferencia - np.median(
                     diferencia, axis=1)[:, None]), axis=1)
-                resultados[i].append(KTE.ESCALA_DAM * dam
-                                     / np.sqrt(1 + k ** 2) / nivel_a)
-    descripcion = primera.descripcion
-    return {f"{descripcion[i]}{i}": float(np.median(np.concatenate(r)))
+                resultados[i].append(((KTE.ESCALA_DAM * dam)
+                                      / np.sqrt(1 + (k ** 2))) / nivel_a)
+    desc = primera.desc
+    return {f"{desc[i]}{i}": float(np.median(np.concatenate(r)))
             for i, r in resultados.items() if r}
 
 
 #
-def fraccion_recortada(histograma: np.ndarray, umbral: float) -> float:
+def part_recortada(histograma: np.ndarray, umbral: float) -> float:
     """
     Fracción de los píxeles de un histograma (valores del RAW) que llegan
     al umbral (también en valores del RAW, con el negro incluido).
@@ -488,7 +548,7 @@ def matriz_color(archivo: Path) -> np.ndarray:
     """ Matriz de cámara (R, G, B) a XYZ de un RAW. """
     with rawpy.imread(str(archivo)) as raw:
         return np.linalg.inv(np.asarray(
-            raw.rgb_xyz_matrix)[:KTE.CANALES_MATRIZ])
+            raw.rgb_xyz_matrix)[:KCOM.CANALES_RGB])
 
 
 #
@@ -504,7 +564,7 @@ def temperatura(rojo: float, verde: float, azul: float,
     x, y = x_ / suma, y_ / suma
     n = (x - KTE.MCCAMY_X_E) / (KTE.MCCAMY_Y_E - y)
     a, b, c, d = KTE.MCCAMY
-    return float(a * n ** 3 + b * n ** 2 + c * n + d)
+    return float((a * (n ** 3)) + (b * (n ** 2)) + (c * n) + d)
 
 
 #
@@ -519,7 +579,7 @@ def oscuridad(archivo: Path, tapadas: list[Path]) -> Oscuridad:
         izquierda = raw.sizes.left_margin
         borde = (_negro_ruido(raw.raw_image[:, :izquierda],
                               raw.raw_colors[:, :izquierda])
-                 if izquierda >= KTE.MIN_COLUMNAS_BORDE else None)
+                 if (izquierda >= KTE.MIN_COLUMNAS_BORDE) else None)
 
     # --- Tapadas: la media de lo que da cada una
     medidas = []
@@ -529,14 +589,15 @@ def oscuridad(archivo: Path, tapadas: list[Path]) -> Oscuridad:
                                         raw.raw_colors_visible))
     oscuras = (tuple(tuple(np.mean([m[k][i] for m in medidas])
                            for i in range(len(medidas[0][k])))
-                     for k in range(2)) if medidas else None)
+                     for k in range(len(medidas[0]))) if medidas else None)
 
     ruido_borde = borde[1] if borde else None
     ruido_tapadas = oscuras[1] if oscuras else None
     difieren = bool(
         ruido_borde and ruido_tapadas
-        and np.nanmax(np.abs(np.array(ruido_borde) / np.array(ruido_tapadas)
-                             - 1)) > KTE.DIFERENCIA_RUIDO)
+        and (np.nanmax(np.abs((np.array(ruido_borde)
+                               / np.array(ruido_tapadas)) - 1))
+             > KTE.DIFERENCIA_RUIDO))
     if ruido_borde:
         ruido, origen_ruido = ruido_borde, KTE.ORIGEN_BORDE
     elif ruido_tapadas:
@@ -544,9 +605,13 @@ def oscuridad(archivo: Path, tapadas: list[Path]) -> Oscuridad:
     else:
         ruido, origen_ruido = None, None
     return Oscuridad(
-        oscuras[0] if oscuras else declarado,
-        KTE.ORIGEN_TAPADAS if oscuras else KTE.ORIGEN_DECLARADO,
-        ruido, origen_ruido, ruido_borde, ruido_tapadas, difieren)
+        negro=oscuras[0] if oscuras else declarado,
+        origen_negro=KTE.ORIGEN_TAPADAS if oscuras else KTE.ORIGEN_DECLARADO,
+        ruido=ruido,
+        origen_ruido=origen_ruido,
+        ruido_borde=ruido_borde,
+        ruido_tapadas=ruido_tapadas,
+        difieren=difieren)
 
 
 #
@@ -566,16 +631,17 @@ class _Raw(NamedTuple):
     enteros: np.ndarray
     colores: np.ndarray
     declarados: tuple[float, ...]
-    descripcion: str
+    desc: str
 
 
 #
 def _leer_raw(archivo: Path) -> _Raw:
     with rawpy.imread(str(archivo)) as raw:
-        return _Raw(raw.raw_image_visible.copy(),
-                    raw.raw_colors_visible.copy(),
-                    tuple(float(n) for n in raw.black_level_per_channel),
-                    raw.color_desc.decode())
+        return _Raw(
+            enteros=raw.raw_image_visible.copy(),
+            colores=raw.raw_colors_visible.copy(),
+            declarados=tuple(float(n) for n in raw.black_level_per_channel),
+            desc=raw.color_desc.decode())
 
 
 #
@@ -584,112 +650,119 @@ def _teselas(raw: _Raw, negros: tuple[float, ...] | None,
              lado: int) -> Teselas:
     imagen = raw.enteros.astype(np.float32)
     colores = raw.colores
-    descripcion = raw.descripcion
-    negro = np.asarray(negros if negros is not None else raw.declarados,
+    desc = raw.desc
+    negro = np.asarray(negros if (negros is not None) else raw.declarados,
                        dtype=np.float32)
 
     # --- Cada tesela, en una fila de lado × lado píxeles, sobre su negro;
     #     la máscara de colores de la primera vale para todas
     filas, columnas = imagen.shape[0] // lado, imagen.shape[1] // lado
-    patron = colores[:lado, :lado].reshape(-1)
-    bloques = (imagen[:filas * lado, :columnas * lado]
-               .reshape(filas, lado, columnas, lado)
-               .transpose(0, 2, 1, 3).reshape(filas, columnas, -1)
-               - negro[patron])
+    mosaico = colores[:lado, :lado].reshape(-1)
+    por_tesela = (imagen[:(filas * lado), :(columnas * lado)]
+                  .reshape(filas, lado, columnas, lado)
+                  .transpose(0, 2, 1, 3).reshape(filas, columnas, -1))
+    bloques = por_tesela - negro[mosaico]
 
     # --- Por canal (los que hay: X-Trans no tiene el 3) y del verde
-    indices = [int(i) for i in np.unique(patron)]
-    medidas = [_mediana_dispersion(bloques[..., patron == i])
-               for i in indices]
-    verdes = [i for i in indices if descripcion[i] == KTE.VERDE]
-    pixeles_verdes = bloques[..., np.isin(patron, verdes)]
-    nivel_verde, dispersion_verde = _mediana_dispersion(pixeles_verdes)
+    idxs = [int(i) for i in np.unique(mosaico)]
+    medidas = [_mediana_disp(bloques[..., mosaico == i])
+               for i in idxs]
+    verdes = [i for i in idxs if desc[i] == KTE.VERDE]
+    px_verdes = bloques[..., np.isin(mosaico, verdes)]
+    nivel_verde, disp_verde = _mediana_disp(px_verdes)
     with np.errstate(divide="ignore", invalid="ignore"):
-        asimetria = ((pixeles_verdes.mean(axis=2) - nivel_verde)
-                     / pixeles_verdes.std(axis=2))
-    return Teselas(lado, tuple(f"{descripcion[i]}{i}" for i in indices),
-                   np.stack([m[0] for m in medidas]),
-                   np.stack([m[1] for m in medidas]),
-                   nivel_verde, dispersion_verde, asimetria)
+        asim = ((px_verdes.mean(axis=2) - nivel_verde)
+                / px_verdes.std(axis=2))
+    return Teselas(
+        lado=lado,
+        canales=tuple(f"{desc[i]}{i}" for i in idxs),
+        nivel=np.stack([m[0] for m in medidas]),
+        disp=np.stack([m[1] for m in medidas]),
+        nivel_verde=nivel_verde,
+        disp_verde=disp_verde,
+        asim_verde=asim)
 
 
 #
-def buscar_pano(teselas: Teselas) -> Ventana | str:
+def buscar_tela(teselas: Teselas) -> Ventana | str:
     """
     Ventana del paño en píxeles o, si no se encuentra, por qué (KTE): los
     dos grupos de teselas no se separan, el paño no es un solo bloque o
     no cabe el cuadro de la lámina.
     """
     claras = (teselas.nivel_verde
-              > KTE.NIVEL_MIN * np.median(teselas.nivel_verde))
-    logaritmo = np.log2(teselas.dispersion_verde)
-    validas = claras & np.isfinite(logaritmo)
-    if not validas.any():
-        return KTE.SIN_PANO
+              > (KTE.NIVEL_MIN * np.median(teselas.nivel_verde)))
+    logaritmo = np.log2(teselas.disp_verde)
+    usables = claras & np.isfinite(logaritmo)
+    if not usables.any():
+        return KTE.SIN_TELA
 
     # --- Corte entre tarjeta y paño, y hueco entre los dos grupos
-    corte = _corte_otsu(logaritmo[validas])
-    pano = validas & (logaritmo > corte)
-    tarjeta = validas & (logaritmo <= corte)
-    if not pano.any() or not tarjeta.any():
-        return KTE.SIN_PANO
-    hueco = 2 ** (np.percentile(logaritmo[pano], KTE.PERCENTIL_HUECO)
+    corte = _corte_otsu(logaritmo[usables])
+    tela = usables & (logaritmo > corte)
+    tarjeta = usables & (logaritmo <= corte)
+    if (not tela.any()) or (not tarjeta.any()):
+        return KTE.SIN_TELA
+    hueco = 2 ** (np.percentile(logaritmo[tela], KTE.PERCENTIL_HUECO)
                   - np.percentile(logaritmo[tarjeta],
-                                  100 - KTE.PERCENTIL_HUECO))
+                                  KCOM.CIEN - KTE.PERCENTIL_HUECO))
     if hueco < KTE.HUECO_MIN:
-        return KTE.SIN_PANO
+        return KTE.SIN_TELA
 
     # --- El bloque de paño más grande debe llenar su rectángulo
-    bloque = _bloque_mayor(pano)
+    bloque = _bloque_mayor(tela)
     filas, columnas = np.nonzero(bloque)
     f0, f1 = filas.min(), filas.max() + 1
     c0, c1 = columnas.min(), columnas.max() + 1
-    if bloque.sum() < KTE.RELLENO_MIN * (f1 - f0) * (c1 - c0):
-        return KTE.SIN_PANO
+    if bloque.sum() < (KTE.RELLENO_MIN * (f1 - f0) * (c1 - c0)):
+        return KTE.SIN_TELA
 
     # --- Sin los bordes, y debe caber el cuadro de la lámina
     f0, c0 = f0 + KTE.MARGEN, c0 + KTE.MARGEN
     f1, c1 = f1 - KTE.MARGEN, c1 - KTE.MARGEN
     lado = teselas.lado
-    ventana = Ventana(int(c0 * lado), int(f0 * lado),
-                      int(max(0, c1 - c0) * lado), int(max(0, f1 - f0) * lado))
+    ventana = Ventana(
+        x=int(c0 * lado),
+        y=int(f0 * lado),
+        ancho=int(max(0, c1 - c0) * lado),
+        alto=int(max(0, f1 - f0) * lado))
     if not factores(ventana):
-        return KTE.PANO_PEQUENO
+        return KTE.TELA_MIN
     return ventana
 
 
 #
-def seleccionar(teselas: Teselas, pano: Ventana | None) -> Seleccion:
+def seleccionar(teselas: Teselas, tela: Ventana | None) -> Select:
     """
     Teselas de tarjeta de la Z-V y las que pasan los filtros. De tarjeta:
-    las claras, sin el paño ni una tesela más por cada lado (pano es la
+    las claras, sin el paño ni una tesela más por cada lado (tela es la
     ventana del recorte, ya encogida: se amplía). Filtros, por orden:
     nivel, dispersión y asimetría del verde.
     """
     claras = (teselas.nivel_verde
-              > KTE.NIVEL_MIN * np.median(teselas.nivel_verde))
-    tarjeta = claras & np.isfinite(teselas.dispersion_verde)
-    if pano is not None:
+              > (KTE.NIVEL_MIN * np.median(teselas.nivel_verde)))
+    tarjeta = claras & np.isfinite(teselas.disp_verde)
+    if tela is not None:
         lado, borde = teselas.lado, 2 * KTE.MARGEN
-        tarjeta[max(0, pano.y // lado - borde):
-                (pano.y + pano.alto) // lado + borde,
-                max(0, pano.x // lado - borde):
-                (pano.x + pano.ancho) // lado + borde] = False
+        tarjeta[max(0, (tela.y // lado) - borde):
+                (((tela.y + tela.alto) // lado) + borde),
+                max(0, (tela.x // lado) - borde):
+                (((tela.x + tela.ancho) // lado) + borde)] = False
     motivo = np.where(tarjeta, KTE.BUENA, KTE.NO_TARJETA).astype(np.int8)
     if not tarjeta.any():
-        return Seleccion(motivo)
+        return Select(motivo)
 
     # --- Cada filtro marca las que no pasa, si aún son buenas
     nivel = np.log2(teselas.nivel_verde
                     / np.median(teselas.nivel_verde[tarjeta]))
     filtros = ((KTE.RECHAZO_NIVEL, np.abs(nivel) > KTE.NIVEL_MAX_ZONAS),
-               (KTE.RECHAZO_DISPERSION,
-                _rara(teselas.dispersion_verde, tarjeta, solo_altas=True)),
-               (KTE.RECHAZO_ASIMETRIA,
-                _rara(teselas.asimetria_verde, tarjeta, solo_altas=False)))
-    for codigo, falla in filtros:
-        motivo[(motivo == KTE.BUENA) & falla] = codigo
-    return Seleccion(motivo)
+               (KTE.RECHAZO_DISP,
+                _rara(teselas.disp_verde, tarjeta, solo_altas=True)),
+               (KTE.RECHAZO_ASIM,
+                _rara(teselas.asim_verde, tarjeta, solo_altas=False)))
+    for code, falla in filtros:
+        motivo[(motivo == KTE.BUENA) & falla] = code
+    return Select(motivo)
 
 
 #
@@ -703,7 +776,8 @@ def factores(ventana: Ventana) -> tuple[int, ...]:
     """ Divisores del recorte (KTE.FACTORES) que caben en la ventana. """
     ancho, alto = KTE.CUADRO
     return tuple(f for f in KTE.FACTORES
-                 if ancho * f <= ventana.ancho and alto * f <= ventana.alto)
+                 if ((ancho * f) <= ventana.ancho)
+                 and ((alto * f) <= ventana.alto))
 
 
 #
@@ -715,7 +789,7 @@ def revelar(archivo: Path) -> np.ndarray:
     """
     with rawpy.imread(str(archivo)) as raw:
         return raw.postprocess(use_camera_wb=True, no_auto_bright=True,
-                               output_bps=8, user_flip=0)
+                               output_bps=KTE.BITS_PANTALLA, user_flip=0)
 
 
 #
@@ -726,9 +800,9 @@ def recorte(imagen: np.ndarray, ventana: Ventana, factor: int) -> np.ndarray:
     como sale en el cuadro de la lámina.
     """
     ancho, alto = KTE.CUADRO
-    x = ventana.x + (ventana.ancho - ancho * factor) // 2
-    y = ventana.y + (ventana.alto - alto * factor) // 2
-    trozo = imagen[y:y + alto * factor, x:x + ancho * factor]
+    x = ventana.x + ((ventana.ancho - (ancho * factor)) // 2)
+    y = ventana.y + ((ventana.alto - (alto * factor)) // 2)
+    trozo = imagen[y:(y + (alto * factor)), x:(x + (ancho * factor))]
     medio = (trozo.reshape(alto, factor, ancho, factor, -1)
              .mean(axis=(1, 3)))
     return np.round(medio).astype(imagen.dtype)
@@ -737,24 +811,52 @@ def recorte(imagen: np.ndarray, ventana: Ventana, factor: int) -> np.ndarray:
 #
 # --- Mediana y dispersión relativa de cada tesela (sus píxeles, en el
 #     último eje). Sin nivel (todo negro), dispersión infinita
-def _mediana_dispersion(pixeles: np.ndarray) -> tuple[np.ndarray,
-                                                       np.ndarray]:
-    mediana = np.median(pixeles, axis=2)
-    dam = np.median(np.abs(pixeles - mediana[..., None]), axis=2)
+def _mediana_disp(px: np.ndarray) -> tuple[np.ndarray,
+                                           np.ndarray]:
+    mediana = np.median(px, axis=2)
+    dam = np.median(np.abs(px - mediana[..., None]), axis=2)
     with np.errstate(divide="ignore", invalid="ignore"):
-        dispersion = np.where(mediana > 0, KTE.ESCALA_DAM * dam / mediana,
-                              np.inf)
-    return mediana, dispersion
+        disp = np.where(mediana > 0,
+                        (KTE.ESCALA_DAM * dam) / mediana, np.inf)
+    return mediana, disp
+
+
+#
+# --- Niveles y dispersiones relativas con el exceso de negro restado (por
+#     canal, en el mismo orden): los niveles bajan lo mismo; las
+#     dispersiones suben en proporción (el ruido no cambia). Sin nivel,
+#     dispersión infinita
+def _bajar(niveles: tuple[float, ...], dispersiones: tuple[float, ...],
+           exceso: tuple[float, ...]
+           ) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    nuevos = tuple(n - e for n, e in zip(niveles, exceso))
+    relativas = tuple(((d * n) / m) if (m > 0) else np.inf
+                      for d, n, m in zip(dispersiones, niveles, nuevos))
+    return nuevos, relativas
+
+
+#
+# --- Teselas de las filas desde-hasta de un RAW (enteros), cada una en
+#     una fila de lado × lado píxeles, sobre su negro (el de cada píxel
+#     de la máscara de colores: negro_patron)
+def _bloques(enteros: np.ndarray, desde: int, hasta: int, lado: int,
+             columnas: int, negro_mosaico: np.ndarray) -> np.ndarray:
+    filas = hasta - desde
+    trozo = enteros[(desde * lado):(hasta * lado),
+                    :(columnas * lado)].astype(np.float32)
+    por_tesela = (trozo.reshape(filas, lado, columnas, lado)
+                  .transpose(0, 2, 1, 3).reshape(filas, columnas, -1))
+    return por_tesela - negro_mosaico
 
 
 #
 # --- Negro (mediana) y ruido (desviación típica, sin atípicos) de unos
 #     píxeles sin luz, por canal del RAW (0 a 3; los que no hay, NaN)
-def _negro_ruido(pixeles: np.ndarray, colores: np.ndarray) -> tuple[
+def _negro_ruido(px: np.ndarray, colores: np.ndarray) -> tuple[
         tuple[float, ...], tuple[float, ...]]:
     negros, ruidos = [], []
-    for i in range(4):
-        valores = pixeles[colores == i].astype(np.float32)
+    for i in range(KTE.CANALES_RAW):
+        valores = px[colores == i].astype(np.float32)
         if not valores.size:
             negros.append(np.nan)
             ruidos.append(np.nan)
@@ -763,7 +865,7 @@ def _negro_ruido(pixeles: np.ndarray, colores: np.ndarray) -> tuple[
         escala = KTE.ESCALA_DAM * np.median(np.abs(valores - mediana))
         if escala > 0:
             valores = valores[np.abs(valores - mediana)
-                              <= KTE.CORTE_ATIPICOS * escala]
+                              <= (KTE.CORTE_RARO * escala)]
         negros.append(mediana)
         ruidos.append(float(valores.std()))
     return tuple(negros), tuple(ruidos)
@@ -779,24 +881,36 @@ def _rara(valores: np.ndarray, tarjeta: np.ndarray,
     escala = KTE.ESCALA_DAM * np.median(np.abs(valores[tarjeta] - mediana))
     with np.errstate(divide="ignore", invalid="ignore"):
         distancia = (valores - mediana) / escala
-    return distancia > KTE.RAREZA if solo_altas else (
-        np.abs(distancia) > KTE.RAREZA)
+    return ((distancia > KTE.RAREZA) if solo_altas
+            else (np.abs(distancia) > KTE.RAREZA))
 
 
 #
 # --- Corte de Otsu: el valor que mejor separa los datos en dos grupos
 def _corte_otsu(datos: np.ndarray) -> float:
     rango = (np.percentile(datos, KTE.PERCENTIL_CORTE),
-             np.percentile(datos, 100 - KTE.PERCENTIL_CORTE))
+             np.percentile(datos, KCOM.CIEN - KTE.PERCENTIL_CORTE))
     cuenta, bordes = np.histogram(datos, bins=KTE.CLASES_CORTE, range=rango)
     centros = (bordes[:-1] + bordes[1:]) / 2
-    peso = np.cumsum(cuenta)
-    suma = np.cumsum(cuenta * centros)
-    total, suma_total = peso[-1], suma[-1]
+
+    # --- Cada corte posible (tras cada clase) parte los datos en dos
+    #     grupos: cuántos quedan debajo y encima, y cuánto suman
+    n_abajo = np.cumsum(cuenta)
+    n_arriba = n_abajo[-1] - n_abajo
+    suma_abajo = np.cumsum(cuenta * centros)
+    suma_arriba = suma_abajo[-1] - suma_abajo
     with np.errstate(divide="ignore", invalid="ignore"):
-        entre = ((suma_total * peso / total - suma) ** 2
-                 / (peso * (total - peso)))
-    return float(centros[np.nanargmax(entre)])
+
+        # --- La media de cada grupo (sin datos en un grupo: NaN)
+        media_abajo = suma_abajo / n_abajo
+        media_arriba = suma_arriba / n_arriba
+
+        # --- Cuánto se separan los dos grupos (varianza entre clases): la
+        #     distancia entre sus medias, al cuadrado, por cuántos hay en
+        #     cada uno. El mejor corte es el que más los separa
+        entre_grupos = ((n_abajo * n_arriba)
+                        * ((media_abajo - media_arriba) ** 2))
+    return float(centros[np.nanargmax(entre_grupos)])
 
 
 #
@@ -815,8 +929,8 @@ def _bloque_mayor(marcadas: np.ndarray) -> np.ndarray:
             f, c = pendientes.popleft()
             bloque[f, c] = True
             for vf, vc in ((f - 1, c), (f + 1, c), (f, c - 1), (f, c + 1)):
-                if (0 <= vf < filas and 0 <= vc < columnas
-                        and marcadas[vf, vc] and not vistas[vf, vc]):
+                if ((0 <= vf < filas) and (0 <= vc < columnas)
+                        and marcadas[vf, vc] and (not vistas[vf, vc])):
                     vistas[vf, vc] = True
                     pendientes.append((vf, vc))
         if bloque.sum() > mayor.sum():

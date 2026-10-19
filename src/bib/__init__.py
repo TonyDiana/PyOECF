@@ -8,11 +8,11 @@
         ``from bib import <<módulo>>``
 
     :Autor:     Tony Diana
-    :Versión:   26.10.05
+    :Versión:   26.10.17
 """
 
 # cSpell:ignore aquila
 
-__all__ = ["clases"]
+__all__ = ["std"]
 
-from . import clases
+from . import clases_slr as std

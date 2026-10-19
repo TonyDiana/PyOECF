@@ -2,10 +2,10 @@
 """
     :Propósito: Marca y modelo de la cámara de un RAW.
     :Autor:     Tony Diana
-    :Versión:   26.10.09
+    :Versión:   26.10.18
 """
 
-# cSpell:ignore desplaz, fujifilmccd, kcom
+# cSpell:ignore fujifilmccd, kcom
 
 __all__ = ["Cam", "KC", "leer_cam"]
 
@@ -15,23 +15,31 @@ from pathlib import Path
 from typing import NamedTuple
 
 # --- Bibliotecas internas
-from bib import clases
+from bib import std
 from .constantes import COM as KCOM
 from .tiff import ascii_tiff, etiqueta_tiff, primer_directorio, texto_ascii
 
 
 #
-class KC(clases.EnumMutable):
+class KC(std.EnumMutable):
     """ Constantes del lector de marca y modelo. """
 
-    # --- TIFF: etiquetas Make y Model (lo común de TIFF, en COM)
+    # --- TIFF (lo común de TIFF, en COM)
     ETIQUETA_MARCA = 0x010F
-    ETIQUETA_MODELO = 0x0110
+    """Etiqueta TIFF Make: la marca."""
 
-    # --- RAF de Fujifilm: firma y posición fija del modelo
+    ETIQUETA_MODELO = 0x0110
+    """Etiqueta TIFF Model: el modelo."""
+
+    # --- RAF de Fujifilm
     FIRMA_RAF = b"FUJIFILMCCD-RAW"
+    """Firma con que empieza un RAF."""
+
     MARCA_RAF = "FUJIFILM"
+    """Marca de los RAF (no la guardan aparte)."""
+
     MODELO_RAF = slice(28, 60)
+    """Posición fija del modelo en un RAF, tras la firma."""
 
 
 #
@@ -64,7 +72,10 @@ def leer_cam(archivo: Path) -> Cam | None:
     except OSError:
         return None
     encontrada = _cam_raf(datos) or _cam_tiff(datos)
-    return Cam(*encontrada) if encontrada else None
+    if not encontrada:
+        return None
+    marca, modelo = encontrada
+    return Cam(marca=marca, modelo=modelo)
 
 
 # --- Los RAF llevan el modelo en una cadena fija tras la firma
@@ -103,9 +114,10 @@ def _directorio_tiff(datos: bytes, pos: int,
     for etiqueta in (KC.ETIQUETA_MARCA, KC.ETIQUETA_MODELO):
         encontrada = etiqueta_tiff(datos, inicio, orden, etiqueta)
 
-        if encontrada and encontrada[0] == KCOM.TIPO_ASCII:
+        if encontrada:
             tipo, cuenta, valor = encontrada
-            reads[etiqueta] = ascii_tiff(datos, pos, orden, cuenta, valor)
+            if tipo == KCOM.TIPO_ASCII:
+                reads[etiqueta] = ascii_tiff(datos, pos, orden, cuenta, valor)
 
     if KC.ETIQUETA_MODELO not in reads:
         return None

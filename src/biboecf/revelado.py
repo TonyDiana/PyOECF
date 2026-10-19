@@ -4,10 +4,12 @@
                 exportaciones del revelador (TIFF), en las mismas teselas
                 buenas que se eligieron en los RAW (las del análisis)
     :Autor:     Tony Diana
-    :Versión:   26.10.12
+    :Versión:   26.10.18
 """
 
-# cSpell:ignore tifffile, mluc, ProPhoto
+# cSpell:ignore colord, curv, darktable, desplaz, iinfo, imagecodecs, imread
+# cSpell:ignore interp, kcom, Lightroom, lstar, mluc, prophoto, recolocadas
+# cSpell:ignore srgb, Therapee, tifffile
 
 __all__ = ["KRV", "espacio_icc", "espacio_tiff", "perfil_tiff",
            "lstar_tiff"]
@@ -21,14 +23,14 @@ import numpy as np
 import tifffile
 
 # --- Bibliotecas internas
-from bib import clases
-from .analisis import Analisis
+from bib import std
+from .review import Review
 from .constantes import COM as KCOM
 from .teselas import KTE
 
 
 #
-class KRV(clases.EnumMutable):
+class KRV(std.EnumMutable):
     """ Constantes de la medida de las exportaciones del revelador. """
 
     # --- Espacios de color que se reconocen (por el nombre de su perfil
@@ -60,7 +62,7 @@ class KRV(clases.EnumMutable):
     #     alto): más, y la exportación no es a tamaño completo (reducida o
     #     recortada): sus teselas caerían en otro sitio. Lightroom, en la
     #     R7, recorta un 0,3 % de ancho y un 0,4 % de alto
-    RECORTE_MAXIMO = 0.02
+    RECORTE_MAX = 0.02
 
     # --- Perfil con otro nombre (RawTherapee, darktable, colord…): se
     #     reconoce por sus datos (Tony, 2026-10-16). Colorantes rojo,
@@ -87,17 +89,16 @@ class KRV(clases.EnumMutable):
 
     # --- Parámetros de cada función de la curva «para» (0 a 4): g; g, a,
     #     b; g, a, b, c; g, a, b, c, d; y g, a, b, c, d, e, f
-    ICC_PARAMETROS = (1, 3, 4, 5, 7)
+    ICC_PARAMS = (1, 3, 4, 5, 7)
     ICC_FIJO_16 = 65536
     ICC_FIJO_8 = 256
-    ICC_MAXIMO_TABLA = 65535
 
     # --- Por qué no se pudo medir una exportación. Compresión: una que
     #     tifffile no abre sin otra biblioteca (LZW…: imagecodecs)
     ESPACIO_DESCONOCIDO = "ESPACIO_DESCONOCIDO"
-    TAMANO_DISTINTO = "TAMANO_DISTINTO"
+    MEDIDA_DISTINTA = "MEDIDA_DISTINTA"
     SIN_TESELAS = "SIN_TESELAS"
-    COMPRESION = "COMPRESION"
+    COMPRIMIDA = "COMPRIMIDA"
 
 
 #
@@ -133,7 +134,7 @@ def espacio_tiff(ruta: Path) -> str | None:
     if nombre in KRV.ESPACIOS:
         return nombre
     icc = _icc_tiff(ruta)
-    return espacio_icc(icc) if icc is not None else None
+    return espacio_icc(icc) if (icc is not None) else None
 
 
 #
@@ -151,37 +152,40 @@ def espacio_icc(icc: bytes) -> str | None:
                   for t in KRV.ICC_COLORANTES]
     medio = _medio_curva(icc, etiquetas.get(KRV.ICC_CURVA_ROJO))
     for espacio, referencia in KRV.COLORANTES.items():
-        if not all(abs(v / KRV.ICC_FIJO_16 - r) <= KRV.TOLERANCIA_COLORANTE
-                   for leidos, ref in zip(colorantes, referencia)
-                   for v, r in zip(leidos, ref)):
+        if not all(abs((v / KRV.ICC_FIJO_16) - r) <= KRV.TOLERANCIA_COLORANTE
+                   for crudos, ref in zip(colorantes, referencia)
+                   for v, r in zip(crudos, ref)):
             continue
         esperado = float(_lineal(np.array([KRV.PUNTO_MEDIO]),
                                  KRV.ESPACIOS[espacio])[0])
-        if medio is not None and abs(medio - esperado) \
-                <= KRV.TOLERANCIA_CURVA:
+        if ((medio is not None)
+                and (abs(medio - esperado) <= KRV.TOLERANCIA_CURVA)):
             return espacio
     return None
 
 
+#
 # --- El perfil ICC incrustado en una TIFF (None si no lleva)
 def _icc_tiff(ruta: Path) -> bytes | None:
     with tifffile.TiffFile(ruta) as tif:
-        etiqueta = tif.pages[0].tags.get("InterColorProfile")
-        return None if etiqueta is None else bytes(etiqueta.value)
+        etiqueta = tif.pages.first.tags.get("InterColorProfile")
+        return None if (etiqueta is None) else bytes(etiqueta.value)
 
 
+#
 # --- Tabla de etiquetas de un perfil ICC: {firma: dónde empieza}
 def _etiquetas(icc: bytes) -> dict[bytes, int]:
     n = struct.unpack(">I", icc[KRV.ICC_TABLA:KRV.ICC_TABLA + 4])[0]
     etiquetas = {}
     for i in range(n):
-        desde = KRV.ICC_TABLA + 4 + KRV.ICC_ENTRADA * i
+        desde = KRV.ICC_TABLA + 4 + (KRV.ICC_ENTRADA * i)
         firma, inicio, _ = struct.unpack(">4sII", icc[desde:desde
-                                                       + KRV.ICC_ENTRADA])
+                                                      + KRV.ICC_ENTRADA])
         etiquetas[firma] = inicio
     return etiquetas
 
 
+#
 # --- Luz lineal que da una curva ICC (curv o para) en el punto medio de
 #     la escala; None si no la hay o es de otro tipo
 def _medio_curva(icc: bytes, inicio: int | None) -> float | None:
@@ -194,32 +198,33 @@ def _medio_curva(icc: bytes, inicio: int | None) -> float | None:
         if n == 0:
             return x
         valores = struct.unpack(f">{n}H", icc[inicio + 12:inicio + 12
-                                              + 2 * n])
+                                              + (2 * n)])
         if n == 1:
             return x ** (valores[0] / KRV.ICC_FIJO_8)
         return float(np.interp(x * (n - 1), range(n), valores)
-                     / KRV.ICC_MAXIMO_TABLA)
+                     / KCOM.MAX_16)
     if tipo == KRV.ICC_PARA:
-        funcion = struct.unpack(">H", icc[inicio + 8:inicio + 10])[0]
-        cuantos = KRV.ICC_PARAMETROS[funcion]
-        leidos = struct.unpack(f">{cuantos}i",
-                               icc[inicio + 12:inicio + 12 + 4 * cuantos])
-        parametros = [v / KRV.ICC_FIJO_16 for v in leidos]
-        parametros += [0.0] * (max(KRV.ICC_PARAMETROS) - cuantos)
-        g, a, b, c, d, e, f = parametros
-        if funcion == 0:
+        func = struct.unpack(">H", icc[inicio + 8:inicio + 10])[0]
+        cuantos = KRV.ICC_PARAMS[func]
+        crudos = struct.unpack(f">{cuantos}i",
+                               icc[inicio + 12:inicio + 12 + (4 * cuantos)])
+        params = [v / KRV.ICC_FIJO_16 for v in crudos]
+        params += [0.0] * (max(KRV.ICC_PARAMS) - cuantos)
+        g, a, b, c, d, e, f = params
+        if func == 0:
             return x ** g
-        if funcion in (1, 2):
-            base = a * x + b
-            return (base ** g if base > 0 else 0.0) + (c if funcion == 2
-                                                       else 0.0)
+        if func in (1, 2):
+            base = (a * x) + b
+            return ((base ** g) if (base > 0) else 0.0) + (c if (func == 2)
+                                                           else 0.0)
         tramo = x >= d
-        if funcion == 3:
-            return (a * x + b) ** g if tramo else c * x
-        return (a * x + b) ** g + e if tramo else c * x + f
+        if func == 3:
+            return (((a * x) + b) ** g) if tramo else (c * x)
+        return ((((a * x) + b) ** g) + e) if tramo else ((c * x) + f)
     return None
 
 
+#
 # --- Luz lineal de unos valores (de 0 a 1) en un espacio de KRV.ESPACIOS
 def _lineal(rgb: np.ndarray, espacio: tuple) -> np.ndarray:
     (gamma, tramo), _ = espacio
@@ -231,7 +236,7 @@ def _lineal(rgb: np.ndarray, espacio: tuple) -> np.ndarray:
 
 
 #
-def lstar_tiff(analisis: Analisis, ruta: Path) -> float | str:
+def lstar_tiff(review: Review, ruta: Path) -> float | str:
     """
     L* de la tarjeta en una exportación del revelador: la mediana de las
     teselas buenas del análisis (recolocadas con el recorte del revelador,
@@ -244,30 +249,30 @@ def lstar_tiff(analisis: Analisis, ruta: Path) -> float | str:
     try:
         imagen = tifffile.imread(ruta)
     except ValueError:
-        return KRV.COMPRESION
+        return KRV.COMPRIMIDA
     alto, ancho = imagen.shape[:2]
-    if not (0 <= analisis.alto - alto <= KRV.RECORTE_MAXIMO * analisis.alto
-            and 0 <= analisis.ancho - ancho
-            <= KRV.RECORTE_MAXIMO * analisis.ancho):
-        return KRV.TAMANO_DISTINTO
-    maximo = float(np.iinfo(imagen.dtype).max)
+    if not ((0 <= (review.alto - alto) <= (KRV.RECORTE_MAX * review.alto))
+            and (0 <= (review.ancho - ancho)
+            <= (KRV.RECORTE_MAX * review.ancho))):
+        return KRV.MEDIDA_DISTINTA
+    tope = float(np.iinfo(imagen.dtype).max)
 
     # --- Mediana de cada tesela buena, dentro de la imagen recortada
-    lado, holgura = analisis.lado, KRV.HOLGURA
-    dy, dx = (analisis.alto - alto) // 2, (analisis.ancho - ancho) // 2
+    lado, holgura = review.lado, KRV.HOLGURA
+    dy, dx = (review.alto - alto) // 2, (review.ancho - ancho) // 2
     medianas = []
-    for f, c in zip(*np.nonzero(analisis.motivos == KTE.BUENA)):
-        y0, x0 = f * lado - dy + holgura, c * lado - dx + holgura
-        y1, x1 = y0 + lado - 2 * holgura, x0 + lado - 2 * holgura
-        if y0 >= 0 and x0 >= 0 and y1 <= alto and x1 <= ancho:
+    for f, c in zip(*np.nonzero(review.motivos == KTE.BUENA)):
+        y0, x0 = (f * lado) - dy + holgura, (c * lado) - dx + holgura
+        y1, x1 = y0 + lado - (2 * holgura), x0 + lado - (2 * holgura)
+        if (y0 >= 0) and (x0 >= 0) and (y1 <= alto) and (x1 <= ancho):
             medianas.append(np.median(
                 imagen[y0:y1, x0:x1].reshape(-1, imagen.shape[2]), axis=0))
     if not medianas:
         return KRV.SIN_TESELAS
-    rgb = np.median(np.array(medianas), axis=0)[:3] / maximo
+    rgb = np.median(np.array(medianas), axis=0)[:3] / tope
 
     # --- A luz lineal, luminancia y L*
     y = float(np.dot(espacio[1], _lineal(rgb, espacio)))
     if y > KCOM.LAB_UMBRAL:
-        return KCOM.LAB_ESCALA * y ** (1 / 3) - KCOM.LAB_DESPLAZA
+        return (KCOM.LAB_ESCALA * (y ** (1 / 3))) - KCOM.LAB_DESPLAZA
     return KCOM.LAB_PENDIENTE * y

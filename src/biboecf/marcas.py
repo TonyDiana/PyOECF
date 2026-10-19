@@ -3,28 +3,29 @@
     :Propósito: Constantes y lecturas propias de cada marca de cámara: lo
                 que cada una guarda a su manera en su RAW
     :Autor:     Tony Diana
-    :Versión:   26.10.09
+    :Versión:   26.10.18
 """
 
-# cSpell:ignore codigo, desplaz, exif, fuji, makernote, nikon, posicion
+# cSpell:ignore colordata, desplaz, exif, fuji, kcom, makernote, nikon
 # cSpell:ignore shotinfo, sony
 
 __all__ = ["KM", "leer_balance", "leer_kelvin"]
 
 # --- Bibliotecas estándar Python
+import os
 import re
 import struct
 from pathlib import Path
 
 # --- Bibliotecas internas
-from bib import clases
+from bib import std
 from .constantes import COM as KCOM
 from .tiff import (ascii_tiff, corto_tiff, entero_tiff, etiqueta_tiff,
                    lista_tiff, orden_tiff, primer_directorio)
 
 
 #
-class KM(clases.EnumMutable):
+class KM(std.EnumMutable):
     """ Constantes propias de cada marca. """
 
     # --- Todas guardan el balance de blancos en sus notas del fabricante
@@ -32,7 +33,7 @@ class KM(clases.EnumMutable):
     #     las demás, con un código propio de cada marca, que aquí se
     #     traduce a un nombre en inglés y mayúsculas, como el de Nikon. Un
     #     código que no está en la tabla se queda en número: «CODE 23»
-    CODIGO_DESCONOCIDO = "CODE {codigo}"
+    CODE_DESCONOCIDO = "CODE {code}"
 
     # --- Nombres de los balances que comparten varias marcas (los que la
     #     app traduce); los demás, escritos en su tabla
@@ -62,10 +63,10 @@ class KM(clases.EnumMutable):
     #     las dos, la etiqueta 0x0004 (ShotInfo) es una lista de enteros
     #     de 2 bytes, y el balance es el de la posición 7
     FIRMA_CR2 = b"CR"
-    POSICION_FIRMA_CR2 = 8
+    POS_FIRMA_CR2 = 8
     FIRMA_CR3 = b"CMT3"
     ETIQUETA_SHOTINFO_CANON = 0x0004
-    POSICION_BALANCE_CANON = 7
+    POS_BALANCE_CANON = 7
     BALANCES_CANON = {0: B_AUTO, 1: B_DAYLIGHT, 2: B_CLOUDY, 3: B_TUNGSTEN,
                       4: B_FLUORESCENT, 5: B_FLASH, 6: B_CUSTOM,
                       7: "BLACK WHITE", 8: B_SHADE, 9: B_KELVIN,
@@ -122,7 +123,7 @@ class KM(clases.EnumMutable):
 
     # --- Nikon: en balance por temperatura de color, el nombre son los
     #     Kelvin seguidos de K (5600K)
-    PATRON_KELVIN = r"^(\d+)K$"
+    REGEX_KELVIN = r"^(\d+)K$"
 
 
 #
@@ -159,7 +160,7 @@ def leer_kelvin(archivo: Path) -> int | None:
         with open(archivo, "rb") as f:
             datos = f.read(KCOM.BYTES_CABECERA)
             if datos.find(KM.FIRMA_CR3) != -1:
-                f.seek(0, 2)
+                f.seek(0, os.SEEK_END)
                 f.seek(max(0, f.tell() - KM.BYTES_COLA_CR3))
                 return _kelvin_cola_cr3(f.read())
     except (OSError, struct.error):
@@ -172,11 +173,13 @@ def leer_kelvin(archivo: Path) -> int | None:
         return None
 
 
+#
 # --- Nombre de un código de balance según la tabla de su marca
-def _nombre(codigo: int, tabla: dict[int, str]) -> str:
-    return tabla.get(codigo, KM.CODIGO_DESCONOCIDO.format(codigo=codigo))
+def _nombre(code: int, tabla: dict[int, str]) -> str:
+    return tabla.get(code, KM.CODE_DESCONOCIDO.format(code=code))
 
 
+#
 # --- Nikon: el balance, en texto, en sus notas
 def _balance_nikon(datos: bytes) -> str | None:
     pos = datos.find(KM.FIRMA_NIKON)
@@ -188,12 +191,15 @@ def _balance_nikon(datos: bytes) -> str | None:
         return None
     inicio = primer_directorio(datos, base, orden)
     encontrada = etiqueta_tiff(datos, inicio, orden, KM.ETIQUETA_BALANCE_NIKON)
-    if encontrada is None or encontrada[0] != KCOM.TIPO_ASCII:
+    if encontrada is None:
         return None
     tipo, cuenta, valor = encontrada
+    if tipo != KCOM.TIPO_ASCII:
+        return None
     return ascii_tiff(datos, base, orden, cuenta, valor) or None
 
 
+#
 # --- Canon: el balance de ShotInfo, en el directorio de sus notas que
 #     empieza en inicio (desplazamientos desde base)
 def _balance_canon(datos: bytes, base: int, inicio: int,
@@ -202,13 +208,13 @@ def _balance_canon(datos: bytes, base: int, inicio: int,
                                KM.ETIQUETA_SHOTINFO_CANON)
     if encontrada is None:
         return None
-    tipo, cuenta, valor = encontrada
+    _, cuenta, valor = encontrada
     lista = base + entero_tiff(valor, orden)
-    codigo = lista_tiff(datos, lista, orden, cuenta)[
-        KM.POSICION_BALANCE_CANON]
-    return _nombre(codigo, KM.BALANCES_CANON)
+    code = lista_tiff(datos, lista, orden, cuenta)[KM.POS_BALANCE_CANON]
+    return _nombre(code, KM.BALANCES_CANON)
 
 
+#
 # --- Canon CR3: las notas, en la caja CMT3
 def _balance_cr3(datos: bytes) -> str | None:
     pos = datos.find(KM.FIRMA_CR3)
@@ -222,6 +228,7 @@ def _balance_cr3(datos: bytes) -> str | None:
     return _balance_canon(datos, base, inicio, orden)
 
 
+#
 # --- Canon CR2: TIFF → EXIF → notas
 def _balance_cr2(datos: bytes) -> str | None:
     notas = _notas_cr2(datos)
@@ -231,24 +238,28 @@ def _balance_cr2(datos: bytes) -> str | None:
     return _balance_canon(datos, 0, inicio, orden)
 
 
+#
 # --- Canon CR2: dónde empieza el directorio de sus notas y su orden de
 #     bytes, o None si no es un CR2
 def _notas_cr2(datos: bytes) -> tuple[int, str] | None:
     orden = orden_tiff(datos, 0)
-    if orden is None or not datos.startswith(KM.FIRMA_CR2,
-                                             KM.POSICION_FIRMA_CR2):
+    if (orden is None) or (not datos.startswith(KM.FIRMA_CR2,
+                                                KM.POS_FIRMA_CR2)):
         return None
     ifd0 = primer_directorio(datos, 0, orden)
     exif = etiqueta_tiff(datos, ifd0, orden, KCOM.ETIQUETA_EXIF)
     if exif is None:
         return None
-    notas = etiqueta_tiff(datos, entero_tiff(exif[2], orden), orden,
+    _, _, valor_exif = exif
+    notas = etiqueta_tiff(datos, entero_tiff(valor_exif, orden), orden,
                           KCOM.ETIQUETA_NOTAS)
     if notas is None:
         return None
-    return entero_tiff(notas[2], orden), orden
+    _, _, valor_notas = notas
+    return entero_tiff(valor_notas, orden), orden
 
 
+#
 # --- Canon: los Kelvin de ColorData, en el directorio que empieza en
 #     inicio (desplazamientos desde base), según su versión
 def _kelvin_canon(datos: bytes, base: int, inicio: int,
@@ -257,13 +268,14 @@ def _kelvin_canon(datos: bytes, base: int, inicio: int,
                                KM.ETIQUETA_COLORDATA_CANON)
     if encontrada is None:
         return None
-    tipo, cuenta, valor = encontrada
+    _, cuenta, valor = encontrada
     lista = lista_tiff(datos, base + entero_tiff(valor, orden), orden,
                        cuenta)
-    posicion = KM.KELVIN_CANON.get(lista[0])
-    return lista[posicion] if posicion is not None else None
+    pos = KM.KELVIN_CANON.get(lista[0])
+    return lista[pos] if (pos is not None) else None
 
 
+#
 # --- Canon CR2: los Kelvin, en sus notas
 def _kelvin_cr2(datos: bytes) -> int | None:
     notas = _notas_cr2(datos)
@@ -273,6 +285,7 @@ def _kelvin_cr2(datos: bytes) -> int | None:
     return _kelvin_canon(datos, 0, inicio, orden)
 
 
+#
 # --- Canon CR3: los Kelvin, en la cabecera TIFF del final del archivo
 #     que tenga ColorData (cola: los últimos bytes del archivo)
 def _kelvin_cola_cr3(cola: bytes) -> int | None:
@@ -293,39 +306,44 @@ def _kelvin_cola_cr3(cola: bytes) -> int | None:
     return None
 
 
+#
 # --- Sony: un código en sus notas
 def _balance_sony(datos: bytes) -> str | None:
     pos = datos.find(KM.FIRMA_SONY)
     orden = orden_tiff(datos, 0)
-    if pos == -1 or orden is None:
+    if (pos == -1) or (orden is None):
         return None
     encontrada = etiqueta_tiff(datos, pos + KM.SALTO_SONY, orden,
-                           KM.ETIQUETA_BALANCE_SONY)
+                               KM.ETIQUETA_BALANCE_SONY)
     if encontrada is None:
         return None
-    codigo = entero_tiff(encontrada[2], orden)
-    return _nombre(codigo, KM.BALANCES_SONY)
+    _, _, valor = encontrada
+    return _nombre(entero_tiff(valor, orden), KM.BALANCES_SONY)
 
 
+#
 # --- Sony: los Kelvin, en sus notas
 def _kelvin_sony(datos: bytes) -> int | None:
     pos = datos.find(KM.FIRMA_SONY)
     orden = orden_tiff(datos, 0)
-    if pos == -1 or orden is None:
+    if (pos == -1) or (orden is None):
         return None
     encontrada = etiqueta_tiff(datos, pos + KM.SALTO_SONY, orden,
-                           KM.ETIQUETA_KELVIN_SONY)
+                               KM.ETIQUETA_KELVIN_SONY)
     if encontrada is None:
         return None
-    return entero_tiff(encontrada[2], orden) or None
+    _, _, valor = encontrada
+    return entero_tiff(valor, orden) or None
 
 
+#
 # --- Nikon: los Kelvin, en el nombre del balance (5600K)
 def _kelvin_nikon(datos: bytes) -> int | None:
-    encontrado = re.match(KM.PATRON_KELVIN, _balance_nikon(datos) or "")
+    encontrado = re.match(KM.REGEX_KELVIN, _balance_nikon(datos) or "")
     return int(encontrado.group(1)) if encontrado else None
 
 
+#
 # --- Fujifilm: un código en sus notas
 def _balance_fuji(datos: bytes) -> str | None:
     pos = datos.find(KM.FIRMA_FUJI)
@@ -336,10 +354,11 @@ def _balance_fuji(datos: bytes) -> str | None:
     encontrada = etiqueta_tiff(datos, inicio, orden, KM.ETIQUETA_BALANCE_FUJI)
     if encontrada is None:
         return None
-    codigo = corto_tiff(encontrada[2], orden)
-    return _nombre(codigo, KM.BALANCES_FUJI)
+    _, _, valor = encontrada
+    return _nombre(corto_tiff(valor, orden), KM.BALANCES_FUJI)
 
 
+#
 # --- Fujifilm: los Kelvin, en sus notas (solo en balance por Kelvin)
 def _kelvin_fuji(datos: bytes) -> int | None:
     pos = datos.find(KM.FIRMA_FUJI)
@@ -350,4 +369,5 @@ def _kelvin_fuji(datos: bytes) -> int | None:
     encontrada = etiqueta_tiff(datos, inicio, orden, KM.ETIQUETA_KELVIN_FUJI)
     if encontrada is None:
         return None
-    return corto_tiff(encontrada[2], orden) or None
+    _, _, valor = encontrada
+    return corto_tiff(valor, orden) or None

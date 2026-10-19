@@ -1,37 +1,37 @@
-# -*- coding: utf-8 *-*
+# -*- coding: utf-8 -*-
 """
-    :Propósito: Manejadores de clases
-    :Autor:     Tony Diana
-    :Versión:   26.09.09
+Manejadores de clases.
 
-    Métodos mágicos que obligan a usar una metaclase.
+:Propósito: Manejadores de clases
+:Autor:     Tony Diana
+:Versión:   26.09.09
 
-Un mixin normal solo define comportamiento para las INSTANCIAS. Cuando
-se necesita interceptar una operación sobre la CLASE misma (no sobre un
+Métodos mágicos que obligan a usar una metaclase.
+
+Un mixin normal solo define comportamiento para las **instancias**. Cuando
+se necesita interceptar una operación sobre la **clase** misma (no sobre un
 objeto creado a partir de ella), el método mágico debe vivir en la
 metaclase — porque Python busca los métodos mágicos de un objeto en
-``type(objeto)``, y el tipo de una clase es su metaclase.
+`type(objeto)`, y el tipo de una clase es su metaclase.
 
-+---------------------------+-------------------------------------------+
-| Método mágico             | Qué controla sobre la clase                |
-+===========================+=============================================+
-| ``__setattr__``           | ``Clase.attr = valor``                     |
-| ``__delattr__``           | ``del Clase.attr``                         |
-| ``__getattr__``           | ``Clase.attr`` (lectura, si no existe)     |
-| ``__getattribute__``      | ``Clase.attr`` (lectura, siempre)          |
-| ``__call__``              | ``Clase(...)`` — creación de instancias    |
-| ``__iter__``              | ``for x in Clase:``                        |
-| ``__len__``               | ``len(Clase)``                             |
-| ``__contains__``          | ``x in Clase``                             |
-| ``__repr__`` / ``__str__``| ``repr(Clase)`` / ``str(Clase)``           |
-| ``__instancecheck__``     | ``isinstance(obj, Clase)``                 |
-| ``__subclasscheck__``     | ``issubclass(Sub, Clase)``                 |
-+---------------------------+-------------------------------------------+
+| Método mágico          | Qué controla sobre la clase            |
+|------------------------|----------------------------------------|
+| `__setattr__`          | `Clase.attr = valor`                   |
+| `__delattr__`          | `del Clase.attr`                       |
+| `__getattr__`          | `Clase.attr` (lectura, si no existe)   |
+| `__getattribute__`     | `Clase.attr` (lectura, siempre)        |
+| `__call__`             | `Clase(...)` — creación de instancias  |
+| `__iter__`             | `for x in Clase:`                      |
+| `__len__`              | `len(Clase)`                           |
+| `__contains__`         | `x in Clase`                           |
+| `__repr__` / `__str__` | `repr(Clase)` / `str(Clase)`           |
+| `__instancecheck__`    | `isinstance(obj, Clase)`               |
+| `__subclasscheck__`    | `issubclass(Sub, Clase)`               |
 
-.. note::
-    ``Enum`` resuelve ``__iter__`` y ``__contains__`` en su propia
-    metaclase (``EnumMeta``/``EnumType``) — por eso ``for m in cls`` y
-    ``"algo" in cls`` funcionan sobre la clase, no solo sobre instancias.
+!!! note
+    `Enum` resuelve `__iter__` y `__contains__` en su propia metaclase
+    (`EnumMeta`/`EnumType`) — por eso `for m in cls` y `"algo" in cls`
+    funcionan sobre la clase, no solo sobre instancias.
 """
 
 # cSpell:ignore unico

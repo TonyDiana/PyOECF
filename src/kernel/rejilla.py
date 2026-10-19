@@ -4,16 +4,22 @@
                 tienen foto y cuáles no, con su resumen, sus incidencias y
                 los botones de su pie
     :Autor:     Tony Diana
-    :Versión:   26.10.09
+    :Versión:   26.10.19
 """
 
-# cSpell:ignore analisis, biboecf, customtkinter, exito, idents
+# cSpell:ignore biboecf, customtkinter, devs, highlightthickness, idxs, idents
+# cSpell:ignore Límpiela
 
 # --- Valenciano
-# cSpell:ignore altre, amb, Balanços, canvi, canvia, costat, costats, enllà
-# cSpell:ignore esperat, esperava, esperaven, Falten, graella, Només, posició
-# cSpell:ignore posicions, preses, principi, Seqüència, seqüència, Sèrie
-# cSpell:ignore sèrie, Sobren, tapades, teòriques, trencada
+# cSpell:ignore altre, amb, analitzar, baix, Balanç, balanç, Balanços, balanços
+# cSpell:ignore blancs, càmera, canvi, canvia, canviar, canvieu, centreu, convé
+# cSpell:ignore costat, costats, dalt, defecte, diferent, dreta, durant, enllà
+# cSpell:ignore esperat, esperava, esperaven, estes, estranys, Falten, graella
+# cSpell:ignore grisa, l'esquerra, llum, l'ordre, mateix, mitjana, Moveu
+# cSpell:ignore Netegeu, Només, pels, personalitzat, posició, posicions, preses
+# cSpell:ignore primeres, principi, reviseu, Seqüència, seqüència, Sèrie, sèrie
+# cSpell:ignore Sobren, sobretot, soroll, tapades, targeta, tenen, teòriques
+# cSpell:ignore terç, terços, tessel, tindre, trencada, trobat
 
 __all__ = ["Rejilla"]
 
@@ -27,7 +33,7 @@ import customtkinter as ctk
 
 # --- Bibliotecas internas
 import biboecf
-from bib import clases
+from bib import std
 from .constantes import K
 
 
@@ -35,14 +41,15 @@ from .constantes import K
 class Rejilla(tk.Canvas):
     """ Rejilla de 11 zonas × 3 tercios con el estado de cada posición. """
 
+    #
     # --- Constantes de la rejilla
-    class KR(clases.EnumMutable):
+    class KR(std.EnumMutable):
         """ Constantes de la rejilla. """
 
         # --- Geometría: tercios a cada lado de la ZV (los del protocolo,
         #     en biboecf), zonas y tercios
         TERCIOS_LADO = biboecf.KS.TERCIOS_LADO
-        ZONAS = 2 * biboecf.KP.ZONA_REF + 1
+        ZONAS = (2 * biboecf.KP.ZONA_REF) + 1
         TERCIOS = biboecf.KP.TERCIOS
 
         # --- Cabeceras de columna y de fila
@@ -79,8 +86,8 @@ class Rejilla(tk.Canvas):
 
         # --- Colores (claro, oscuro). Fondo, texto y acento salen del
         #     tema de customtkinter; éxito y aviso no existen en el tema
-        EXITO = ("#cfe8d2", "#1f4a2a")
-        TEXTO_EXITO = ("#1e5a2b", "#bfe5c6")
+        OK = ("#cfe8d2", "#1f4a2a")
+        TEXTO_OK = ("#1e5a2b", "#bfe5c6")
         AVISO = ("#f6e2bd", "#5a4212")
         TEXTO_AVISO = ("#8a5300", "#f0c070")
 
@@ -291,7 +298,7 @@ class Rejilla(tk.Canvas):
         TXT_DONDE = {K.ES: ", sobre todo {donde}",
                      K.EN: ", above all {donde}",
                      K.CA: ", sobretot {donde}"}
-        TXT_LADOS = {
+        TXT_DONDE_LADO = {
             biboecf.KTE.LADO_IZQUIERDA: {K.ES: "a la izquierda",
                                          K.EN: "on the left",
                                          K.CA: "a l'esquerra"},
@@ -324,7 +331,7 @@ class Rejilla(tk.Canvas):
 
         # --- Desvío de una toma: identificador y desvío con signo, en
         #     tercios; el punto decimal se cambia por el del idioma
-        FORMATO_DESVIO = "{ident} ({desvio:+.2f})"
+        FORMATO_DEV = "{ident} ({dev:+.2f})"
         FORMATO_UMBRAL = "{:.2f}"
         PUNTO = "."
         SEP_DECIMAL = {K.ES: ",", K.EN: ".", K.CA: ","}
@@ -392,79 +399,98 @@ class Rejilla(tk.Canvas):
     # --- Cuenta (función pura)
     #
 
-    # --- Identificador corto: número final del nombre o, si no tiene,
-    #     el orden en la serie (contando desde 1)
+    #
     @classmethod
     def ident(cls, archivo: Path, archivos: list[Path]) -> str:
+        """
+        Identificador corto: número final del nombre o, si no tiene, el orden
+        en la serie (contando desde 1)
+        """
         numero = re.search(cls.KR.PATRON_IDENT, archivo.stem)
         return numero.group(1) if numero else str(archivos.index(archivo) + 1)
 
-    # --- Posición de la ZV: (zona, tercio)
+    #
     @classmethod
     def pos_zv(cls) -> tuple[int, int]:
+        """ Posición de la ZV: (zona, tercio) """
         return divmod(cls.KR.TERCIOS_LADO, cls.KR.TERCIOS)
 
-    # --- Las 31 posiciones que existen, de Z0 a ZX
+    #
     @classmethod
     def posiciones(cls) -> list[tuple[int, int]]:
+        """ Las 31 posiciones que existen, de Z0 a ZX. """
         return [divmod(i, cls.KR.TERCIOS)
-                for i in range(2 * cls.KR.TERCIOS_LADO + 1)]
+                for i in range((2 * cls.KR.TERCIOS_LADO) + 1)]
 
-    # --- Línea de debajo de la rejilla: «Serie completa» o cuántas
-    #     posiciones faltan
+    #
     @classmethod
     def resumen(cls, OECF: biboecf.OECF) -> str:
-        n = len(OECF.vacias)
+        """
+        Línea de debajo de la rejilla: «Serie completa» o cuántas posiciones
+        faltan.
+        """
+        n = len(OECF.huecos)
         if not n:
             return K.tr(cls.KR.TXT_COMPLETA)
         return K.tr_n(cls.KR.TXT_FALTAN, n).format(n=n)
 
-    # --- Línea del balance de blancos personalizado inicial. balance:
-    #     True (se hizo), False (no) o None (no se sabe)
+    #
     @classmethod
     def linea_balance(cls, balance: bool | None) -> str:
+        """
+        Línea del balance de blancos personalizado inicial. balance: True (se
+        hizo), False (no) o None (no se sabe)
+        """
         valor = {True: cls.KR.TXT_SI, False: cls.KR.TXT_NO,
                  None: cls.KR.TXT_NO_SE}[balance]
         return K.tr(cls.KR.TXT_BALANCE).format(valor=K.tr(valor))
 
-    # --- Línea de los balances de cámara: cuántos hay
+    #
     @classmethod
     def linea_balances(cls, n: int) -> str:
+        """ Línea de los balances de cámara: cuántos hay. """
         return K.tr(cls.KR.TXT_BALANCES).format(n=n)
 
-    # --- Línea de las tomas tapadas: cuántas hay de las esperadas
+    #
     @classmethod
     def linea_tapadas(cls, n: int) -> str:
+        """ Línea de las tomas tapadas: cuántas hay de las esperadas. """
         return K.tr(cls.KR.TXT_TAPADAS).format(n=n,
                                                esperadas=cls.KR.TAPADAS)
 
-    # --- Todas las incidencias, una por línea: se muestran aparte, en
-    #     su propia ventana, para que la principal no crezca con ellas.
-    #     Cuáles son lo decide biboecf; aquí solo se traducen
+    #
     @classmethod
     def incidencias(cls, OECF: biboecf.OECF) -> list[str]:
+        """
+        Todas las incidencias, una por línea: se muestran aparte, en su propia
+        ventana, para que la principal no crezca con ellas. Cuáles son lo
+        decide biboecf; aquí solo se traducen.
+        """
         return [cls.texto_incidencia(inc, OECF)
                 for inc in biboecf.incidencias(OECF)]
 
-    # --- Texto de una incidencia en el idioma activo. Cada texto usa los
-    #     datos que necesita; los demás se ignoran
+    #
     @classmethod
     def texto_incidencia(cls, inc: biboecf.Incidencia,
                          OECF: biboecf.OECF) -> str:
+        """
+        Texto de una incidencia en el idioma activo. Cada texto usa los datos
+        que necesita; los demás se ignoran.
+        """
         kr = cls.KR
         raws = OECF.raws
-        texto = kr.TEXTOS_INCIDENCIA[inc.codigo]
+        texto = kr.TEXTOS_INCIDENCIA[inc.code]
         n = len(inc.tomas) if inc.tomas else inc.n
 
         # --- Tomas: su identificador y, en las desviadas y en las de la
         #     luz que cambió, cuánto se apartan
-        if inc.codigo == biboecf.KI.DESVIADAS:
-            idents = [cls.decimal(kr.FORMATO_DESVIO.format(
-                ident=cls.ident(raws[i], raws), desvio=OECF.desvios[i]))
+        if inc.code == biboecf.KI.DESVIADAS:
+            idents = [cls.decimal(kr.FORMATO_DEV.format(
+                ident=cls.ident(raws[i], raws), dev=OECF.devs[i]))
                 for i in inc.tomas]
         elif inc.valores:
-            idents = [cls.decimal(kr.FORMATO_DESVIO.format(
-                ident=cls.ident(raws[i], raws), desvio=valor))
+            idents = [cls.decimal(kr.FORMATO_DEV.format(
+                ident=cls.ident(raws[i], raws), dev=valor))
                 for i, valor in zip(inc.tomas, inc.valores)]
         else:
             idents = [cls.ident(raws[i], raws) for i in inc.tomas]
@@ -476,40 +502,45 @@ class Rejilla(tk.Canvas):
             idents=kr.SEP_IDENTS.join(idents),
             ident=idents[0] if idents else "",
             iso=(biboecf.OECF.TextoISO(OECF.isoSerie)
-                 if OECF.isoSerie is not None else ""),
+                 if (OECF.isoSerie is not None) else ""),
             zona=(biboecf.texto_zona(inc.tercioEV)
-                  if inc.tercioEV is not None else ""),
+                  if (inc.tercioEV is not None) else ""),
             esperada=biboecf.texto_zona(inc.esperado),
             real=(biboecf.texto_zona(inc.tercioEV)
-                  if inc.tercioEV is not None else ""),
+                  if (inc.tercioEV is not None) else ""),
             umbral=cls.decimal(kr.FORMATO_UMBRAL.format(
-                biboecf.KP.DESVIO_MAXIMO)),
+                biboecf.KP.DEV_MAX)),
             porcentaje=cls.decimal(kr.FORMATO_PORCENTAJE.format(
                 inc.porcentaje)),
             lados=(K.tr(kr.TXT_DONDE).format(donde=K.tr(kr.TXT_Y).join(
-                K.tr(kr.TXT_LADOS[lado]) for lado in inc.lados))
+                K.tr(kr.TXT_DONDE_LADO[lado]) for lado in inc.lados))
                 if inc.lados else ""))
 
-    # --- Texto con el punto decimal cambiado por el del idioma activo
+    #
     @classmethod
     def decimal(cls, texto: str) -> str:
+        """ Texto con el punto decimal cambiado por el del idioma activo. """
         return texto.replace(cls.KR.PUNTO, K.tr(cls.KR.SEP_DECIMAL))
 
     #
     # --- Dibujo
     #
 
-    # --- Muestra las celdas de una serie: las posiciones de OECF, como
-    #     (zona, tercio), con el identificador corto de cada toma
+    #
     def mostrar(self, OECF: biboecf.OECF) -> None:
+        """
+        Muestra las celdas de una serie: las posiciones de OECF, como (zona,
+        tercio), con el identificador corto de cada toma.
+        """
         raws = OECF.raws
         self.celdas = {biboecf.zona_tercio(t): [self.ident(raws[i], raws)
-                                               for i in indices]
-                       for t, indices in OECF.celdas.items()}
+                                                for i in idxs]
+                       for t, idxs in OECF.celdas.items()}
         self.dibujar()
 
-    # --- Dibuja cabeceras y celdas con el ancho actual del Canvas
+    #
     def dibujar(self) -> None:
+        """ Dibuja cabeceras y celdas con el ancho actual del Canvas. """
         self.delete("all")
         self.configure(bg=self._color(ctk.ThemeManager.theme["CTk"]
                                       ["fg_color"]))
@@ -517,26 +548,26 @@ class Rejilla(tk.Canvas):
 
         kr = self.KR
         ancho = max(kr.CELDA,
-                    (self.winfo_width() - kr.ANCHO_ETIQUETAS) // kr.ZONAS
+                    ((self.winfo_width() - kr.ANCHO_ETIQUETAS) // kr.ZONAS)
                     - kr.HUECO)
         paso_x, paso_y = ancho + kr.HUECO, kr.CELDA + kr.HUECO
 
         # --- Cabeceras de columna (zonas) y de fila (tercios)
         for zona, cabecera in enumerate(kr.CABECERAS):
-            x = kr.ANCHO_ETIQUETAS + zona * paso_x + ancho / 2
+            x = kr.ANCHO_ETIQUETAS + (zona * paso_x) + (ancho / 2)
             self.create_text(x, kr.ALTO_CABECERA / 2, text=cabecera,
                              fill=texto)
         for tercio, fila in enumerate(kr.FILAS):
-            y = kr.ALTO_CABECERA + tercio * paso_y + kr.CELDA / 2
+            y = kr.ALTO_CABECERA + (tercio * paso_y) + (kr.CELDA / 2)
             self.create_text(kr.ANCHO_ETIQUETAS / 2, y, text=fila,
                              fill=texto)
 
         # --- Celdas: las que no existen (X +.3 y X +.7) no se dibujan
-        for posicion in self.posiciones():
-            zona, tercio = posicion
-            x = kr.ANCHO_ETIQUETAS + zona * paso_x
-            y = kr.ALTO_CABECERA + tercio * paso_y
-            self._celda(posicion, x, y, ancho)
+        for pos in self.posiciones():
+            zona, tercio = pos
+            x = kr.ANCHO_ETIQUETAS + (zona * paso_x)
+            y = kr.ALTO_CABECERA + (tercio * paso_y)
+            self._celda(pos, x, y, ancho)
 
         # --- Pie (si lo hay), bajo las celdas: los botones, como los de
         #     la ventana, el izquierdo alineado con el borde izquierdo de
@@ -548,16 +579,16 @@ class Rejilla(tk.Canvas):
             izquierdo, resumen, derechos, sep = self.pie
             widgets = (izquierdo, resumen, *derechos)
             fondo = self.cget("bg")
-            arriba = kr.ALTO_CABECERA + kr.TERCIOS * paso_y + kr.HUECO
+            arriba = kr.ALTO_CABECERA + (kr.TERCIOS * paso_y) + kr.HUECO
             alto_pie = max(w.winfo_reqheight() for w in widgets)
-            centro_y = arriba + alto_pie / 2
+            centro_y = arriba + (alto_pie / 2)
             primera, ultima = kr.COLUMNAS_PIE
             for w in widgets:
                 w.configure(bg_color=fondo)
-            x_izquierdo = kr.ANCHO_ETIQUETAS + primera * paso_x
+            x_izquierdo = kr.ANCHO_ETIQUETAS + (primera * paso_x)
             self.create_window(x_izquierdo, centro_y, window=izquierdo,
                                anchor="w")
-            x = kr.ANCHO_ETIQUETAS + ultima * paso_x + ancho
+            x = kr.ANCHO_ETIQUETAS + (ultima * paso_x) + ancho
             for w in reversed(derechos):
                 self.create_window(x, centro_y, window=w, anchor="e")
                 x -= w.winfo_reqwidth() + sep
@@ -571,21 +602,25 @@ class Rejilla(tk.Canvas):
             if int(self.cget("height")) != alto:
                 self.configure(height=alto)
 
-    # --- Coloca el pie: un botón a la izquierda, los de la derecha (en su
-    #     orden, de izquierda a derecha, separados sep píxeles: los de la
-    #     ventana) y el resumen entre ellos. Tienen que ser hijos de la
-    #     rejilla (Tk no deja meter en un Canvas widgets de otro sitio)
+    #
     def poner_pie(self, izquierdo: ctk.CTkButton, resumen: ctk.CTkLabel,
                   derechos: tuple[ctk.CTkButton, ...], sep: int) -> None:
+        """
+        Coloca el pie: un botón a la izquierda, los de la derecha (en su orden,
+        de izquierda a derecha, separados sep píxeles: los de la ventana) y el
+        resumen entre ellos. Tienen que ser hijos de la rejilla (Tk no deja
+        meter en un Canvas widgets de otro sitio)
+        """
         self.pie = (izquierdo, resumen, derechos, sep)
         self.dibujar()
 
+    #
     # --- Una celda: estado según cuántas tomas tenga
-    def _celda(self, posicion: tuple[int, int], x: float, y: float,
+    def _celda(self, pos: tuple[int, int], x: float, y: float,
                ancho: float) -> None:
         kr = self.KR
-        idents = self.celdas.get(posicion, [])
-        es_zv = posicion == self.pos_zv()
+        idents = self.celdas.get(pos, [])
+        es_zv = pos == self.pos_zv()
         caja = (x, y, x + ancho, y + kr.CELDA)
 
         # --- falta: borde discontinuo y texto, sin relleno (se distingue
@@ -594,37 +629,39 @@ class Rejilla(tk.Canvas):
             aviso = self._color(kr.TEXTO_AVISO)
             self.create_rectangle(*caja, outline=aviso, dash=kr.GUIONES,
                                   width=kr.BORDE)
-            self.create_text(x + ancho / 2, y + kr.CELDA / 2, fill=aviso,
+            self.create_text(x + (ancho / 2), y + (kr.CELDA / 2), fill=aviso,
                              text=K.tr(kr.TXT_FALTA), font=kr.FUENTE)
             return
 
         # --- repetida (fuera de ZV): relleno de aviso, identificadores
         #     apilados. ZV: borde de acento; en aviso si no son anclas
         correcta = len(idents) == (kr.ANCLAS if es_zv else 1)
-        fondo = kr.EXITO if correcta else kr.AVISO
-        color = kr.TEXTO_EXITO if correcta else kr.TEXTO_AVISO
+        fondo = kr.OK if correcta else kr.AVISO
+        color = kr.TEXTO_OK if correcta else kr.TEXTO_AVISO
         borde = (self._color(ctk.ThemeManager.theme["CTkButton"]["fg_color"])
                  if es_zv else self._color(color))
         self.create_rectangle(*caja, fill=self._color(fondo), outline=borde,
                               width=kr.BORDE_ZV if es_zv else kr.BORDE)
 
         # --- Si no caben, se dice cuántas hay
-        lineas = idents if len(idents) <= kr.MAX_LINEAS else [
+        lineas = idents if (len(idents) <= kr.MAX_LINEAS) else [
             K.tr(kr.TXT_N_ZV).format(n=len(idents))]
-        arriba = y + (kr.CELDA - len(lineas) * kr.ALTO_LINEA) / 2
+        arriba = y + ((kr.CELDA - (len(lineas) * kr.ALTO_LINEA)) / 2)
         for i, linea in enumerate(lineas):
-            self.create_text(x + ancho / 2,
-                             arriba + (i + 0.5) * kr.ALTO_LINEA,
+            self.create_text(x + (ancho / 2),
+                             arriba + ((i + 0.5) * kr.ALTO_LINEA),
                              text=linea, fill=self._color(color),
                              font=kr.FUENTE)
 
+    #
     # --- Alto total: cabecera y 3 filas de celdas
     @classmethod
     def _alto(cls) -> int:
         kr = cls.KR
-        return kr.ALTO_CABECERA + kr.TERCIOS * (kr.CELDA + kr.HUECO)
+        return kr.ALTO_CABECERA + (kr.TERCIOS * (kr.CELDA + kr.HUECO))
 
+    #
     # --- Color (claro, oscuro) según el modo de customtkinter
     @staticmethod
     def _color(par: tuple[str, str] | list[str]) -> str:
-        return par[0] if ctk.get_appearance_mode() == "Light" else par[1]
+        return par[0] if (ctk.get_appearance_mode() == "Light") else par[1]
