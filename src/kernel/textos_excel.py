@@ -13,27 +13,27 @@
 # cSpell:ignore unclipped, viñeteo
 
 # --- Valenciano
-# cSpell:ignore acceptades, admet, Aleatori, aleatori, Altes, altre, altres
-# cSpell:ignore amb, amunt, Anàlisi, analitza, anotat, anteriors, Arxiu
-# cSpell:ignore asimetria, asimètrica, assolit, baix, baixar, Balanç, balanç
-# cSpell:ignore Balanços, balanços, blanc, blancs, Blau, blau, brillant, Càlcul
-# cSpell:ignore càlculs, calent, càmera, càmeres, canvie, casen, caure, cel
-# cSpell:ignore cinquena, Colorimetria, comencen, comparació, comparant
-# cSpell:ignore Compleix, complet, Comprovació, compta, comptar, compten
-# cSpell:ignore Concepte, còpia, còpies, Corba, corba, corbes, criteri, Dades
-# cSpell:ignore dades, dalt, damunt, d'Anàlisi, Davall, davall, decisió
+# cSpell:ignore acceptades, admet, així, Aleatori, aleatori, Altes, altre
+# cSpell:ignore altres, amb, amunt, Anàlisi, analitza, anotat, anteriors, Arxiu
+# cSpell:ignore asimetria, asimètrica, assolit, auditoria, baix, baixar, Balanç
+# cSpell:ignore balanç, Balanços, balanços, blanc, blancs, Blau, blau, brillant
+# cSpell:ignore Càlcul, càlculs, calent, càmera, càmeres, canvie, casen, caure
+# cSpell:ignore cel, cinquena, Colorimetria, comencen, comparació, comparant
+# cSpell:ignore Compleix, complet, Comprovació, compta, comptar, compte
+# cSpell:ignore compten, Concepte, còpia, còpies, Corba, corba, corbes, criteri
+# cSpell:ignore Dades, dades, dalt, damunt, d'Anàlisi, Davall, davall, decisió
 # cSpell:ignore declarat, defecte, defineix, deixen, dels, d'enginyeria
 # cSpell:ignore d'entrada, desplaçament, Desviació, desviacions, dia, dibuixar
 # cSpell:ignore Diferència, diferència, diferent, Dispersió, dispersió, disseny
 # cSpell:ignore divideix, d'on, Drap, drap, d'un, d'uns, eixe, Eixida, eixida
 # cSpell:ignore Els, els, Enginyeria, Ennuvolat, És, és, escrit, Escriu, espai
 # cSpell:ignore Esperat, esperat, està, estimat, estimats, exportacions
-# cSpell:ignore exposició, fallada, filtres, finestra, Flaix, fórmules, fosc
-# cSpell:ignore fosques, Fracció, fracció, Generat, gràfic, Gràfics, gràfics
-# cSpell:ignore Grandària, grisa, Guany, guany, iguals, importants, impreses
-# cSpell:ignore ixen, l'aigua, làmina, l'arrel, l'editor, l'eixida, l'entrada
-# cSpell:ignore l'escala, linealitat, llegir, llegit, llevat, llibre, Llig
-# cSpell:ignore Lligen, llindar, llindars, llisa, llista, Llum, llum
+# cSpell:ignore exposició, fallada, filtres, finestra, Fins, Flaix, fórmules
+# cSpell:ignore fosc, fosques, Fracció, fracció, Generat, gràfic, Gràfics
+# cSpell:ignore gràfics, Grandària, grisa, Guany, guany, iguals, importants
+# cSpell:ignore impreses, ixen, l'aigua, làmina, l'arrel, l'editor, l'eixida
+# cSpell:ignore l'entrada, l'escala, linealitat, llegir, llegit, llevat, llibre
+# cSpell:ignore Llig, Lligen, llindar, llindars, llisa, llista, Llum, llum
 # cSpell:ignore lluminositat, Llums, llums, locar, l'ordre, l'última
 # cSpell:ignore Luminància, luminància, mà, mana, mateixa, Màxim, màxim, màxima
 # cSpell:ignore megapíxels, més, Mesurada, mesurada, mesurat, mesures, mètode
@@ -41,21 +41,22 @@
 # cSpell:ignore negre, neutre, nivell, nivells, Nom, nom, Només, només
 # cSpell:ignore normalitzada, normalitzat, Objectiu, Obtingut, obtingut, Ombra
 # cSpell:ignore ombra, Ombres, ombres, orde, ordre, passa, passar, Passos
-# cSpell:ignore pegat, Percentatge, perquè, Personalitzat, píxels, Poden, Poseu
-# cSpell:ignore Posició, potència, Preajust, pren, Preses, preses, Profunditat
-# cSpell:ignore pròpies, propòsit, prou, pròxim, puntes, qual, qualitat, Quan
-# cSpell:ignore Què, què, Quocient, ratlla, Rebutjades, rebutjades, recomana
-# cSpell:ignore Recomanacions, Recomanada, recomanada, recomanades, Recompte
-# cSpell:ignore Referència, referència, referències, Relació, repartixen
-# cSpell:ignore resolució, respecte, resultat, retall, Retallat, retallat
-# cSpell:ignore retallats, Rètol, revelat, robustes, Roig, roig, roïna
-# cSpell:ignore s'aparten, s'aprecia, s'aprecie, saturació, saturat, seguits
-# cSpell:ignore senceres, Senyal, senyal, Sèrie, sèrie, s'estima, seu, seua
-# cSpell:ignore seus, s'ha, simètric, Sòl, sòl, sòls, Són, són, Soroll, soroll
-# cSpell:ignore Sostre, suggerida, Suggeriment, suggeriment, Suggerit, suggerit
-# cSpell:ignore Tapades, tapades, targeta, taronja, teclejar, terç, Terços
-# cSpell:ignore terços, Tessel, tessel, teua, típiques, tota, transferència
-# cSpell:ignore Tria, triades, Tungstè, Últim, últim, Unitat, usen, useu
+# cSpell:ignore pegat, Percentatge, perquè, Personalitzat, píxels, poc, Poden
+# cSpell:ignore Poseu, Posició, potència, Preajust, pren, Preses, preses
+# cSpell:ignore Profunditat, pròpies, propòsit, prou, pròxim, punt, puntes
+# cSpell:ignore punts, qual, qualitat, Quan, Què, què, Quocient, ratlla
+# cSpell:ignore Rebutjades, rebutjades, recomana, Recomanacions, Recomanada
+# cSpell:ignore recomanada, recomanades, Recompte, Referència, referència
+# cSpell:ignore referències, Relació, repartixen, resolució, respecte, resultat
+# cSpell:ignore retall, Retallat, retallat, retallats, Rètol, revelat, robustes
+# cSpell:ignore Roig, roig, roïna, s'aparten, s'aprecia, s'aprecie, saturació
+# cSpell:ignore saturat, seguits, senceres, Senyal, senyal, Sèrie, sèrie
+# cSpell:ignore s'estima, seu, seua, seus, s'ha, simètric, Sòl, sòl, sòls, Són
+# cSpell:ignore són, Soroll, soroll, Sostre, suau, suggerida, Suggeriment
+# cSpell:ignore suggeriment, Suggerit, suggerit, Tapades, tapades, targeta
+# cSpell:ignore taronja, teclejar, terç, Terços, terços, Tessel, tessel, teu
+# cSpell:ignore teua, teues, típiques, tota, traça, transferència, Tria
+# cSpell:ignore triades, Tungstè, Últim, últim, Unitat, units, usen, useu
 # cSpell:ignore utilitzable, valors, vegades, Vegeu, veïnes, veïns, Verd, verd
 # cSpell:ignore veritat, vinyetatge, volta, Vora, vora, xicotet
 
@@ -549,21 +550,27 @@ TEXTOS = {
                  K.EN: "3. Tone curve by zone (L*)",
                  K.CA: "3. Corba tonal per zona (L*)"},
     _L.T_NOTA_CURVA_ANTES: {
-        K.ES: "Esperado: ZV en L* 50, un paso de luz por zona. Sensor: de "
-              "los datos de la serie. Revelador: de Datos (el L* leído o, "
-              "en un tercio sin él, estimado). Entrada y salida de "
-              "la curva de Lightroom (0 a 255), con el revelador. "
-              "Comprobación: el parche ZV debe leer ",
-        K.EN: "Expected: ZV at L* 50, one light step per zone. Sensor: "
-              "from the series data. Developer: from Data (the L* read or, "
-              "in a third without it, estimated). Lightroom curve input and "
-              "output (0 to 255), with the developer. Check: the ZV patch "
-              "must read ",
-        K.CA: "Esperat: ZV en L* 50, un pas de llum per zona. Sensor: de "
-              "les dades de la sèrie. Revelador: de Dades (el L* llegit o, "
-              "en un terç sense ell, estimat). Entrada i eixida de la "
-              "corba de Lightroom (0 a 255), amb el revelador. "
-              "Comprovació: el pegat ZV ha de llegir "},
+        K.ES: "Esperado: ZV en L* 50, un paso de luz por zona (la escena; "
+              "el sensor se compara con él). Objetivo: 10 L* por zona, ZX "
+              "en 100 (el destino del revelado; el revelador se compara con "
+              "él). Sensor: de los datos de la serie. Revelador: de Datos "
+              "(el L* leído o, en un tercio sin él, estimado). Entrada (el "
+              "revelador) y salida (el objetivo) de la curva de Lightroom "
+              "(0 a 255). Comprobación: el parche ZV debe leer ",
+        K.EN: "Expected: ZV at L* 50, one light step per zone (the scene; "
+              "the sensor is compared with it). Target: 10 L* per zone, ZX "
+              "at 100 (where the development should land; the developer is "
+              "compared with it). Sensor: from the series data. Developer: "
+              "from Data (the L* read or, in a third without it, "
+              "estimated). Lightroom curve input (the developer) and output "
+              "(the target), 0 to 255. Check: the ZV patch must read ",
+        K.CA: "Esperat: ZV en L* 50, un pas de llum per zona (l'escena; el "
+              "sensor es compara amb ell). Objectiu: 10 L* per zona, ZX en "
+              "100 (el destí del revelat; el revelador es compara amb ell). "
+              "Sensor: de les dades de la sèrie. Revelador: de Dades (el L* "
+              "llegit o, en un terç sense ell, estimat). Entrada (el "
+              "revelador) i eixida (l'objectiu) de la corba de Lightroom (0 "
+              "a 255). Comprovació: el pegat ZV ha de llegir "},
     _L.T_NOTA_CURVA_MEDIO: {K.ES: " % en Revelar (", K.EN: "% in Develop (",
                             K.CA: " % en Revelar ("},
     _L.T_NOTA_CURVA_TRAS: {K.ES: ").", K.EN: ").", K.CA: ")."},
@@ -577,17 +584,48 @@ TEXTOS = {
                           K.CA: "Llum del sensor"},
     _L.T_CAB_L_SENSOR: {K.ES: "Sensor (L*)", K.EN: "Sensor (L*)",
                         K.CA: "Sensor (L*)"},
-    _L.T_CAB_DIF_SENSOR: {K.ES: "Dif. sensor", K.EN: "Sensor diff.",
-                          K.CA: "Dif. sensor"},
+    # --- Diferencias: cada una, con lo que resta (el sensor, el esperado;
+    #     el revelador, el objetivo), en la segunda línea
+    _L.T_CAB_DIF_SENSOR: {K.ES: "Dif. sensor\n(− esperado)",
+                          K.EN: "Sensor diff.\n(− expected)",
+                          K.CA: "Dif. sensor\n(− esperat)"},
     _L.T_CAB_L_REVELADOR: {K.ES: "Revelador (L*)", K.EN: "Developer (L*)",
                            K.CA: "Revelador (L*)"},
     _L.T_CAB_LUZ_REVELADOR: {K.ES: "Luz del revelador",
                              K.EN: "Developer light",
                              K.CA: "Llum del revelador"},
-    _L.T_CAB_DIF_REVELADOR: {K.ES: "Dif. revelador", K.EN: "Developer diff.",
-                             K.CA: "Dif. revelador"},
+    _L.T_CAB_DIF_REVELADOR: {K.ES: "Dif. revelador\n(− objetivo)",
+                             K.EN: "Developer diff.\n(− target)",
+                             K.CA: "Dif. revelador\n(− objectiu)"},
     _L.T_CAB_FALTA: {K.ES: "Falta", K.EN: "Shortfall", K.CA: "Falta"},
     _L.T_CAB_SOBRA: {K.ES: "Sobra", K.EN: "Excess", K.CA: "Sobra"},
+    # --- Tu curva (bloque 3 de Cálculo, a la derecha)
+    _L.T_CAB_TU_DESDE_ENTRADA: {K.ES: "Desde\n(entrada)",
+                                K.EN: "From\n(input)",
+                                K.CA: "Des de\n(entrada)"},
+    _L.T_CAB_TU_DESDE_SALIDA: {K.ES: "Desde\n(salida)",
+                               K.EN: "From\n(output)",
+                               K.CA: "Des de\n(eixida)"},
+    _L.T_CAB_TU_HASTA_ENTRADA: {K.ES: "Hasta\n(entrada)",
+                                K.EN: "To\n(input)",
+                                K.CA: "Fins a\n(entrada)"},
+    _L.T_CAB_TU_HASTA_SALIDA: {K.ES: "Hasta\n(salida)",
+                               K.EN: "To\n(output)",
+                               K.CA: "Fins a\n(eixida)"},
+    _L.T_CAB_TU_SALIDA: {K.ES: "Tu salida\n(0-255)",
+                         K.EN: "Your output\n(0-255)",
+                         K.CA: "La teua eixida\n(0-255)"},
+    _L.T_CAB_TU_L: {K.ES: "Tu curva (L*)", K.EN: "Your curve (L*)",
+                    K.CA: "La teua corba (L*)"},
+    _L.T_CAB_TU_DIF: {K.ES: "Dif. tu curva\n(− objetivo)",
+                      K.EN: "Your curve diff.\n(− target)",
+                      K.CA: "Dif. la teua corba\n(− objectiu)"},
+    _L.T_CAB_TU_PUNTO_ENTRADA: {K.ES: "Tu punto\n(entrada)",
+                                K.EN: "Your point\n(input)",
+                                K.CA: "El teu punt\n(entrada)"},
+    _L.T_CAB_TU_PUNTO_SALIDA: {K.ES: "Tu punto\n(salida)",
+                               K.EN: "Your point\n(output)",
+                               K.CA: "El teu punt\n(eixida)"},
     # --- Entrada y salida: el rango, siempre en la segunda línea (así las
     #     dos cabeceras quedan alineadas)
     _L.T_CAB_ENTRADA: {K.ES: "Entrada\n(0-255)", K.EN: "Input\n(0-255)",
@@ -611,7 +649,7 @@ TEXTOS = {
                          K.CA: "[$-403]d\\-mmm\\-yyyy;@"},
     _L.T_ZV: {K.ES: "ZV", K.EN: "ZV", K.CA: "ZV"},
     _L.T_ISO: {K.ES: "ISO", K.EN: "ISO", K.CA: "ISO"},
-    _L.T_TV: {K.ES: "TV", K.EN: "TV", K.CA: "TV"},
+    _L.T_TV: {K.ES: "Tv", K.EN: "Tv", K.CA: "Tv"},
     _L.T_F: {K.ES: "f/", K.EN: "f/", K.CA: "f/"},
     _L.T_SUGERENCIA: {K.ES: "Sugerencia de revelado para contraste CIELab",
                       K.EN: "Development suggestion for CIELab contrast",
@@ -634,25 +672,33 @@ TEXTOS = {
     _L.T_SUGERIDO: {
         K.ES: "Sugerido: punto de la curva de tonos de Lightroom (curva de "
               "puntos RGB), con entrada y salida de 0 a 255. Entrada = L* "
-              "del revelador y salida = L* esperado. Ponga Perfeccionar "
+              "del revelador y salida = L* objetivo (10 L* por zona). Ponga "
+              "Perfeccionar "
               "saturación a 0 para que la curva cambie solo la luminosidad. "
               "La curva admite 16 puntos: use las zonas enteras.",
         K.EN: "Suggested: point of the Lightroom tone curve (RGB point "
               "curve), with input and output from 0 to 255. Input = "
-              "developer L* and output = expected L*. Set Refine Saturation "
+              "developer L* and output = target L* (10 L* per zone). Set "
+              "Refine Saturation "
               "to 0 so the curve only changes lightness. The curve accepts "
               "16 points: use the whole zones.",
         K.CA: "Suggerit: punt de la corba de tons de Lightroom (corba de "
               "punts RGB), amb entrada i eixida de 0 a 255. Entrada = L* "
-              "del revelador i eixida = L* esperat. Poseu Perfeccionar "
+              "del revelador i eixida = L* objectiu (10 L* per zona). Poseu "
+              "Perfeccionar "
               "saturació a 0 perquè la corba canvie només la lluminositat. "
               "La corba admet 16 punts: useu les zones senceres."},
-    _L.T_DIF_MEDIA_SENSOR: {K.ES: "Diferencia media del sensor",
-                            K.EN: "Sensor average difference",
-                            K.CA: "Diferència mitjana del sensor"},
-    _L.T_DIF_MEDIA_REVELADOR: {K.ES: "Diferencia media del revelador",
-                               K.EN: "Developer average difference",
-                               K.CA: "Diferència mitjana del revelador"},
+    _L.T_DIF_MEDIA_SENSOR: {K.ES: "Diferencia media del sensor (− esperado)",
+                            K.EN: "Sensor average difference (− expected)",
+                            K.CA: "Diferència mitjana del sensor (− esperat)"},
+    _L.T_DIF_MEDIA_REVELADOR: {
+        K.ES: "Diferencia media del revelador (− objetivo)",
+        K.EN: "Developer average difference (− target)",
+        K.CA: "Diferència mitjana del revelador (− objectiu)"},
+    _L.T_DIF_MEDIA_TU: {
+        K.ES: "Diferencia media con tu curva (− objetivo)",
+        K.EN: "Average difference with your curve (− target)",
+        K.CA: "Diferència mitjana amb la teua corba (− objectiu)"},
     _L.T_SIN_REVELADOR: {
         K.ES: "Sin L* leído (a mano o de las exportaciones del revelador): "
               "su diferencia, la entrada y la salida salen en blanco. El "
@@ -862,9 +908,20 @@ TEXTOS = {
     _L.T_TITULO_GRAF: {K.ES: "Gráficos", K.EN: "Charts",
                        K.CA: "Gràfics"},
     _L.T_NOTA_GRAF: {
-        K.ES: "Leen de Cálculo. Datos de la serie de la {cam}.",
-        K.EN: "They read from Calculation. Data of the {cam} series.",
-        K.CA: "Lligen de Càlcul. Dades de la sèrie de la {cam}."},
+        K.ES: "Leen de Cálculo. Datos de la serie de la {cam}. La 3 aplica "
+              "al revelado los puntos de tus decisiones propias (Análisis), "
+              "unidos en recta: Lightroom traza una curva suave, así que "
+              "entre punto y punto puede dar algo distinto.",
+        K.EN: "They read from Calculation. Data of the {cam} series. Chart "
+              "3 applies the points of your own decisions (Analysis) to the "
+              "development, joined by straight lines: Lightroom draws a "
+              "smooth curve, so between points it may give something "
+              "slightly different.",
+        K.CA: "Lligen de Càlcul. Dades de la sèrie de la {cam}. La 3 aplica "
+              "al revelat els punts de les teues decisions pròpies "
+              "(Anàlisi), units en recta: Lightroom traça una corba suau, "
+              "així que entre punt i punt pot donar una cosa un poc "
+              "diferent."},
     _L.T_G_ESPERADO: {K.ES: "Esperado y obtenido",
                       K.EN: "Expected and obtained",
                       K.CA: "Esperat i obtingut"},
@@ -879,9 +936,18 @@ TEXTOS = {
                  K.CA: "Relació senyal/soroll per zona (8 Mpx)"},
     _L.T_G_CURVA: {K.ES: "Curva tonal en L*", K.EN: "Tone curve in L*",
                    K.CA: "Corba tonal en L*"},
-    _L.T_G_DIFERENCIA: {K.ES: "Diferencia en L* (− esperado)",
-                        K.EN: "L* difference (− expected)",
-                        K.CA: "Diferència en L* (− esperat)"},
+    _L.T_G_DIFERENCIA: {K.ES: "Diferencia en L* (− objetivo)",
+                        K.EN: "L* difference (− target)",
+                        K.CA: "Diferència en L* (− objectiu)"},
+    _L.T_G_TU_CURVA: {K.ES: "Tu curva y el objetivo",
+                      K.EN: "Your curve and the target",
+                      K.CA: "La teua corba i l'objectiu"},
+    _L.T_G_BALANCES: {K.ES: "Balances de blancos: Kelvin anotado y medido",
+                      K.EN: "White balances: recorded and measured Kelvin",
+                      K.CA: "Balanços de blancs: Kelvin anotat i mesurat"},
+    _L.T_AUDITORIA: {K.ES: "Gráficas de auditoría (el sensor)",
+                     K.EN: "Audit charts (the sensor)",
+                     K.CA: "Gràfics d'auditoria (el sensor)"},
     _L.T_EJE_ZONA: {K.ES: "Zona", K.EN: "Zone", K.CA: "Zona"},
     _L.T_EJE_SIGNAL: {K.ES: "Señal en zonas equivalentes",
                       K.EN: "Signal in equivalent zones",
@@ -898,6 +964,7 @@ TEXTOS = {
     _L.T_EJE_LSTAR: {K.ES: "L*", K.EN: "L*", K.CA: "L*"},
     _L.T_EJE_DIF_LSTAR: {K.ES: "Diferencia de L*", K.EN: "L* difference",
                          K.CA: "Diferència de L*"},
+    _L.T_EJE_KELVIN: {K.ES: "Kelvin", K.EN: "Kelvin", K.CA: "Kelvin"},
     _L.T_S_MIN: {K.ES: "Mínimo sugerido", K.EN: "Suggested minimum",
                  K.CA: "Mínim suggerit"},
     _L.T_S_EXCELENTE: {K.ES: "Excelente", K.EN: "Excellent",
@@ -909,6 +976,8 @@ TEXTOS = {
     _L.T_S_SENSOR: {K.ES: "Sensor", K.EN: "Sensor", K.CA: "Sensor"},
     _L.T_S_REVELADOR: {K.ES: "Revelador", K.EN: "Developer",
                        K.CA: "Revelador"},
+    _L.T_S_TU_CURVA: {K.ES: "Con tu curva", K.EN: "With your curve",
+                      K.CA: "Amb la teua corba"},
 
     # --- Leyenda de los colores del texto
     _L.T_LEYENDA: {K.ES: "Colores del texto", K.EN: "Text colours",
@@ -1027,9 +1096,12 @@ TEXTOS = {
                            K.EN: "Recommendations",
                            K.CA: "Recomanacions"},
     _L.T_VALIDA_ZONA: {
-        K.ES: "Elige la zona de la lista (Z0, Z0 1/3… ZX).",
-        K.EN: "Choose the zone from the list (Z0, Z0 1/3… ZX).",
-        K.CA: "Tria la zona de la llista (Z0, Z0 1/3… ZX)."},
+        K.ES: "Elige la zona de la lista (Z0, Z0 1/3… ZX), o — para que el "
+              "punto no cuente.",
+        K.EN: "Choose the zone from the list (Z0, Z0 1/3… ZX), or — so the "
+              "point does not count.",
+        K.CA: "Tria la zona de la llista (Z0, Z0 1/3… ZX), o — perquè el "
+              "punt no compte."},
     _L.T_VALIDA_CURVA: {
         K.ES: "Escribe un número entero de 0 a {tope}.",
         K.EN: "Type a whole number from 0 to {tope}.",
@@ -1065,14 +1137,14 @@ TEXTOS = {
                        K.CA: "de {desde}\na {hasta}"},
     _F.T_NOTA_RECOMENDACIONES: {
         K.ES: "Puntos de la curva (escala 0–255 del editor de curvas): "
-              "lleva cada entrada a su salida. Son una sugerencia: la "
-              "decisión es tuya.",
+              "lleva cada entrada a su salida, que es el objetivo (10 L* "
+              "por zona). Son una sugerencia: la decisión es tuya.",
         K.EN: "Curve points (0–255 scale of the curve editor): take each "
-              "input to its output. They are a suggestion: the decision is "
-              "yours.",
+              "input to its output, which is the target (10 L* per zone). "
+              "They are a suggestion: the decision is yours.",
         K.CA: "Punts de la corba (escala 0–255 de l'editor de corbes): porta "
-              "cada entrada a la seua eixida. Són un suggeriment: la decisió "
-              "és teua."},
+              "cada entrada a la seua eixida, que és l'objectiu (10 L* per "
+              "zona). Són un suggeriment: la decisió és teua."},
     _F.T_SIN_FASE_2: {
         K.ES: "Falta la fase 2: exporta las TIFF del revelador y analiza "
               "el revelado para completar la entrada.",

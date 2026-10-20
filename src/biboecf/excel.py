@@ -375,7 +375,7 @@ class KXL(std.EnumMutable):
     F_TELA = "tela"
 
     # --- Hoja Cálculo: anchos (C a AA), altos de las cabeceras y formatos
-    ANCHOS_CALCULO = (12.0,) * 25
+    ANCHOS_CALCULO = (12.0,) * 28
     ALTO_CABECERA_ALTA = 42
     NUM_SIGNO_TRES = "+0.000;-0.000;0.000"
     NUM_SIGNO_UNO = "+0.0;-0.0;0.0"
@@ -515,11 +515,42 @@ class KXL(std.EnumMutable):
     # --- Columnas del bloque 3 de Cálculo que leen Análisis y Datos
     #     (desde la de la zona)
     CURVA_L_ESPERADO = 3
+    CURVA_L_OBJETIVO = 4
+    CURVA_L_REVELADOR = 8
     CURVA_DIF_SENSOR = 7
     CURVA_DIF_REVELADOR = 10
     CURVA_ENTRADA = 13
     CURVA_SALIDA = 14
     CURVA_PUNTO = 15
+
+    # --- Tu curva (bloque 3 de Cálculo, a la derecha): la entrada de cada
+    #     zona pasada por los puntos de las decisiones propias, en recta
+    #     entre el de abajo y el de arriba (con (0, 0) y (C_ESCALA_CURVA,
+    #     C_ESCALA_CURVA) en los extremos, como en Lightroom). Columnas
+    #     (desde la de la zona): los dos puntos del tramo, la salida, el
+    #     L*, su diferencia con el objetivo y falta y sobra (barras de la
+    #     gráfica); y la tabla de los puntos (entrada y salida), una fila
+    #     por punto, desde la Z0
+    TU_DESDE_ENTRADA = 16
+    TU_DESDE_SALIDA = 17
+    TU_HASTA_ENTRADA = 18
+    TU_HASTA_SALIDA = 19
+    TU_SALIDA = 20
+    TU_L = 21
+    TU_DIF = 22
+    TU_FALTA = 23
+    TU_SOBRA = 24
+    TU_PUNTOS_ENTRADA = 26
+    TU_PUNTOS_SALIDA = 27
+    T_CAB_TU_DESDE_ENTRADA = "cab_tu_desde_entrada"
+    T_CAB_TU_DESDE_SALIDA = "cab_tu_desde_salida"
+    T_CAB_TU_HASTA_ENTRADA = "cab_tu_hasta_entrada"
+    T_CAB_TU_HASTA_SALIDA = "cab_tu_hasta_salida"
+    T_CAB_TU_SALIDA = "cab_tu_salida"
+    T_CAB_TU_L = "cab_tu_l"
+    T_CAB_TU_DIF = "cab_tu_dif"
+    T_CAB_TU_PUNTO_ENTRADA = "cab_tu_punto_entrada"
+    T_CAB_TU_PUNTO_SALIDA = "cab_tu_punto_salida"
 
     # --- Filas de Cálculo que leen otras hojas (claves de Excel.filas)
     F_CANALES = "canales"
@@ -564,6 +595,9 @@ class KXL(std.EnumMutable):
     #     la primera columna y desde la quinta: zona, entrada y salida)
     FILAS_DECISIONES = 5
     LADOS_DECISIONES = (0, 4)
+    F_DECISIONES = "decisiones"
+    SIN_ZONA = "—"
+    """Zona de una decisión propia que no cuenta (el punto no se usa)."""
     T_DECISIONES = "decisiones"
     T_RECOMENDACIONES = "recomendaciones"
     T_VALIDA_ZONA = "valida_zona"
@@ -596,12 +630,15 @@ class KXL(std.EnumMutable):
     T_ISO = "iso"
     T_TV = "tv"
     T_F = "f"
+    ROTULOS_EXP = (T_F, T_TV, T_ISO)
+    """Rótulos de la exposición, en el orden de OECF.TextoExp."""
     T_SUGERENCIA = "sugerencia"
     T_REFERENCIA = "referencia"
     T_ES_SUGERENCIA = "es_sugerencia"
     T_SUGERIDO = "sugerido"
     T_DIF_MEDIA_SENSOR = "dif_media_sensor"
     T_DIF_MEDIA_REVELADOR = "dif_media_revelador"
+    T_DIF_MEDIA_TU = "dif_media_tu"
     T_SIN_REVELADOR = "sin_revelador"
     T_NOTA_TEXTURAS_RESUMEN = "nota_texturas_resumen"
     T_SIN_TELA = "sin_tela"
@@ -652,7 +689,8 @@ class KXL(std.EnumMutable):
     BASE_EJE_SNR = 10
     EJE_LSTAR = (0, 100, 20, "0")
     """Eje de L*: mínimo, máximo, paso y formato de número."""
-    EJE_DIF_LSTAR = (-15, 10, 5, "+0;-0;0")
+    EJE_DIF_LSTAR = (-25, 25, 5, "+0;-0;0")
+    EJE_KELVIN = (2000, 10000, 1000, "0")
 
     # --- Textos de Gráficos
     T_TITULO_GRAF = "titulo_graf"
@@ -663,13 +701,22 @@ class KXL(std.EnumMutable):
     T_G_SNR = "g_snr"
     T_G_CURVA = "g_curva"
     T_G_DIFERENCIA = "g_diferencia"
+    T_G_TU_CURVA = "g_tu_curva"
+    T_G_BALANCES = "g_balances"
+    T_S_TU_CURVA = "s_tu_curva"
+    T_EJE_KELVIN = "eje_kelvin"
 
     # --- Orden de las gráficas en la hoja (de izquierda a derecha y de
     #     arriba abajo): primero lo que más interesa al estudiante (Tony).
-    #     Su número en el título sale de aquí
-    ORDEN_GRAF = (T_G_CURVA, T_G_DIFERENCIA, T_G_ESPERADO,
-                  T_G_DESV_LINEAL, T_G_DESV_COMPLETA, T_G_SNR)
+    #     Su número en el título sale de aquí. Las de auditoría (el
+    #     sensor), al final de Cálculo, sin número, una al lado de otra
+    ORDEN_GRAF = (T_G_CURVA, T_G_DIFERENCIA, T_G_TU_CURVA,
+                  T_G_DESV_LINEAL, T_G_BALANCES, T_G_SNR)
     """Orden de las gráficas en la hoja; da su número en el título."""
+    GRAF_AUDITORIA = (T_G_ESPERADO, T_G_DESV_COMPLETA)
+    F_AUDITORIA = "auditoria"
+    COLUMNAS_AUDITORIA = 8
+    T_AUDITORIA = "auditoria"
     FORMATO_TITULO_GRAF = "{numero}. {titulo}"
     """Título numerado de una gráfica: «número. título»."""
     T_EJE_ZONA = "eje_zona"
@@ -774,7 +821,10 @@ class Excel(object):
         #     Datos (KXL.F_*), para las fórmulas de las demás hojas
         self.__textos: dict[str, str] = self.con_nombres(textos)
         self.__datos: Review = datos
-        self.__excel = xlsxwriter.Workbook(str(ruta))
+        # --- use_future_functions: MAXIFS y MINIFS (tu curva) llevan el
+        #     prefijo que Excel pide a las funciones nuevas
+        self.__excel = xlsxwriter.Workbook(
+            str(ruta), {"use_future_functions": True})
         self.__formatos: dict[tuple, Format] = {}
         self.__hojas: dict[str, Worksheet] = {}
         self.__filas: dict[str, int] = {}
@@ -814,6 +864,7 @@ class Excel(object):
         self.hoja_datos()
         self.hoja_calculo()
         self.hoja_resumen()
+        self.bloque_tu_curva()
         self.revelador_datos()
         self.hoja_graf()
         self.hoja_rechazadas()
@@ -1445,6 +1496,13 @@ class Excel(object):
 
         # --- Bloque 4: latitud de texturas (verde)
         ultima = self.bloque_texturas(hoja, fila_b3 + n + 4, col, k)
+
+        # --- Gráficas de auditoría (el sensor): su título y su sitio; las
+        #     pone hoja_graf
+        fila_auditoria = ultima + 3
+        hoja.write(fila_auditoria, col, t[KXL.T_AUDITORIA], self.apartado())
+        f[KXL.F_AUDITORIA] = fila_auditoria + 2
+        ultima = f[KXL.F_AUDITORIA] + KXL.FILAS_HUECO
         self.marco(hoja, ((ultima, KXL.ANCHOS_CALCULO),))
 
     #
@@ -1630,9 +1688,11 @@ class Excel(object):
         """
         Bloque 3 de Cálculo, la curva tonal en L*: por zona, la luz y el
         L* esperados, el objetivo, el sensor (de los datos de la serie)
-        y el revelador (de su tabla en Datos), sus diferencias, falta y
-        sobra (para las barras de la gráfica), entrada y salida de la
-        curva de Lightroom (con el revelador) y si es punto de la curva.
+        y el revelador (de su tabla en Datos), sus diferencias (el sensor,
+        con el esperado; el revelador, con el objetivo), falta y sobra
+        del revelador hasta el objetivo (para las barras de la gráfica),
+        entrada (el revelador) y salida (el objetivo) de la curva de
+        Lightroom y si es punto de la curva.
         Los resultados, de puntos_curva.
         """
         t, f = self.__textos, self.__filas
@@ -1708,34 +1768,31 @@ class Excel(object):
             #     diferencia en L*
             revelador = self.ref(KXL.T_HOJA_DATOS, f[KXL.F_REVELADOR] + i,
                                  c_rev)
-            l_esp, l_rev, luz_rev = p.esperado, p.revelador, p.luz_revelador
+            l_obj, l_rev, luz_rev = p.objetivo, p.revelador, p.luz_revelador
             self.formula(
                 hoja, r, col + 8, f'=IF(ISNUMBER({revelador}),{revelador},'
                 f'{KXL.FORMULA_NA})',
                 fmt(KXL.NUM_UNO), KXL.RESULTADO_NA if (l_rev is None)
                 else l_rev)
             self.formula(
-                hoja, r, col + 9, f'=IF(ISNUMBER({c(8)}),IF({c(8)}>'
-                f'{KXL.C_LAB_UMBRAL}*{KXL.C_LAB_PENDIENTE},'
-                f'(({c(8)}+'
-                f'{KXL.C_LAB_DESPLAZA})/{KXL.C_LAB_ESCALA})^3,'
-                f'{c(8)}/{KXL.C_LAB_PENDIENTE}),"")',
+                hoja, r, col + 9,
+                f'=IF(ISNUMBER({c(8)}),{self.formula_luz(c(8))},"")',
                 fmt(KXL.NUM_CUATRO), self.en_blanco(luz_rev))
             self.formula(
                 hoja, r, col + KXL.CURVA_DIF_REVELADOR,
-                f'=IF(ISNUMBER({c(8)}),{c(8)}-{c(3)},{KXL.FORMULA_NA})',
+                f'=IF(ISNUMBER({c(8)}),{c(8)}-{c(4)},{KXL.FORMULA_NA})',
                 fmt(KXL.NUM_SIGNO_UNO),
-                KXL.RESULTADO_NA if (l_rev is None) else (l_rev - l_esp))
+                KXL.RESULTADO_NA if (l_rev is None) else (l_rev - l_obj))
             self.formula(
                 hoja,
-                r, col + 11, f'=IF(ISNUMBER({c(8)}),MAX(0,{c(3)}-{c(8)}),"")',
+                r, col + 11, f'=IF(ISNUMBER({c(8)}),MAX(0,{c(4)}-{c(8)}),"")',
                 fmt(KXL.NUM_UNO),
-                "" if (l_rev is None) else max(0.0, l_esp - l_rev))
+                "" if (l_rev is None) else max(0.0, l_obj - l_rev))
             self.formula(
                 hoja,
-                r, col + 12, f'=IF(ISNUMBER({c(8)}),MAX(0,{c(8)}-{c(3)}),"")',
+                r, col + 12, f'=IF(ISNUMBER({c(8)}),MAX(0,{c(8)}-{c(4)}),"")',
                 fmt(KXL.NUM_UNO),
-                "" if (l_rev is None) else max(0.0, l_rev - l_esp))
+                "" if (l_rev is None) else max(0.0, l_rev - l_obj))
             self.formula(
                 hoja, r, col + KXL.CURVA_ENTRADA,
                 f'=IF(ISNUMBER({c(9)}),{self.formula_curva(c(9))},"")',
@@ -1744,7 +1801,8 @@ class Excel(object):
             salida = p.salida
             self.formula(
                 hoja, r, col + KXL.CURVA_SALIDA,
-                f'=IF(ISNUMBER({c(8)}),{self.formula_curva(c(2))},"")',
+                f'=IF(ISNUMBER({c(8)}),'
+                f'{self.formula_curva(self.formula_luz(c(4)))},"")',
                 fmt(KXL.NUM_ENTERO), "" if (l_rev is None) else salida)
             if tercio_ev == 0:
                 salida_zv = (celda(r, col + 2), salida)
@@ -1836,11 +1894,13 @@ class Excel(object):
         if d.bits:
             hoja.write_number(fila, col + 1, d.bits, bits)
         fila += 1
+        # --- Exposición de la Z-V en el orden de KXL.ROTULOS_EXP: f, Tv e
+        #     ISO (el de la pantalla y la ficha)
         hoja.write(fila, col, t[KXL.T_ZV], rotulo)
-        for i, (clave, dato) in enumerate((
-                (KXL.T_ISO, OECF.TextoISO(d.iso) if d.iso else ""),
-                (KXL.T_TV, OECF.TextoTV(d.tv) if d.tv else ""),
-                (KXL.T_F, OECF.TextoF(d.f) if d.f else ""))):
+        for i, (clave, dato) in enumerate(zip(KXL.ROTULOS_EXP, (
+                OECF.TextoF(d.f) if d.f else "",
+                OECF.TextoTV(d.tv) if d.tv else "",
+                OECF.TextoISO(d.iso) if d.iso else ""), strict=True)):
             hoja.write(fila, col + 1 + (2 * i), t[clave], rotulo)
             hoja.write(fila, col + 2 + (2 * i), dato, valor)
 
@@ -2011,8 +2071,11 @@ class Excel(object):
                                  KXL.ANCHOS_RESUMEN_DERECHA,
                                  self.nota_resumen(KXL.COLOR_ESTIMADO))
 
-        # --- Diferencias medias (sensor y revelador) y, sin revelador, la
-        #     nota que lo explica (sus filas, aunque salga vacía)
+        # --- Diferencias medias (sensor, revelador y con tu curva: esta,
+        #     de unas columnas de Cálculo que se escriben después, en
+        #     blanco hasta que el estudiante pone sus puntos) y, sin
+        #     revelador, la nota que lo explica (sus filas, aunque salga
+        #     vacía)
         rotulo = self.fmt_resumen(bold=True, align="right", valign="top")
         valor_media = self.fmt_resumen(align="left", valign="top",
                                        num_format=KXL.NUM_LSTAR)
@@ -2020,7 +2083,8 @@ class Excel(object):
         medias = []
         for desp, clave in ((KXL.CURVA_DIF_SENSOR, KXL.T_DIF_MEDIA_SENSOR),
                             (KXL.CURVA_DIF_REVELADOR,
-                             KXL.T_DIF_MEDIA_REVELADOR)):
+                             KXL.T_DIF_MEDIA_REVELADOR),
+                            (KXL.TU_DIF, KXL.T_DIF_MEDIA_TU)):
             fila += 1
             primera = self.ref(KXL.T_HOJA_CALCULO, b3, col_calculo + desp,
                                True, True)
@@ -2048,9 +2112,12 @@ class Excel(object):
             f'=IF(COUNT({medias[1]})=0,{aviso},"")', t[KXL.T_SIN_REVELADOR])
 
         # --- Decisiones propias: barra, cabecera doble (zona, entrada y
-        #     salida, en cada lado) y sus filas en blanco, que escribe el
-        #     estudiante (validadas al final, cuando se sabe dónde está la
-        #     lista de las zonas)
+        #     salida, en cada lado) y sus filas, de un lado y luego del
+        #     otro: por defecto, las zonas enteras desde la Z0 y la salida
+        #     recomendada de cada una, como valores (en azul: el
+        #     estudiante los cambia libremente; KXL.SIN_ZONA, el punto no
+        #     cuenta). La entrada (fórmula) y las validaciones, al final,
+        #     cuando se sabe dónde está la tabla
         fila += 2
         self.barra_resumen(hoja, fila, col, ultima, t[KXL.T_DECISIONES])
         punto = ((t[KXL.T_CAB_ZONA], 1), (t[KXL.T_CAB_ENTRADA], 1),
@@ -2059,18 +2126,25 @@ class Excel(object):
             fin_cabecera = self.cabecera_tarjeta(hoja, fila + 1, col + lado,
                                                  punto, KXL.FILAS_CABECERA)
         primera_propia = fin_cabecera + 1
+        self.__filas[KXL.F_DECISIONES] = primera_propia
         fila = fin_cabecera
+        k = self.valores_constantes()
+        puntos = self.puntos_curva(k)
+        por_zona = k[KXL.C_TERCIO_POR_ZONA]
         for i in range(KXL.FILAS_DECISIONES):
             fila += 1
             banda = (i % 2) == 0
-            for lado in KXL.LADOS_DECISIONES:
-                hoja.write_blank(fila, col + lado, None, self.celda_resumen(
-                    banda, "center", font_color=KXL.COLOR_DATO))
-                for j in (1, 2):
-                    hoja.write_blank(fila, col + lado + j, None,
-                                     self.celda_resumen(
-                                         banda, "center", KXL.NUM_ENTERO,
-                                         font_color=KXL.COLOR_DATO))
+            dato = self.celda_resumen(banda, "center",
+                                      font_color=KXL.COLOR_DATO)
+            numero = self.celda_resumen(banda, "center", KXL.NUM_ENTERO,
+                                        font_color=KXL.COLOR_DATO)
+            for n_lado, lado in enumerate(KXL.LADOS_DECISIONES):
+                zona = (n_lado * KXL.FILAS_DECISIONES) + i
+                p = puntos[KS.TERCIOS_LADO
+                           + ((zona - k[KXL.C_ZONA_ZV]) * por_zona)]
+                hoja.write_string(fila, col + lado, p.nombre, dato)
+                hoja.write_blank(fila, col + lado + 1, None, numero)
+                hoja.write_number(fila, col + lado + 2, p.salida, numero)
         ultima_propia = fila
 
         # --- Recomendaciones, justo debajo: barra y la tabla por zona
@@ -2149,18 +2223,38 @@ class Excel(object):
                  f'ISNUMBER({celda(primera, c)}))',
                  "format": estimado})
 
-        # --- Decisiones propias validadas: la zona, de la lista de la
-        #     tabla; entrada y salida, enteros de 0 a C_ESCALA_CURVA
-        zonas = (f"={celda(primera, col, True, True)}:"
-                 f"{celda(fila, col, True, True)}")
+        # --- Decisiones propias: la zona, desplegable (KXL.SIN_ZONA y las
+        #     de la tabla); la entrada, la de esa zona en la tabla (fórmula:
+        #     el estudiante solo elige la zona y su salida; con SIN_ZONA, en
+        #     blanco); la salida, entero de 0 a C_ESCALA_CURVA
+        rango_zonas = (f"{celda(primera, col, True, True)}:"
+                       f"{celda(fila, col, True, True)}")
+        col_entrada = (col_apuntado + 1
+                       + [desp for desp, _ in cols_num].index(
+                           KXL.CURVA_ENTRADA))
+        rango_entradas = (f"{celda(primera, col_entrada, True, True)}:"
+                          f"{celda(fila, col_entrada, True, True)}")
+        for i, r in enumerate(range(primera_propia, ultima_propia + 1)):
+            formato = self.celda_resumen(
+                (i % 2) == 0, "center", KXL.NUM_ENTERO,
+                font_color=KXL.COLOR_FORMULA)
+            for lado in KXL.LADOS_DECISIONES:
+                zona = celda(r, col + lado)
+                self.formula(
+                    hoja, r, col + lado + 1,
+                    f'=IF({zona}="","",IFERROR(INDEX({rango_entradas},'
+                    f'MATCH({zona},{rango_zonas},0)),""))', formato, "")
+        lista_zonas = [KXL.SIN_ZONA] + [
+            self.nombre_zona(i - KS.TERCIOS_LADO)
+            for i in range((2 * KS.TERCIOS_LADO) + 1)]
         for lado in KXL.LADOS_DECISIONES:
             hoja.data_validation(
                 primera_propia, col + lado, ultima_propia, col + lado,
-                {"validate": "list", "source": zonas,
+                {"validate": "list", "source": lista_zonas,
                  "error_title": t[KXL.T_DECISIONES],
                  "error_message": t[KXL.T_VALIDA_ZONA]})
             hoja.data_validation(
-                primera_propia, col + lado + 1, ultima_propia,
+                primera_propia, col + lado + 2, ultima_propia,
                 col + lado + 2,
                 {"validate": "integer", "criteria": "between",
                  "minimum": 0, "maximum": f"={KXL.C_ESCALA_CURVA}",
@@ -2168,6 +2262,104 @@ class Excel(object):
                  "error_message": t[KXL.T_VALIDA_CURVA].format(
                      tope=self.valores_constantes()[KXL.C_ESCALA_CURVA])})
         return fila
+
+    #
+    def bloque_tu_curva(self) -> None:
+        """
+        Tu curva, a la derecha del bloque 3 de Cálculo: los puntos de las
+        decisiones propias de Análisis (los que tienen entrada y salida),
+        en su tabla, y, por zona, la entrada del revelador pasada por
+        ellos en recta entre el de abajo y el de arriba ((0, 0) y
+        (C_ESCALA_CURVA, C_ESCALA_CURVA) en los extremos): la salida, su
+        L*, la diferencia con el objetivo y falta y sobra. Sin puntos o
+        sin revelador, en blanco (NA() en lo que dibuja la gráfica). Va
+        después de Análisis, cuando se sabe dónde están las decisiones.
+        """
+        t, f = self.__textos, self.__filas
+        hoja = self.__hojas[KXL.T_HOJA_CALCULO]
+        col, b3 = KXL.COLUMNA_INICIO, f[KXL.F_CURVA]
+        n = (2 * KS.TERCIOS_LADO) + 1
+        self.cabecera(hoja, b3 - 1, col + KXL.TU_DESDE_ENTRADA, tuple(
+            t[c] for c in (KXL.T_CAB_TU_DESDE_ENTRADA,
+                           KXL.T_CAB_TU_DESDE_SALIDA,
+                           KXL.T_CAB_TU_HASTA_ENTRADA,
+                           KXL.T_CAB_TU_HASTA_SALIDA, KXL.T_CAB_TU_SALIDA,
+                           KXL.T_CAB_TU_L, KXL.T_CAB_TU_DIF, KXL.T_CAB_FALTA,
+                           KXL.T_CAB_SOBRA)))
+        self.cabecera(hoja, b3 - 1, col + KXL.TU_PUNTOS_ENTRADA, (
+            t[KXL.T_CAB_TU_PUNTO_ENTRADA], t[KXL.T_CAB_TU_PUNTO_SALIDA]))
+
+        # --- Los puntos: cada fila de las decisiones, de un lado y luego
+        #     del otro; solo con entrada y salida
+        filas_puntos = KXL.FILAS_DECISIONES * len(KXL.LADOS_DECISIONES)
+        col_decisiones = self.columna_derecha()
+        for j in range(filas_puntos):
+            r = b3 + j
+            fmt = partial(self.fmt_formula, (j % 2) == 0)
+            lado = KXL.LADOS_DECISIONES[j // KXL.FILAS_DECISIONES]
+            fila_decision = f[KXL.F_DECISIONES] + (j % KXL.FILAS_DECISIONES)
+            entrada, salida = (
+                self.ref(KXL.T_HOJA_RESUMEN, fila_decision,
+                         col_decisiones + lado + desp) for desp in (1, 2))
+            completo = f"AND(ISNUMBER({entrada}),ISNUMBER({salida}))"
+            for desp, valor in ((KXL.TU_PUNTOS_ENTRADA, entrada),
+                                (KXL.TU_PUNTOS_SALIDA, salida)):
+                self.formula(hoja, r, col + desp,
+                             f'=IF({completo},{valor},"")',
+                             fmt(KXL.NUM_ENTERO), "")
+        entradas, salidas = (
+            xl_range_abs(b3, col + desp, (b3 + filas_puntos) - 1, col + desp)
+            for desp in (KXL.TU_PUNTOS_ENTRADA, KXL.TU_PUNTOS_SALIDA))
+
+        # --- Por zona: el tramo (desde y hasta: entrada y salida), la
+        #     salida en recta, su L*, la diferencia y falta y sobra
+        tope = KXL.C_ESCALA_CURVA
+        for i in range(n):
+            r = b3 + i
+            fmt = partial(self.fmt_formula, (i % 2) == 0)
+            c = partial(Excel.celda_desp, r, col)
+            x = c(KXL.CURVA_ENTRADA)
+            de, ds, he, hs = (c(d) for d in (
+                KXL.TU_DESDE_ENTRADA, KXL.TU_DESDE_SALIDA,
+                KXL.TU_HASTA_ENTRADA, KXL.TU_HASTA_SALIDA))
+            ts, tl, obj = (c(KXL.TU_SALIDA), c(KXL.TU_L),
+                           c(KXL.CURVA_L_OBJETIVO))
+            hay = f"AND(ISNUMBER({x}),COUNT({entradas})>0)"
+            formulas = (
+                (KXL.TU_DESDE_ENTRADA,
+                 f'=IF({hay},MAXIFS({entradas},{entradas},"<="&{x}),"")',
+                 KXL.NUM_ENTERO, ""),
+                (KXL.TU_DESDE_SALIDA,
+                 f'=IF(ISNUMBER({de}),IF(COUNTIFS({entradas},{de})>0,'
+                 f'AVERAGEIFS({salidas},{entradas},{de}),{de}),"")',
+                 KXL.NUM_ENTERO, ""),
+                (KXL.TU_HASTA_ENTRADA,
+                 f'=IF({hay},IF(COUNTIFS({entradas},">="&{x})=0,{tope},'
+                 f'MINIFS({entradas},{entradas},">="&{x})),"")',
+                 KXL.NUM_ENTERO, ""),
+                (KXL.TU_HASTA_SALIDA,
+                 f'=IF(ISNUMBER({he}),IF(COUNTIFS({entradas},{he})>0,'
+                 f'AVERAGEIFS({salidas},{entradas},{he}),{he}),"")',
+                 KXL.NUM_ENTERO, ""),
+                (KXL.TU_SALIDA,
+                 f'=IF(ISNUMBER({de}),IF({he}={de},{ds},'
+                 f'{ds}+((({hs}-{ds})*({x}-{de}))/({he}-{de}))),"")',
+                 KXL.NUM_UNO, ""),
+                (KXL.TU_L,
+                 f'=IF(ISNUMBER({ts}),'
+                 f'{self.formula_lab(self.formula_luz_curva(ts))},'
+                 f'{KXL.FORMULA_NA})', KXL.NUM_UNO, KXL.RESULTADO_NA),
+                (KXL.TU_DIF,
+                 f'=IF(ISNUMBER({tl}),{tl}-{obj},{KXL.FORMULA_NA})',
+                 KXL.NUM_SIGNO_UNO, KXL.RESULTADO_NA),
+                (KXL.TU_FALTA,
+                 f'=IF(ISNUMBER({tl}),MAX(0,{obj}-{tl}),"")',
+                 KXL.NUM_UNO, ""),
+                (KXL.TU_SOBRA,
+                 f'=IF(ISNUMBER({tl}),MAX(0,{tl}-{obj}),"")',
+                 KXL.NUM_UNO, ""))
+            for desp, texto, numero, valor in formulas:
+                self.formula(hoja, r, col + desp, texto, fmt(numero), valor)
 
     #
     def revelador_datos(self) -> None:
@@ -2214,13 +2406,15 @@ class Excel(object):
     #
     def hoja_graf(self) -> None:
         """
-        Hoja Gráficos: seis gráficas que leen de Cálculo, en el orden de
-        KXL.ORDEN_GRAF (que les da su número): la curva tonal en L*,
-        la diferencia en L*, esperado y obtenido (con un segundo eje en
-        pasos respecto a la Z-V), la desviación (tramo lineal y rango
-        completo) y la señal/ruido. La serie del revelador, siempre: el L*
-        leído puede llegar después (a mano); sin él, Cálculo da NA() y la
-        gráfica no lo dibuja.
+        Hoja Gráficos: seis gráficas que leen de Cálculo (y Datos), en el
+        orden de KXL.ORDEN_GRAF (que les da su número): la curva tonal en
+        L*, la diferencia en L* con el objetivo, tu curva (las decisiones
+        propias), la desviación del tramo lineal, los balances de blancos
+        y la señal/ruido. Las de auditoría (KXL.GRAF_AUDITORIA: esperado y
+        obtenido, con un segundo eje en pasos respecto a la Z-V, y la
+        desviación de todo el rango), sin número, al final de Cálculo. La
+        serie del revelador, siempre: el L* leído puede llegar después (a
+        mano); sin él, Cálculo da NA() y la gráfica no lo dibuja.
         """
         t, d, f = self.__textos, self.__datos, self.__filas
         hoja = self.__hojas[KXL.T_HOJA_GRAF]
@@ -2310,7 +2504,7 @@ class Excel(object):
         grafs[KXL.T_G_SNR] = g
 
         # --- Curva tonal en L*: esperado, objetivo, sensor y
-        #     revelador, con barras lilas hasta el esperado
+        #     revelador, con barras lilas hasta el objetivo
         g = graf("line", KXL.T_G_CURVA, KXL.EJE_LSTAR, KXL.T_EJE_LSTAR)
         g.add_series({"name": t[KXL.T_CAB_ESPERADO], "categories": zonas_b3,
                       "values": rango(b3, 3),
@@ -2334,20 +2528,58 @@ class Excel(object):
                 "line": linea(KXL.COLOR_BARRAS, KXL.ANCHO_BARRAS)}})
         grafs[KXL.T_G_CURVA] = g
 
-        # --- Diferencia en L*: sensor y revelador; las negativas, en
-        #     rojo
+        # --- Diferencia en L*: cuánto se separa el revelado del objetivo
+        #     (lo que el estudiante corrige); las negativas, en rojo. La
+        #     del sensor (con el esperado) queda en Cálculo
         g = graf("column", KXL.T_G_DIFERENCIA, KXL.EJE_DIF_LSTAR,
                  KXL.T_EJE_DIF_LSTAR)
-        for nombre, desp, color in (
-                (KXL.T_S_SENSOR, KXL.CURVA_DIF_SENSOR, KXL.COLOR_SENSOR),
-                (KXL.T_S_REVELADOR, KXL.CURVA_DIF_REVELADOR,
-                 KXL.COLORES_CANALES[2])):
-            g.add_series({"name": t[nombre], "categories": zonas_b3,
-                          "values": rango(b3, desp),
-                          "fill": {"color": color},
-                          "invert_if_negative": True,
-                          "invert_if_negative_color": KXL.COLOR_NEGATIVO})
+        g.add_series({"name": t[KXL.T_S_REVELADOR], "categories": zonas_b3,
+                      "values": rango(b3, KXL.CURVA_DIF_REVELADOR),
+                      "fill": {"color": KXL.COLORES_CANALES[2]},
+                      "invert_if_negative": True,
+                      "invert_if_negative_color": KXL.COLOR_NEGATIVO})
         grafs[KXL.T_G_DIFERENCIA] = g
+
+        # --- Tu curva: el revelado con los puntos de las decisiones
+        #     propias, con barras lilas hasta el objetivo; el objetivo y,
+        #     fino y gris, el revelado sin ellos
+        g = graf("line", KXL.T_G_TU_CURVA, KXL.EJE_LSTAR, KXL.T_EJE_LSTAR)
+        g.add_series({"name": t[KXL.T_CAB_L_OBJETIVO],
+                      "categories": zonas_b3,
+                      "values": rango(b3, KXL.CURVA_L_OBJETIVO),
+                      "line": linea(KXL.COLOR_OBJETIVO, trazo="dash")})
+        g.add_series({"name": t[KXL.T_S_REVELADOR], "categories": zonas_b3,
+                      "values": rango(b3, KXL.CURVA_L_REVELADOR),
+                      "line": linea(KXL.COLOR_ESPERADO)})
+        g.add_series({
+            "name": t[KXL.T_S_TU_CURVA], "categories": zonas_b3,
+            "values": rango(b3, KXL.TU_L),
+            "line": linea(KXL.COLORES_CANALES[2]),
+            "marker": marcador(KXL.COLORES_CANALES[2]),
+            "y_error_bars": {
+                "type": "custom", "plus_values": rango(b3, KXL.TU_FALTA),
+                "minus_values": rango(b3, KXL.TU_SOBRA), "end_style": 0,
+                "line": linea(KXL.COLOR_BARRAS, KXL.ANCHO_BARRAS)}})
+        grafs[KXL.T_G_TU_CURVA] = g
+
+        # --- Balances de blancos (de Datos): por balance, los Kelvin que
+        #     anota la cámara y los que de verdad aplica. Sin balances, la
+        #     fila que lo dice (la gráfica sale vacía)
+        nb = max(1, len(d.balancesDistintos))
+        balances = partial(Excel.rango_graf, t[KXL.T_HOJA_DATOS], col, nb,
+                           f[KXL.F_BALANCES])
+        g = graf("column", KXL.T_G_BALANCES, KXL.EJE_KELVIN,
+                 KXL.T_EJE_KELVIN)
+        g.set_x_axis({"name": t[KXL.T_CAB_BALANCE]})
+        for desp, clave, color in (
+                (KXL.COL_VALORES, KXL.T_CAB_KELVIN_ANOTADO,
+                 KXL.COLOR_ESPERADO),
+                (KXL.COL_VALORES + 1, KXL.T_CAB_KELVIN_MEDIDO,
+                 KXL.COLORES_CANALES[2])):
+            g.add_series({"name": t[clave], "categories": balances(0),
+                          "values": balances(desp),
+                          "fill": {"color": color}})
+        grafs[KXL.T_G_BALANCES] = g
 
         # --- Los huecos, con su borde, y cada gráfica en el suyo
         gris = KXL.BORDE_HUECO
@@ -2376,6 +2608,14 @@ class Excel(object):
                                "y_offset": KXL.MARGEN_GRAF})
             ultima_fila = max(ultima_fila, fila1)
         self.marco(hoja, ((ultima_fila, KXL.ANCHOS_GRAF),))
+
+        # --- Las de auditoría, al final de Cálculo, una al lado de otra
+        hoja_calculo = self.__hojas[KXL.T_HOJA_CALCULO]
+        for i, clave in enumerate(KXL.GRAF_AUDITORIA):
+            hoja_calculo.insert_chart(
+                f[KXL.F_AUDITORIA], col + (i * KXL.COLUMNAS_AUDITORIA),
+                grafs[clave], {"x_offset": KXL.MARGEN_GRAF,
+                               "y_offset": KXL.MARGEN_GRAF})
 
     #
     def hoja_rechazadas(self) -> None:
@@ -2646,7 +2886,7 @@ class Excel(object):
                  for p in puntos]
         sensor = [abs(p.sensor - p.esperado) for p in puntos
                   if p.sensor is not None]
-        revelador = [abs(p.revelador - p.esperado) for p in puntos
+        revelador = [abs(p.revelador - p.objetivo) for p in puntos
                      if p.revelador is not None]
         medias = {KXL.J_SENSOR: self.media(sensor),
                   KXL.J_REVELADOR: self.media(revelador)}
@@ -2673,8 +2913,9 @@ class Excel(object):
         La curva tonal en L*, zona a zona (de Z0 a ZX): lo que escribe el
         bloque 3 de Cálculo y dibuja la ficha PDF. Esperado: un paso de
         luz por zona desde la ZV, hasta el blanco; objetivo: C_L_POR_ZONA por
-        zona; sensor: el verde de la zona entre el de la ZV (media);
-        revelador: el de Datos (leído o estimado).
+        zona, el destino del revelado (la salida de la curva); sensor: el
+        verde de la zona entre el de la ZV (media); revelador: el de Datos
+        (leído o estimado).
         """
         medias = self.medias_zv()
         lzv = self.lab_a_luz(k[KXL.C_LZV], k)
@@ -2686,21 +2927,21 @@ class Excel(object):
                        if (zona and (zona.nivelRGB[1] > 0)) else None)
             l_rev = self.__revelador[i]
             luz_rev = None if (l_rev is None) else self.lab_a_luz(l_rev, k)
+            objetivo = k[KXL.C_L_POR_ZONA] * (
+                k[KXL.C_ZONA_ZV] + (tercio_ev / k[KXL.C_TERCIO_POR_ZONA]))
             puntos.append(PuntoCurva(
                 tercio_ev=tercio_ev,
                 nombre=self.nombre_zona(tercio_ev),
                 luz_esperada=luz_esp,
                 esperado=self.luz_a_lab(luz_esp, k),
-                objetivo=k[KXL.C_L_POR_ZONA] * (
-                    k[KXL.C_ZONA_ZV]
-                    + (tercio_ev / k[KXL.C_TERCIO_POR_ZONA])),
+                objetivo=objetivo,
                 luz_sensor=luz_sen,
                 sensor=None if (luz_sen is None)
                 else self.luz_a_lab(luz_sen, k),
                 luz_revelador=luz_rev,
                 revelador=l_rev,
                 entrada=None if (luz_rev is None) else self.curva(luz_rev, k),
-                salida=self.curva(luz_esp, k)))
+                salida=self.curva(self.lab_a_luz(objetivo, k), k)))
         return puntos
 
     #
@@ -3001,6 +3242,27 @@ class Excel(object):
         """ Fórmula del L* de la luz de esta celda. """
         return (f"IF({luz}>{KXL.C_LAB_UMBRAL},{KXL.C_LAB_ESCALA}*{luz}^(1/3)"
                 f"-{KXL.C_LAB_DESPLAZA},{KXL.C_LAB_PENDIENTE}*{luz})")
+
+    #
+    @staticmethod
+    def formula_luz(lab: str) -> str:
+        """ Fórmula de la luz del L* de esta celda (inversa de CIELAB). """
+        return (f"IF({lab}>{KXL.C_LAB_UMBRAL}*{KXL.C_LAB_PENDIENTE},"
+                f"(({lab}+{KXL.C_LAB_DESPLAZA})/{KXL.C_LAB_ESCALA})^3,"
+                f"{lab}/{KXL.C_LAB_PENDIENTE})")
+
+    #
+    @staticmethod
+    def formula_luz_curva(valor: str) -> str:
+        """
+        Fórmula de la luz de un valor de 0 a 255 de la curva de esta celda
+        (inversa de sRGB).
+        """
+        v = f"({valor}/{KXL.C_ESCALA_CURVA})"
+        return (f"IF({v}<={KXL.C_SRGB_UMBRAL}*{KXL.C_SRGB_PENDIENTE},"
+                f"{v}/{KXL.C_SRGB_PENDIENTE},"
+                f"(({v}+{KXL.C_SRGB_DESPLAZA})/{KXL.C_SRGB_ESCALA})"
+                f"^{KXL.C_SRGB_GAMMA})")
 
     #
     @staticmethod
@@ -3474,8 +3736,8 @@ class Excel(object):
         """
         g = cast(Chart, self.__excel.add_chart({"type": tipo}))
         g.set_title({"name": KXL.FORMATO_TITULO_GRAF.format(
-            numero=KXL.ORDEN_GRAF.index(titulo) + 1,
-            titulo=t[titulo])})
+            numero=KXL.ORDEN_GRAF.index(titulo) + 1, titulo=t[titulo])
+            if (titulo in KXL.ORDEN_GRAF) else t[titulo]})
         g.set_x_axis({"name": t[KXL.T_EJE_ZONA],
                       "label_position": "low",
                       "num_font": {"rotation": KXL.GIRO_ZONAS,

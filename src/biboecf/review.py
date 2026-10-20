@@ -87,9 +87,9 @@ class KAN(std.EnumMutable):
     J_REVELADOR = "revelador"
     J_CAM = "cam"
     J_FECHA = "fecha_zv"
-    J_ISO = "iso"
-    J_TV = "tv"
     J_F = "f"
+    J_TV = "tv"
+    J_ISO = "iso"
     J_BITS = "bits_raw"
     J_TRANSFERENCIA = "transferencia"
     J_LECTURA = "lectura"
@@ -189,7 +189,7 @@ class Review:
     del sensor y motivo de cada una), el paño, el negro y el ruido con su
     origen, la matriz de la cámara, las 31 zonas (None si falta), las
     demás Z-V, para la cabecera del libro, la cámara (su nombre), la
-    fecha de la Z-V (ISO 8601) y su exposición (ISO, Tv en segundos, f),
+    fecha de la Z-V (ISO 8601) y su exposición (f, Tv en segundos, ISO),
     los balances de la cámara, el L* del revelador por zona (las 31, de
     sus exportaciones; () hasta la segunda parte), la profundidad de bits
     de los RAW (None si no se leyó), la curva de transferencia del ruido
@@ -214,9 +214,9 @@ class Review:
     control: tuple[ZonaMedida, ...]
     cam: str = ""
     fecha: str | None = None
-    iso: float | None = None
-    tv: float | None = None
     f: float | None = None
+    tv: float | None = None
+    iso: float | None = None
     balances: tuple[BalanceMedido, ...] = ()
     revelador: tuple[float, ...] = ()
     bits: int | None = None
@@ -333,8 +333,8 @@ def review_a_dict(review: Review) -> dict:
         KAN.J_MATRIZ: [list(fila) for fila in a.matriz],
         KAN.J_ZONAS: [_zona_a_dict(z) if z else None for z in a.zonas],
         KAN.J_CONTROL: [_zona_a_dict(z) for z in a.control],
-        KAN.J_CAM: a.cam, KAN.J_FECHA: a.fecha, KAN.J_ISO: a.iso,
-        KAN.J_TV: a.tv, KAN.J_F: a.f,
+        KAN.J_CAM: a.cam, KAN.J_FECHA: a.fecha, KAN.J_F: a.f,
+        KAN.J_TV: a.tv, KAN.J_ISO: a.iso,
         KAN.J_BALANCES: [{KAN.J_ARCHIVO: b.archivo, KAN.J_NOMBRE: b.nombre,
                           KAN.J_KELVIN_CAM: b.kelvin_cam,
                           KAN.J_KELVIN: b.kelvin,
@@ -377,9 +377,9 @@ def review_de_dict(datos: dict) -> Review:
         control=tuple(_zona_de_dict(z) for z in datos[KAN.J_CONTROL]),
         cam=datos[KAN.J_CAM],
         fecha=datos[KAN.J_FECHA],
-        iso=datos[KAN.J_ISO],
-        tv=datos[KAN.J_TV],
         f=datos[KAN.J_F],
+        tv=datos[KAN.J_TV],
+        iso=datos[KAN.J_ISO],
         balances=tuple(
             BalanceMedido(
                 archivo=b[KAN.J_ARCHIVO],

@@ -243,10 +243,6 @@ class Ventana(ctk.CTk):
 
         TXT_MODELO = {K.ES: "Modelo", K.EN: "Model", K.CA: "Model"}
 
-        TXT_EXP = {K.ES: "Tv",  K.EN: "Tv",  K.CA: "Tv"}
-        TXT_F = {K.ES: "f/",    K.EN: "f/",  K.CA: "f/"}
-        TXT_ISO = {K.ES: "ISO", K.EN: "ISO", K.CA: "ISO"}
-
         # --- Profundidad de bits de los RAW
         TXT_BITS = {K.ES: "{n} bits", K.EN: "{n} bits", K.CA: "{n} bits"}
 
@@ -271,7 +267,8 @@ class Ventana(ctk.CTk):
                         K.CA: " · {n} sense llegir"}
 
         # --- Resumen de la rejilla en una línea: separador entre trozos
-        SEP_RESUMEN = " · "
+        #     (el de biboecf, el mismo de la exposición)
+        SEP_RESUMEN = biboecf.OECF.KT.SEPARADOR
 
         # --- Incidencias de la rejilla: botón bajo la Z0, con cuántas
         #     hay, y su propia ventana (ancho × alto, en píxeles)
@@ -1078,13 +1075,12 @@ class Ventana(ctk.CTk):
         return fecha.strftime(K.tr(self.KV.FORMATO_FECHA))
 
     #
-    # --- f, Tv e ISO en un solo texto: «f/9 · Tv 1/125 s · ISO 100»
+    # --- f, Tv e ISO en un solo texto: «f/9 · Tv 1/125 s · ISO 100»; el
+    #     mismo de la ficha, con los rótulos del libro
     def _texto_exp(self, exp: biboecf.Exp) -> str:
-        kv = self.KV
-        return kv.SEP_RESUMEN.join((
-            K.tr(kv.TXT_F) + biboecf.OECF.TextoF(exp.f),
-            f"{K.tr(kv.TXT_EXP)} {biboecf.OECF.TextoTV(exp.tv)}",
-            f"{K.tr(kv.TXT_ISO)} {biboecf.OECF.TextoISO(exp.iso)}"))
+        t = textos_excel()
+        return biboecf.OECF.TextoExp(exp.f, exp.tv, exp.iso, tuple(
+            t[c] for c in biboecf.KXL.ROTULOS_EXP))
 
     #
     # --- Caja --- Serie

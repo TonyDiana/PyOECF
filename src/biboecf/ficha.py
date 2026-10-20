@@ -28,11 +28,14 @@ from pathlib import Path
 # --- Bibliotecas externas
 import matplotlib
 from matplotlib.axes import Axes
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyBboxPatch, Rectangle
+from matplotlib.text import Text
 from matplotlib.ticker import FuncFormatter
+from matplotlib.transforms import Bbox
 
 # --- Bibliotecas internas
 from bib import std
@@ -70,6 +73,11 @@ class KFI(std.EnumMutable):
     CERO = "#7F7F7F"
     REVELADOR = KXL.COLORES_CANALES[2]
 
+    # --- Bordes de los pasos de la escala de zonas: gris, el de la línea
+    #     del cero (el verde claro de los bordes se confundía con los
+    #     grises claros y el blanco, de la Z7 en adelante)
+    MARCO_TIRA = CERO
+
     # --- Letra: la de matplotlib (DejaVu Sans, va con él en cualquier
     #     sistema) y sus tamaños
     FUENTE = "DejaVu Sans"
@@ -88,44 +96,75 @@ class KFI(std.EnumMutable):
     PIE_Y = 0.025
 
     # --- Página 1: latitud (sección, nota, escala de zonas y cifras) y
-    #     las dos gráficas: (izquierda, abajo, ancho, alto)
+    #     las dos gráficas: (izquierda, abajo, ancho, alto). La escala va
+    #     de margen a margen, como la raya de las secciones; las
+    #     gráficas dejan sitio a la izquierda para el nombre del eje
     APARTADO_LATITUD = 0.875
     SUBRAYA = 0.008
-    ESCALA = (0.06, 0.725, 0.88, 0.1)
+    ESCALA = (IZQUIERDA, 0.725, DERECHA - IZQUIERDA, 0.1)
     CIFRAS_Y = 0.62
     CIFRAS_ALTO = 0.085
     CIFRAS_ANCHO = 0.43
     CIFRAS_PASO = 0.45
     APARTADO_CURVA = 0.585
-    GRAF_CURVA = (0.1, 0.33, 0.84, 0.225)
+    GRAF_IZQUIERDA = 0.1
+    GRAF_CURVA = (GRAF_IZQUIERDA, 0.33, DERECHA - GRAF_IZQUIERDA, 0.225)
     APARTADO_DIFERENCIA = 0.275
-    GRAF_DIFERENCIA = (0.1, 0.06, 0.84, 0.185)
+    GRAF_DIFERENCIA = (GRAF_IZQUIERDA, 0.06, DERECHA - GRAF_IZQUIERDA,
+                       0.185)
 
-    # --- Escala de zonas: alto de los tramos (apreciable, recomendado) y
-    #     su grosor, y dónde van los nombres de las zonas
+    # --- Recuadros de las cifras: margen interior, altura de la cifra
+    #     grande y de «de Zx a Zy» sobre su base, y radio de las esquinas
+    CIFRAS_MARGEN = 0.02
+    CIFRAS_NUMERO_Y = 0.025
+    CIFRAS_DESDE_Y = 0.028
+    CIFRAS_REDONDEO = 0.008
+
+    # --- Escala de zonas (en peine): tira de grises, un paso por tercio,
+    #     cada uno con su borde; alto de los pasos de zona entera y de los
+    #     de tercio (dos tercios), desde 0. Debajo, el peine (diente largo en
+    #     cada zona entera, corto en cada tercio: la mitad) y los nombres
+    #     de las zonas enteras, con la ZV destacada (recuadro oscuro, letra
+    #     blanca). Encima, los tramos: alto (apreciable, recomendado) y su
+    #     grosor
+    ALTO_ZONA = 1
+    ALTO_TERCIO = 2 / 3
     TRAMO_APRECIABLE = (1.45, 2.5)
     TRAMO_RECOMENDADO = (1.2, 4)
     PATA_TRAMO = 0.1
-    NOMBRES_Y = -0.35
-    ESCALA_Y = (-0.6, 1.65)
+    DIENTE_ZONA = 0.3
+    DIENTE_TERCIO = 0.15
+    LINEA_DIENTE = 0.8
+    LINEA_TIRA = 0.5
+    NOMBRES_Y = -0.62
+    MARCO_ZV = "round,pad=0.25"
+    ESCALA_Y = (-0.95, 1.65)
 
     # --- Página 2: secciones y tablas (alto de fila; separación entre
-    #     secciones; de la sección a su nota y a su tabla)
+    #     secciones; de la sección a lo alto de su nota y a su tabla (con
+    #     nota o sin ella); hueco mínimo de la nota a la tabla, si la nota
+    #     es tan larga que la empuja, y de una tabla a la nota de debajo)
     APARTADO_RECOMENDACIONES = 0.875
     ALTO_FILA = 0.021
     ENTRE_APARTADOS = 0.04
-    A_LA_NOTA = 0.03
+    A_LA_NOTA = 0.014
     A_LA_TABLA = 0.05
+    A_LA_TABLA_SIN_NOTA = 0.03
+    NOTA_A_TABLA = 0.008
+    TABLA_A_NOTA = 0.012
     ANCHOS_RECOMENDACIONES = (1, 1.3, 1.3, 1, 1)
     ANCHOS_RUIDO = (2.4, 1, 1, 1)
     ANCHOS_BALANCES = (1.6, 1, 1)
 
     # --- Gráficas: grosor de las líneas, tamaño de los puntos y ancho de
-    #     las barras (en zonas)
+    #     las barras (en zonas). El esperado, una banda gris ancha y casi
+    #     opaca: el sensor va encima, casi igual, y no debe taparlo
     LINEA = 1.5
     LINEA_OBJETIVO = 1.2
+    LINEA_ESPERADO = 7
+    OPACIDAD_ESPERADO = 0.75
     PUNTO = 3.5
-    BARRA = 0.13
+    BARRA = 0.26
 
     # --- Sin dato en una tabla
     SIN_DATO = "—"
@@ -224,7 +263,7 @@ class Ficha(object):
     def pagina_datos(self, k: dict, puntos: list[PuntoCurva]) -> Figure:
         """
         Página 2: recomendaciones para la curva del revelador (las zonas
-        enteras: L* esperado y del revelador, entrada y salida), ruido de
+        enteras: L* objetivo y del revelador, entrada y salida), ruido de
         lectura y negro, y balances de blancos (sin tomas de balance, lo
         dice).
         """
@@ -232,24 +271,24 @@ class Ficha(object):
         fig = self.pagina(2)
         y = KFI.APARTADO_RECOMENDACIONES
         self.apartado(fig, y, t[KXL.T_RECOMENDACIONES])
-        self.nota(fig, y - KFI.A_LA_NOTA, t[KFI.T_NOTA_RECOMENDACIONES])
+        fin = self.nota(fig, y - KFI.A_LA_NOTA,
+                        t[KFI.T_NOTA_RECOMENDACIONES])
         enteras = [p for p in puntos
                    if (p.tercio_ev % k[KXL.C_TERCIO_POR_ZONA]) == 0]
-        filas = [(p.nombre, self.numero(p.esperado, 1),
+        filas = [(p.nombre, self.numero(p.objetivo, 1),
                   self.numero(p.revelador, 1), self.numero(p.entrada, 0),
                   self.numero(p.salida, 0)) for p in enteras]
-        y = self.tabla(fig, y - KFI.A_LA_TABLA, tuple(t[c] for c in (
-            KXL.T_CAB_ZONA, KXL.T_CAB_L_ESPERADO, KXL.T_CAB_L_REVELADOR,
+        y = self.tabla(fig, self.bajo_nota(y, fin), tuple(t[c] for c in (
+            KXL.T_CAB_ZONA, KXL.T_CAB_L_OBJETIVO, KXL.T_CAB_L_REVELADOR,
             KXL.T_CAB_ENTRADA, KXL.T_CAB_SALIDA)), filas,
             KFI.ANCHOS_RECOMENDACIONES)
         if all(p.revelador is None for p in enteras):
-            self.nota(fig, y - KFI.A_LA_NOTA, t[KFI.T_SIN_FASE_2])
-            y -= KFI.A_LA_NOTA
+            y = self.nota(fig, y - KFI.TABLA_A_NOTA, t[KFI.T_SIN_FASE_2])
 
         # --- Ruido de lectura y negro
         y -= KFI.ENTRE_APARTADOS
         self.apartado(fig, y, t[KXL.T_RUIDO_NEGRO])
-        y = self.tabla(fig, y - KFI.A_LA_NOTA, ("",) + tuple(
+        y = self.tabla(fig, y - KFI.A_LA_TABLA_SIN_NOTA, ("",) + tuple(
             t[c] for c in KXL.T_CANALES), [
             (t[KFI.T_RUIDO_FICHA],) + self.canales(d.ruidoRGB, 2),
             (t[KFI.T_NEGRO_FICHA],) + self.canales(d.negroRGB, 0)],
@@ -261,8 +300,8 @@ class Ficha(object):
         if not d.balancesDistintos:
             self.nota(fig, y - KFI.A_LA_NOTA, t[KXL.T_SIN_BALANCES])
             return fig
-        self.nota(fig, y - KFI.A_LA_NOTA, t[KXL.T_NOTA_BALANCES])
-        self.tabla(fig, y - KFI.A_LA_TABLA, tuple(t[c] for c in (
+        fin = self.nota(fig, y - KFI.A_LA_NOTA, t[KXL.T_NOTA_BALANCES])
+        self.tabla(fig, self.bajo_nota(y, fin), tuple(t[c] for c in (
             KXL.T_CAB_BALANCE, KXL.T_CAB_KELVIN_ANOTADO,
             KXL.T_CAB_KELVIN_MEDIDO)), [
             (self.__excel.nombre_balance(b.nombre),
@@ -294,10 +333,8 @@ class Ficha(object):
                  va="center")
         fecha = (datetime.fromisoformat(d.fecha).strftime(
             t[KFI.T_FORMATO_FECHA_FICHA]) if d.fecha else KFI.SIN_DATO)
-        exp = " · ".join((
-            f"{t[KXL.T_ISO]} {OECF.TextoISO(d.iso)}" if d.iso else "",
-            OECF.TextoTV(d.tv) if d.tv else "",
-            f"{t[KXL.T_F]}{OECF.TextoF(d.f)}" if d.f else ""))
+        exp = (OECF.TextoExp(d.f, d.tv, d.iso, tuple(
+            t[c] for c in KXL.ROTULOS_EXP)) or KFI.SIN_DATO)
         fig.text(KFI.IZQUIERDA, KFI.SUBTITULO_Y,
                  t[KFI.T_SUBTITULO_FICHA].format(
                      fecha=fecha, bits=d.bits or KFI.SIN_DATO,
@@ -321,33 +358,101 @@ class Ficha(object):
                                 linewidth=1))
 
     #
-    def nota(self, fig: Figure, y: float, texto: str) -> None:
-        """ Nota en gris bajo una sección. """
-        fig.text(KFI.IZQUIERDA, y, texto, fontsize=KFI.LETRA_NOTA,
-                 color=KFI.GRIS, wrap=True)
+    def nota(self, fig: Figure, y: float, texto: str) -> float:
+        """
+        Nota en gris, desde y (lo alto de su primera línea) hacia abajo,
+        partida en líneas que no pasan de la raya de las secciones (de
+        KFI.IZQUIERDA a KFI.DERECHA). Devuelve dónde acaba.
+        """
+        nota = fig.text(KFI.IZQUIERDA, y, "\n".join(self.partir(
+            fig, texto, KFI.LETRA_NOTA)), fontsize=KFI.LETRA_NOTA,
+            color=KFI.GRIS, va="top")
+        return self.caja(fig, nota).y0
+
+    #
+    def partir(self, fig: Figure, texto: str, letra: float) -> list[str]:
+        """
+        Líneas de un texto, palabra a palabra, sin pasar del ancho entre
+        márgenes con ese tamaño de letra (lo mide como lo dibujará).
+        """
+        ancho = KFI.DERECHA - KFI.IZQUIERDA
+        medida = fig.text(0, 0, "", fontsize=letra)
+        lineas: list[str] = []
+        linea = ""
+        for palabra in texto.split():
+            prueba = f"{linea} {palabra}" if linea else palabra
+            medida.set_text(prueba)
+            if linea and (self.caja(fig, medida).width > ancho):
+                lineas.append(linea)
+                linea = palabra
+            else:
+                linea = prueba
+        lineas.append(linea)
+        medida.remove()
+        return lineas
+
+    #
+    @staticmethod
+    def caja(fig: Figure, texto: Text) -> Bbox:
+        """
+        Caja que ocupa un texto, en fracción de la página. Lo mide con el
+        lienzo de Agg de la página (se lo pone la primera vez).
+        """
+        lienzo = (fig.canvas if isinstance(fig.canvas, FigureCanvasAgg)
+                  else FigureCanvasAgg(fig))
+        return texto.get_window_extent(lienzo.get_renderer()).transformed(
+            fig.transFigure.inverted())
+
+    #
+    @staticmethod
+    def bajo_nota(y: float, fin: float) -> float:
+        """
+        Dónde empieza la tabla de una sección con nota: a su distancia de
+        siempre o, si la nota es tan larga que llega, más abajo.
+        """
+        return min(y - KFI.A_LA_TABLA, fin - KFI.NOTA_A_TABLA)
 
     #
     def escala(self, fig: Figure, k: dict, puntos: list[PuntoCurva],
                limites: dict | None) -> None:
         """
-        Escala de las zonas enteras, cada una en su gris (el de su L*
-        esperado en sRGB, con un borde para que el blanco se vea) y, con
-        paño, los tramos de la latitud apreciable y recomendada.
+        Escala de zonas en peine: una tira con un paso por tercio, cada uno
+        en su gris (el de su L* objetivo en sRGB) y con un borde gris para
+        que el blanco se vea; los de zona entera, altos, y los de tercio,
+        a media altura. Debajo, el peine (diente largo en las zonas
+        enteras, corto en los tercios) y los nombres de las zonas enteras,
+        con la ZV destacada. Con paño, encima, los tramos de la latitud
+        apreciable y recomendada.
         """
         t = self.__textos
         ax = fig.add_axes(KFI.ESCALA)
         zona_zv = k[KXL.C_ZONA_ZV]
+        por_zona = k[KXL.C_TERCIO_POR_ZONA]
+        paso = 1 / por_zona
+        izquierda = -(paso / 2)
+        derecha = (2 * zona_zv) + (paso / 2)
         for p in puntos:
-            if p.tercio_ev % k[KXL.C_TERCIO_POR_ZONA]:
+            zona = zona_zv + (p.tercio_ev / por_zona)
+            # --- El gris del objetivo: su sRGB, la salida de la curva
+            gris = p.salida / k[KXL.C_ESCALA_CURVA]
+            entera = ((p.tercio_ev % por_zona) == 0)
+            ax.add_patch(Rectangle(
+                (zona - (paso / 2), 0), paso,
+                KFI.ALTO_ZONA if entera else KFI.ALTO_TERCIO,
+                facecolor=(gris,) * 3, edgecolor=KFI.MARCO_TIRA,
+                linewidth=KFI.LINEA_TIRA))
+            ax.plot([zona, zona],
+                    [0, -(KFI.DIENTE_ZONA if entera else KFI.DIENTE_TERCIO)],
+                    color=KFI.TINTA if entera else KFI.GRIS,
+                    linewidth=KFI.LINEA_DIENTE)
+            if not entera:
                 continue
-            zona = zona_zv + (p.tercio_ev / k[KXL.C_TERCIO_POR_ZONA])
-            gris = self.__excel.curva(p.luz_esperada, k) / k[
-                KXL.C_ESCALA_CURVA]
-            ax.add_patch(Rectangle((zona - 0.5, 0), 1, 1,
-                                   facecolor=(gris,) * 3,
-                                   edgecolor=KFI.BORDE, linewidth=0.5))
+            zv = (p.tercio_ev == 0)
             ax.text(zona, KFI.NOMBRES_Y, p.nombre, ha="center", va="center",
-                    color=KFI.TINTA)
+                    color="white" if zv else KFI.TINTA,
+                    weight="bold" if zv else "normal",
+                    bbox=({"boxstyle": KFI.MARCO_ZV, "facecolor": KFI.TINTA,
+                           "edgecolor": "none"} if zv else None))
         if limites is not None:
             for clave, (alto, grueso), color in (
                     (KXL.T_APRECIABLE, KFI.TRAMO_APRECIABLE, KFI.VERDE),
@@ -362,10 +467,10 @@ class Ficha(object):
                     ax.plot([x, x], [alto - KFI.PATA_TRAMO,
                                      alto + KFI.PATA_TRAMO], color=color,
                             linewidth=KFI.LINEA)
-                ax.text(-0.45, alto, t[clave], ha="left", va="center",
+                ax.text(izquierda, alto, t[clave], ha="left", va="center",
                         fontsize=KFI.LETRA_NOTA, color=color)
-        # --- De Z0 a ZX: la ZV está en medio
-        ax.set_xlim(-0.5, (2 * zona_zv) + 0.5)
+        # --- De Z0 a ZX (la ZV está en medio), justo lo que ocupa la tira
+        ax.set_xlim(izquierda, derecha)
         ax.set_ylim(*KFI.ESCALA_Y)
         ax.axis("off")
 
@@ -381,17 +486,20 @@ class Ficha(object):
         fig.patches.append(FancyBboxPatch(
             (x, KFI.CIFRAS_Y), KFI.CIFRAS_ANCHO, KFI.CIFRAS_ALTO,
             transform=fig.transFigure,
-            boxstyle="round,pad=0,rounding_size=0.008",
+            boxstyle=f"round,pad=0,rounding_size={KFI.CIFRAS_REDONDEO}",
             facecolor=KFI.VERDE_CLARO, edgecolor=KFI.BORDE, linewidth=0.8))
         arriba = KFI.CIFRAS_Y + KFI.CIFRAS_ALTO
-        fig.text(x + 0.02, arriba - 0.02, rotulo, color=KFI.GRIS)
+        fig.text(x + KFI.CIFRAS_MARGEN, arriba - KFI.CIFRAS_MARGEN, rotulo,
+                 color=KFI.GRIS)
         cifra = (t[KFI.T_CIFRA_ZONAS].format(
             zonas=self.__excel.tercios_texto(ancho))
             if isinstance(ancho, float) else ancho)
-        fig.text(x + 0.02, KFI.CIFRAS_Y + 0.025, cifra,
-                 fontsize=KFI.LETRA_CIFRA, weight="bold", color=KFI.TINTA)
+        fig.text(x + KFI.CIFRAS_MARGEN, KFI.CIFRAS_Y + KFI.CIFRAS_NUMERO_Y,
+                 cifra, fontsize=KFI.LETRA_CIFRA, weight="bold",
+                 color=KFI.TINTA)
         if isinstance(sombra, float) and isinstance(luz, float):
-            fig.text(x + KFI.CIFRAS_ANCHO - 0.02, KFI.CIFRAS_Y + 0.028,
+            fig.text((x + KFI.CIFRAS_ANCHO) - KFI.CIFRAS_MARGEN,
+                     KFI.CIFRAS_Y + KFI.CIFRAS_DESDE_Y,
                      t[KFI.T_DESDE_HASTA].format(
                          desde=self.nombre(sombra, k),
                          hasta=self.nombre(luz, k)),
@@ -402,17 +510,17 @@ class Ficha(object):
     def graf_curva(self, fig: Figure, k: dict,
                    puntos: list[PuntoCurva]) -> None:
         """
-        Curva tonal en L*: esperado (gris grueso, detrás), objetivo
-        (discontinuo), sensor (delante, para que se vea aunque coincida
-        con el esperado) y revelador (si lo hay).
+        Curva tonal en L*: esperado (banda gris ancha, detrás), objetivo
+        (discontinuo), sensor (delante, fino, dentro de la banda: casi
+        coincide con el esperado) y revelador (si lo hay).
         """
         t = self.__textos
         ax = fig.add_axes(KFI.GRAF_CURVA)
         x = self.zonas(puntos, k)
         ax.plot(x, [p.esperado for p in puntos], color=KXL.COLOR_ESPERADO,
-                linewidth=KXL.ANCHO_ESPERADO + 1,
-                alpha=KXL.TRANSPARENCIA_ESPERADO / KXL.CIEN,
-                label=t[KXL.T_CAB_ESPERADO], zorder=1)
+                linewidth=KFI.LINEA_ESPERADO, alpha=KFI.OPACIDAD_ESPERADO,
+                solid_capstyle="butt", label=t[KXL.T_CAB_ESPERADO],
+                zorder=1)
         ax.plot(x, [p.objetivo for p in puntos], color=KXL.COLOR_OBJETIVO,
                 linewidth=KFI.LINEA_OBJETIVO, linestyle="--",
                 label=t[KXL.T_CAB_L_OBJETIVO], zorder=2)
@@ -432,29 +540,26 @@ class Ficha(object):
     def graf_diferencia(self, fig: Figure, k: dict,
                         puntos: list[PuntoCurva]) -> None:
         """
-        Diferencia en L* (menos el esperado): barras del sensor y, si lo
-        hay, del revelador, cada serie siempre en su color (el signo se
-        lee en el eje); sin dato, hueco. La leyenda, encima, fuera de las
-        barras.
+        Diferencia en L* del revelador con el objetivo: cuánto se separa
+        el revelado de la escala que se busca, lo que el estudiante
+        corrige (el signo se lee en el eje); sin dato, hueco. La leyenda,
+        encima, fuera de las barras. Sin revelador, lo dice.
         """
         t = self.__textos
         ax = fig.add_axes(KFI.GRAF_DIFERENCIA)
-        x = self.zonas(puntos, k)
-        hay_revelador = any(p.revelador is not None for p in puntos)
-        desplaza = (KFI.BARRA / 2) if hay_revelador else 0
-        ax.bar([v - desplaza for v in x],
-               [math.nan if (p.sensor is None) else (p.sensor - p.esperado)
-                for p in puntos], width=KFI.BARRA, color=KXL.COLOR_SENSOR,
-               label=t[KXL.T_S_SENSOR])
-        if hay_revelador:
-            ax.bar([v + desplaza for v in x],
-                   [math.nan if (p.revelador is None)
-                    else (p.revelador - p.esperado) for p in puntos],
-                   width=KFI.BARRA, color=KFI.REVELADOR,
-                   label=t[KXL.T_S_REVELADOR])
         ax.axhline(0, color=KFI.CERO, linewidth=0.8)
         self.ejes(ax, k, t[KXL.T_EJE_DIF_LSTAR])
-        ax.legend(loc="lower right", bbox_to_anchor=(1, 1), ncol=2,
+        if all(p.revelador is None for p in puntos):
+            ax.text(0.5, 0.5, t[KFI.T_SIN_FASE_2], transform=ax.transAxes,
+                    ha="center", va="center", color=KFI.GRIS,
+                    fontsize=KFI.LETRA_NOTA)
+            return
+        ax.bar(self.zonas(puntos, k),
+               [math.nan if (p.revelador is None)
+                else (p.revelador - p.objetivo) for p in puntos],
+               width=KFI.BARRA, color=KFI.REVELADOR,
+               label=t[KXL.T_S_REVELADOR])
+        ax.legend(loc="lower right", bbox_to_anchor=(1, 1),
                   frameon=False, fontsize=KFI.LETRA_NOTA)
 
     #

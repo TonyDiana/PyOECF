@@ -95,8 +95,11 @@ class OECF(object):
     class KT(std.EnumMutable):
         """ Constantes de la lectura de una toma. """
 
-        # --- Unidad del tiempo de exposición al mostrarlo
+        # --- Unidad del tiempo de exposición al mostrarlo, y separador
+        #     entre los trozos de un texto de una línea (f, Tv e ISO de la
+        #     exposición; también lo usa la aplicación en sus resúmenes)
         SEGUNDOS = "s"
+        SEPARADOR = " · "
 
         # --- Decimales del diafragma: rawpy lo da en coma flotante de 32
         #     bits
@@ -929,9 +932,9 @@ class OECF(object):
             control=tuple(control),
             cam=self.cam.nombre if self.cam else "",
             fecha=self.fecha.isoformat() if self.fecha else None,
-            iso=exp_zv.iso if exp_zv else None,
-            tv=exp_zv.tv if exp_zv else None,
             f=exp_zv.f if exp_zv else None,
+            tv=exp_zv.tv if exp_zv else None,
+            iso=exp_zv.iso if exp_zv else None,
             balances=tuple(balances),
             bits=self.bits,
             transferencia=curvas or None,
@@ -1101,6 +1104,23 @@ class OECF(object):
     def TextoISO(iso: float) -> str:
         """ ISO como texto, en número entero: 100. """
         return str(round(iso))
+
+    #
+    @staticmethod
+    def TextoExp(f: float | None, tv: float | None, iso: float | None,
+                 rotulos: tuple[str, ...]) -> str:
+        """
+        Exposición en un solo texto, como la marca la cámara: «f/9 · Tv
+        1/125 s · ISO 100». rotulos: los de f, Tv e ISO, en ese orden y
+        ya traducidos (KXL.ROTULOS_EXP). Lo que falta no sale.
+        """
+        rotulo_f, rotulo_tv, rotulo_iso = rotulos
+        trozos = (
+            (f"{rotulo_f}{OECF.TextoF(f)}" if (f is not None) else ""),
+            (f"{rotulo_tv} {OECF.TextoTV(tv)}" if (tv is not None) else ""),
+            (f"{rotulo_iso} {OECF.TextoISO(iso)}"
+             if (iso is not None) else ""))
+        return OECF.KT.SEPARADOR.join(t for t in trozos if t)
 
     # endregion Métodos públicos
 
