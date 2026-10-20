@@ -1,10 +1,11 @@
 # -*- coding: utf-8 *-*
 """
     :Propósito: El protocolo de la serie (KS) y su reparto en partes:
-                iniciales, lados, cambio, balances de cámara, sobrantes y
-                saltos. También, si se hizo el balance personalizado
+                iniciales, lados, cambio, final, tapadas, balances de
+                cámara, sobrantes y saltos, y la ZV. También, si se hizo
+                el balance personalizado
     :Autor:     Tony Diana
-    :Versión:   26.10.18
+    :Versión:   26.10.19
 """
 
 # cSpell:ignore
@@ -16,6 +17,7 @@ from typing import NamedTuple
 
 # --- Bibliotecas internas
 from bib import std
+from .zonas import KP
 
 
 #
@@ -36,7 +38,8 @@ class KS(std.EnumMutable):
     """Z-V de cambio de lado."""
 
     FINALES = 1
-    """Z-V final: tras el segundo lado, marca el fin de la serie."""
+    """Z-V final: tras el segundo lado, con el balance de la serie y con
+    las tapadas detrás; marca el fin de la serie."""
 
     TAPADAS = 2
     """Tomas tapadas (solo tras la Z-V final)."""
@@ -56,7 +59,10 @@ class Secuencia(NamedTuple):
     """
     Partes de una serie: índices de sus tomas (en el orden de la lista que
     se repartió) y los saltos de cada lado: (índice, tercioEV esperado,
-    tercioEV).
+    tercioEV). zv: la ZV de la serie, la última de cambio o, si no hay,
+    la última inicial (None si no hay ninguna: Tony, 2026-10-19). paso:
+    tercios de cada paso de los lados, 1 (por tercios) o KP.TERCIOS (por
+    pasos enteros, sin tercios: Tony, 2026-10-19).
     """
     iniciales: list[int]
     lados: list[list[int]]
@@ -66,6 +72,8 @@ class Secuencia(NamedTuple):
     balances: list[int]
     sobrantes: list[int]
     saltos: list[tuple[int, int, int]]
+    zv: int | None
+    paso: int
 
 
 #
@@ -91,7 +99,8 @@ def balance_personalizado(tercioEVs: list[int | None],
 
 
 #
-def secuencia(tercioEVs: list[int | None], oscuras: list[bool]) -> Secuencia:
+def secuencia(tercioEVs: list[int | None], de_tapada: list[bool],
+              WBs: list[tuple[float, ...] | None]) -> Secuencia:
     """
     Reparte la serie en sus partes. Las tomas se agrupan en rachas
     seguidas de tercioEV = 0 (Z-V) o de tercioEV del mismo signo (un
@@ -100,21 +109,30 @@ def secuencia(tercioEVs: list[int | None], oscuras: list[bool]) -> Secuencia:
     Z-V de cambio entre ellos, y con al menos KS.MIN_LADO tomas cada uno.
     Si no hay ninguna, los dos más largos de signo contrario (los últimos
     si empatan). Las Z-V del principio son las iniciales; las de entre los
-    dos lados, las de cambio; la primera Z-V justo después del segundo
-    lado, la final, que marca el fin de la serie. Las tapadas son las
-    oscuras (a 1/160 y casi negras) que van detrás de la final: sin final,
-    no se buscan, y las oscuras de antes son tomas normales. Los balances
-    de cámara, la racha de Z-V más larga de las demás, sin la final ni las
-    tapadas, con al menos KS.MIN_BALANCES tomas (la última si empatan),
-    esté donde esté. En cada lado, el tercioEV debe avanzar de uno en uno
-    desde ±1: lo que no, es un salto (repetida, saltada o fuera de orden),
-    y lo que pasa de ±KS.TERCIOS_LADO sobra. Las que no se pudieron leer
-    no cuentan.
+    dos lados, las de cambio. La ZV de la serie es la última de cambio o,
+    si no hay, la última inicial, y su balance (WBs) es el de la serie.
+    Las tomas con la exposición de las tapadas (f/11 y 1/160) nunca van a
+    los lados ni a ninguna zona. Final: las Z-V justo después del segundo
+    lado con el balance de la serie, solo si detrás de la última va una
+    con la exposición de las tapadas; marca el fin de la serie. Las
+    tapadas son las que la tienen y van detrás de la final: sin final no
+    hay tapadas, y sobran (Tony, 2026-10-19). Balances de cámara, con al
+    menos KS.MIN_BALANCES tomas: con tapadas, las Z-V que van detrás de
+    la última; sin ellas, las Z-V tras el segundo lado desde la primera
+    con un balance distinto del de la serie (Tony, 2026-10-19). La serie
+    va por pasos enteros si todas las tomas de los lados caen en una zona
+    entera; si no, por tercios. En cada lado, el tercioEV debe avanzar de
+    paso en paso desde ±1 paso: lo que no, es un salto (repetida, saltada
+    o fuera de orden), y lo que pasa de ±KS.TERCIOS_LADO sobra. Las que no
+    se pudieron leer no cuentan. de_tapada (si tiene la exposición de las
+    tapadas) y WBs: de cada toma, en el orden de tercioEVs.
     """
-    # --- Las tomas leídas: {índice: tercioEV}, en su orden
-    tomas: dict[int, int] = {i: tercioEV
-                             for i, tercioEV in enumerate(tercioEVs)
-                             if tercioEV is not None}
+    # --- Las tomas leídas, en su orden; y, sin las de la exposición de
+    #     las tapadas, {índice: tercioEV}
+    leidas = [i for i, tercioEV in enumerate(tercioEVs)
+              if tercioEV is not None]
+    tomas: dict[int, int] = {i: tercioEVs[i] for i in leidas
+                             if not de_tapada[i]}           # type: ignore
 
     # --- Rachas: (signo: 0, 1 o -1, índices de sus tomas)
     rachas: list[tuple[int, list[int]]] = []
@@ -154,18 +172,26 @@ def secuencia(tercioEVs: list[int | None], oscuras: list[bool]) -> Secuencia:
                 elegidas.append(_mas_larga(contrarias, rachas))
             elegidas.sort()
 
-    # --- Lados, recortando lo que pasa de ±KS.TERCIOS_LADO, y sus saltos
+    # --- Lados, recortando lo que pasa de ±KS.TERCIOS_LADO
     lados: list[list[int]] = []
-    saltos: list[tuple[int, int, int]] = []
     usadas = set()
     for n in elegidas:
-        signo, tomas_racha = rachas[n]
-        lado = [i for i in tomas_racha if abs(tomas[i]) <= KS.TERCIOS_LADO]
+        lado = [i for i in rachas[n][1] if abs(tomas[i]) <= KS.TERCIOS_LADO]
         lados.append(lado)
         usadas.update(lado)
+
+    # --- Paso: enteros si todas las tomas de los lados caen en una zona
+    #     entera; si no, tercios. Saltos: lo que no avanza de paso en paso
+    de_lados = [tomas[i] for lado in lados for i in lado]
+    paso = (KP.TERCIOS
+            if (de_lados and all((t % KP.TERCIOS) == 0 for t in de_lados))
+            else 1)
+    saltos: list[tuple[int, int, int]] = []
+    for n, lado in zip(elegidas, lados):
+        signo = rachas[n][0]
         anterior = 0
         for i in lado:
-            esperado = anterior + signo
+            esperado = anterior + (signo * paso)
             if tomas[i] != esperado:
                 saltos.append((i, esperado, tomas[i]))
             anterior = tomas[i]
@@ -178,27 +204,50 @@ def secuencia(tercioEVs: list[int | None], oscuras: list[bool]) -> Secuencia:
              else range(0))
     cambios = [i for n in entre if rachas[n][0] == 0 for i in rachas[n][1]]
 
-    # --- Z-V final: la primera de la racha de Z-V justo después del
-    #     segundo lado. Las tapadas, las oscuras que vayan detrás
-    tras_lados = (elegidas[-1] + 1) if dos_lados else len(rachas)
-    hay_final = ((tras_lados < len(rachas))
-                 and (rachas[tras_lados][0] == 0))
-    finales = [rachas[tras_lados][1][0]] if hay_final else []
-    tapadas = ([i for i, oscura in enumerate(oscuras)
-                if oscura and (i > finales[0])] if finales else [])
+    # --- ZV: la última de cambio o, si no hay, la última inicial. Su
+    #     balance es el de la serie
+    zv = cambios[-1] if cambios else (iniciales[-1] if iniciales else None)
+    wb_serie = WBs[zv] if (zv is not None) else None
 
-    # --- Balances de cámara: de las demás rachas de Z-V, sin la final ni
-    #     las tapadas, la más larga (la última si empatan)
-    quitar = set(finales) | set(tapadas)
-    otras = [[i for i in tomas_racha if i not in quitar]
-             for n, (s, tomas_racha) in enumerate(rachas)
-             if (s == 0) and (n != 0) and (n not in entre)]
-    otras = [tomas_racha for tomas_racha in otras
-             if len(tomas_racha) >= KS.MIN_BALANCES]
-    balances = (max(reversed(otras), key=len) if otras else [])
+    # --- Z-V tras el segundo lado, en su orden (ninguna sin dos lados)
+    ultima_lado = lados[-1][-1] if (dos_lados and lados[-1]) else None
+    tras = ([i for i, tercioEV in tomas.items()
+             if (i > ultima_lado) and (tercioEV == 0)]
+            if (ultima_lado is not None) else [])
+
+    # --- Final: las Z-V seguidas justo después del segundo lado con el
+    #     balance de la serie, si detrás de la última va una con la
+    #     exposición de las tapadas. Las tapadas, las que la tengan y
+    #     vayan detrás
+    finales: list[int] = []
+    if ultima_lado is not None:
+        for i in leidas:
+            if i <= ultima_lado:
+                continue
+            if de_tapada[i] or (tomas[i] != 0) or (WBs[i] != wb_serie):
+                break
+            finales.append(i)
+    if finales:
+        siguiente = next((i for i in leidas if i > finales[-1]), None)
+        if (siguiente is None) or (not de_tapada[siguiente]):
+            finales = []
+    tapadas = ([i for i in leidas if de_tapada[i] and (i > finales[-1])]
+               if finales else [])
+
+    # --- Balances de cámara: con tapadas, las Z-V tras la última; sin
+    #     ellas, las Z-V tras el segundo lado desde la primera con otro
+    #     balance que el de la serie
+    if tapadas:
+        balances = [i for i in tras if i > tapadas[-1]]
+    else:
+        desde = next((n for n, i in enumerate(tras)
+                      if WBs[i] != wb_serie), len(tras))
+        balances = tras[desde:]
+    if len(balances) < KS.MIN_BALANCES:
+        balances = []
     usadas.update(iniciales, cambios, finales, tapadas, balances)
 
-    sobrantes = [i for i in tomas if i not in usadas]
+    sobrantes = [i for i in leidas if i not in usadas]
     return Secuencia(
         iniciales=iniciales,
         lados=lados,
@@ -207,7 +256,9 @@ def secuencia(tercioEVs: list[int | None], oscuras: list[bool]) -> Secuencia:
         tapadas=tapadas,
         balances=balances,
         sobrantes=sobrantes,
-        saltos=saltos)
+        saltos=saltos,
+        zv=zv,
+        paso=paso)
 
 
 #

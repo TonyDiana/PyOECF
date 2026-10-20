@@ -2,7 +2,7 @@
 """
     :Propósito: Kernel PyOECF.
     :Autor:     Tony Diana
-    :Versión:   26.10.17
+    :Versión:   26.10.19
 """
 
 # cSpell:ignore anchoxalto, biboecf, borderwidth, choosedir, customtkinter
@@ -59,8 +59,9 @@ import screeninfo
 import biboecf
 from bib import std
 from .constantes import K
-from .json_estudio import (grabar_json, grabar_resultados, grabar_review,
-                           hay_review, leer_resultados, leer_review)
+from .json_estudio import (es_preparada, grabar_json, grabar_resultados,
+                           grabar_review, hay_review, leer_resultados,
+                           leer_review, restaurar_serie)
 from .rejilla import Rejilla
 from .textos_excel import textos_excel
 from .update import KA, es_mas_nueva, version_publicada
@@ -112,6 +113,14 @@ class Ventana(ctk.CTk):
         TXT_CANCELAR = {K.ES: "Cancelar", K.EN: "Cancel", K.CA: "Cancel·lar"}
         TECLAS_CANCELAR = ("<Return>", "<Escape>")
         TK_CERRAR = "WM_DELETE_WINDOW"
+
+        # --- Órdenes de Tcl para ver y cancelar lo programado con after
+        #     (ver destroy). Se cancela en Tcl y no con after_cancel, que
+        #     además borra su comando de Python y falla con los que no lo
+        #     son («can't delete Tcl command»)
+        TCL_AFTER = "after"
+        TCL_INFO = "info"
+        TCL_CANCEL = "cancel"
         TXT_SE_BORRARA = {
             K.ES: "Si prepara de nuevo, el análisis se borrará. ¿Seguir?",
             K.EN: "If you prepare again, the analysis will be deleted. "
@@ -459,6 +468,16 @@ class Ventana(ctk.CTk):
             K.EN: "No permission to write to the folder",
             K.CA: "Sense permís per a escriure en la carpeta"}
 
+        # --- Carpeta OECF de una serie preparada cuyo JSON no sirve para
+        #     restaurarla (de una versión anterior o dañado)
+        TXT_ESTUDIO_ANTIGUO = {
+            K.ES: "No se puede abrir esta preparación: vuelve a preparar la "
+                  "serie desde su carpeta",
+            K.EN: "This preparation cannot be opened: prepare the series "
+                  "again from its folder",
+            K.CA: "No es pot obrir aquesta preparació: torna a preparar la "
+                  "sèrie des de la seva carpeta"}
+
         # --- Texto de cada problema de la carpeta (biboecf.KCA)
         TXT_PROBLEMA_CARPETA = {
             biboecf.KCA.SIN_CARPETA: TXT_SIN_CARPETA,
@@ -717,8 +736,10 @@ class Ventana(ctk.CTk):
     #
     def caja_carpeta(self) -> None:
         """
-        Caja Carpeta: el botón para elegirla, la casilla con su ruta,
-        Analizar revelado (oculto hasta que haya análisis) y Preparar.
+        Caja Carpeta: el botón para elegirla, la casilla con su ruta y sus
+        botones: Preparar o, en una carpeta OECF ya preparada, Analizar; y,
+        con análisis, Analizar revelado si hay exportaciones del revelador o,
+        si no, Abrir resultados (los enseña ActivarCarpeta).
         """
         # --- Abreviar escritura
         kv = self.KV
@@ -732,18 +753,28 @@ class Ventana(ctk.CTk):
         self.ApuntarTexto(ctk.CTkButton(fila, command=self._elegir),
                           kv.TXT_CARPETA).pack(side="left")
 
-        # --- Preparar antes que la casilla, para que esta ocupe el hueco.
-        #     Empieza inactivo: aún no hay RAW
-        self.btn_preparar = ctk.CTkButton(fila, command=self.Preparar,
+        # --- Los botones, en su grupo, antes que la casilla, para que esta
+        #     ocupe el hueco. Se crean ocultos y los enseña ActivarCarpeta,
+        #     en este orden: Analizar revelado (con análisis y
+        #     exportaciones del revelador) o Abrir resultados (sin ellas) y
+        #     Preparar o, en una carpeta OECF ya preparada, Analizar (Tony,
+        #     2026-10-19)
+        botones = self.botones_carpeta = ctk.CTkFrame(
+            fila, fg_color="transparent")
+        botones.pack(side="right")
+        self.btn_revelado = ctk.CTkButton(botones,
+                                          command=self.AnalizarRevelado)
+        self.ApuntarTexto(self.btn_revelado, kv.TXT_ANALIZAR_REVELADO)
+        self.btn_abrir_carpeta = ctk.CTkButton(
+            botones, command=self.AbrirResultados)
+        self.ApuntarTexto(self.btn_abrir_carpeta, kv.TXT_ABRIR_RESULTADOS)
+        self.btn_analizar_carpeta = ctk.CTkButton(botones,
+                                                  command=self.Analizar)
+        self.ApuntarTexto(self.btn_analizar_carpeta, kv.TXT_ANALIZAR)
+        self.btn_preparar = ctk.CTkButton(botones, command=self.Preparar,
                                           state="disabled")
         self.ApuntarTexto(self.btn_preparar, kv.TXT_PREPARAR)
-        self.btn_preparar.pack(side="right", padx=(kv.MARGEN, 0))
-
-        # --- Analizar revelado, a la izquierda de Preparar: se crea
-        #     oculto; lo enseña ActivarCarpeta
-        self.btn_revelado = ctk.CTkButton(
-            fila, command=self.AnalizarRevelado, state="disabled")
-        self.ApuntarTexto(self.btn_revelado, kv.TXT_ANALIZAR_REVELADO)
+        self.btn_preparar.pack(side="left", padx=(kv.MARGEN, 0))
 
         # --- Cada cambio en la ruta (elegida o tecleada) quita las cajas
         #     de encima y muestra la cámara de la carpeta nueva
@@ -891,7 +922,7 @@ class Ventana(ctk.CTk):
     # --- ¿La carpeta escrita es la de la cámara que ya se ve?
     def _es_la_vista(self) -> bool:
         return ((self.OECF is not None)
-                and (self.carpetaEscrita == self.OECF.path))
+                and (self.carpetaEscrita == self.carpetaVista))
 
     #
     # --- Otra carpeta: se quitan las cajas de encima de esta, sean
@@ -963,18 +994,36 @@ class Ventana(ctk.CTk):
         self.Traducir()
 
         # --- Fase 1 de la serie: la carpeta, sus RAW y la exposición de
-        #     la primera. Se guarda para Preparar (y su carpeta, para no
-        #     rehacer la caja si se vuelve a elegir la misma)
-        OECF = self.OECF = biboecf.OECF(self.carpetaEscrita)
+        #     la primera. Se guarda para Preparar (y la carpeta elegida,
+        #     para no rehacer la caja si se vuelve a elegir la misma). Si
+        #     es la OECF de una serie ya preparada, la serie se restaura
+        #     de ella, sin Preparar: se va directo a Analizar (Tony,
+        #     2026-10-19)
+        carpeta = self.carpetaVista = self.carpetaEscrita
+        self.preparada = es_preparada(carpeta)
+        if self.preparada:
+            restaurada = restaurar_serie(carpeta)
+            if restaurada is None:
+                self.OECF = biboecf.OECF(carpeta, buscar=False)
+                self.Poner(self.val_archivo,                    # type: ignore
+                           kv.TXT_ESTUDIO_ANTIGUO)
+                self.ActivarCarpeta()
+                return
+            OECF = self.OECF = restaurada
+            self.propias_serie = len(self.cajas)
+            self.incidencias = partial(Rejilla.incidencias, OECF)
+        else:
+            OECF = self.OECF = biboecf.OECF(carpeta)
 
-        # --- Si la carpeta no sirve (no existe, no se lee, sin RAW o sin
-        #     permiso para escribir los resultados), se dice por qué y
-        #     Preparar no se activa
-        problema = biboecf.problema_carpeta(OECF)
-        if problema:
-            self.Poner(self.val_archivo,                        # type: ignore
-                       kv.TXT_PROBLEMA_CARPETA[problema])
-            return
+            # --- Si la carpeta no sirve (no existe, no se lee, sin RAW o
+            #     sin permiso para escribir los resultados), se dice por
+            #     qué y Preparar no se activa
+            problema = biboecf.problema_carpeta(OECF)
+            if problema:
+                self.Poner(self.val_archivo,                    # type: ignore
+                           kv.TXT_PROBLEMA_CARPETA[problema])
+                self.ActivarCarpeta()
+                return
 
         self.Poner(self.val_archivo, OECF.primera)              # type: ignore
 
@@ -1007,7 +1056,7 @@ class Ventana(ctk.CTk):
             self.Poner(self.val_exp,                            # type: ignore
                        partial(self._texto_exp, exp))
 
-        # --- Con RAW, ya se puede preparar
+        # --- Con RAW, ya se puede preparar (o, preparada, analizar)
         self.ActivarCarpeta()
 
     #
@@ -1302,7 +1351,8 @@ class Ventana(ctk.CTk):
         if hay_tela:
             aviso.pack_forget()
             self.ventana_tela = ventana
-            self.imagen_zv = biboecf.revelar(OECF.zonas[0])     # type: ignore
+            self.imagen_zv = biboecf.revelar(
+                OECF.zonasCopia[0])                             # type: ignore
             fondo = self._apply_appearance_mode(
                 ctk.ThemeManager.theme["CTk"]["fg_color"])
             self.val_recorte = tk.Label(grupo, bg=fondo, borderwidth=0)
@@ -1417,13 +1467,26 @@ class Ventana(ctk.CTk):
         self._fin_medida()
 
     #
+    # --- Carpeta ANALISIS de la serie, creada si no está (en una serie
+    #     ya preparada se puede haber borrado): ahí van el libro, la ficha
+    #     y las láminas. Si no se puede crear, lo dirá quien escriba
+    @staticmethod
+    def _carpeta_analisis(oecf: biboecf.OECF) -> Path:
+        try:
+            oecf.carpetaAnalisis.mkdir(exist_ok=True)
+        except OSError:
+            pass
+        return oecf.carpetaAnalisis
+
+    #
     # --- Con la serie medida: el JSON (ya con el análisis) y el libro
     def _fin_medida(self) -> None:
         kv = self.KV
         oecf: biboecf.OECF = self.OECF                          # type: ignore
         self.medida = None
         grabar_json(oecf)
-        ruta = oecf.carpeta / f"{K.NOMBRE}{kv.EXTENSION_EXCEL}"
+        ruta = (self._carpeta_analisis(oecf)
+                / f"{K.NOMBRE}{kv.EXTENSION_EXCEL}")
         # --- Cualquier otro fallo del libro (un dato que no se puede
         #     escribir…) también se dice, con su error, y se sigue
         error = ""
@@ -1446,7 +1509,8 @@ class Ventana(ctk.CTk):
         #     (para FotoEstación) y la ficha PDF
         if excel is not None:
             grabar_resultados(oecf.carpeta, excel.resultados())
-            ficha, archivo, fallo = self.EscribirFicha(excel, oecf.carpeta)
+            ficha, archivo, fallo = self.EscribirFicha(
+                excel, oecf.carpetaAnalisis)
             self.Mensaje(partial(self._componer, ficha, archivo=archivo,
                                  error=fallo))
 
@@ -1465,8 +1529,8 @@ class Ventana(ctk.CTk):
             return
         factores = tuple(sorted({biboecf.KTE.FACTORES[0],
                                  self.factor.get()}))           # type: ignore
-        zonas = {oecf.NombreZona(t): raw
-                 for t, raw in sorted(oecf.zonas.items()) if raw}
+        zonas = {oecf.NombreZona(t): copia for t, copia
+                 in oecf.RellenarTercios(oecf.zonasCopia).items()}
         review: biboecf.Review = oecf.review                    # type: ignore
         self.psd = biboecf.Psd(
             biboecf.RUTA_PLANTILLA, zonas, self.ventana_tela, factores,
@@ -1499,7 +1563,7 @@ class Ventana(ctk.CTk):
                                  archivo=nombre), sustituir=True)
             self.update_idletasks()
             try:
-                psd.Escribir(factor, oecf.carpeta / nombre)
+                psd.Escribir(factor, oecf.carpetaAnalisis / nombre)
                 escritas.append(nombre)
                 self.escritos.append(nombre)
             except OSError:
@@ -1666,25 +1730,29 @@ class Ventana(ctk.CTk):
     def ContarIncidencias(self) -> None:
         """
         Pone en el botón de incidencias cuántas hay (o que no hay), lo activa
-        si las hay y rehace su ventana si está abierta.
+        si las hay y rehace su ventana si está abierta; y las graba. En una
+        serie ya preparada no hay botón (ni rejilla): solo las graba.
         """
         btn = self.btn_incidencias
-        if btn is None:
+        if (btn is None) and (not self.preparada):
             return
-        n = len(self.incidencias())
-        if n:
-            self.Poner(btn, self.KV.TXT_INCIDENCIAS, n=n)
-        else:
-            self.Poner(btn, self.KV.TXT_SIN_INCIDENCIAS)
-        btn.configure(state="normal" if n else "disabled")
-        self.rellenar_incidencias()
+        if btn is not None:
+            n = len(self.incidencias())
+            if n:
+                self.Poner(btn, self.KV.TXT_INCIDENCIAS, n=n)
+            else:
+                self.Poner(btn, self.KV.TXT_SIN_INCIDENCIAS)
+            btn.configure(state="normal" if n else "disabled")
+            self.rellenar_incidencias()
+
+        # --- También sin botón (sin rejilla: una serie ya preparada)
         self.GrabarIncidencias()
 
     #
     def GrabarIncidencias(self) -> None:
         """
         Graba las incidencias, como en su ventana (o que no hay), en
-        incidencias.txt de la carpeta OECF, en el idioma de la ventana. Se
+        incidencias.txt de la carpeta CTRL, en el idioma de la ventana. Se
         rehace cada vez que cambian (Analizar y Generar añaden). Sin copias (la
         carpeta OECF no está lista), nada.
         """
@@ -1694,7 +1762,8 @@ class Ventana(ctk.CTk):
             return
         incidencias = self.incidencias() or [K.tr(kv.TXT_SIN_INCIDENCIAS)]
         try:
-            (oecf.carpeta / kv.ARCHIVO_INCIDENCIAS).write_text(
+            oecf.carpetaCtrl.mkdir(exist_ok=True)
+            (oecf.carpetaCtrl / kv.ARCHIVO_INCIDENCIAS).write_text(
                 kv.SEP_INCIDENCIAS.join(incidencias) + kv.SEP_INCIDENCIAS,
                 encoding="utf-8")
         except OSError:
@@ -1760,11 +1829,14 @@ class Ventana(ctk.CTk):
         #     compone su texto, para rehacerlo al cambiar de idioma
         self._textos: dict[ctk.CTkBaseClass, Callable[[], str]] = {}
 
-        # --- Caja Carpeta (caja_carpeta): los botones Preparar y Analizar
-        #     revelado (los enseña, activa y desactiva ActivarCarpeta) y la
-        #     variable de la casilla
+        # --- Caja Carpeta (caja_carpeta): los botones Preparar, Analizar,
+        #     Analizar revelado y Abrir resultados (los enseña, activa y
+        #     desactiva ActivarCarpeta) y la variable de la casilla
+        self.botones_carpeta: ctk.CTkFrame
         self.btn_preparar: ctk.CTkButton
+        self.btn_analizar_carpeta: ctk.CTkButton
         self.btn_revelado: ctk.CTkButton
+        self.btn_abrir_carpeta: ctk.CTkButton
         self.ruta: ctk.StringVar
 
         # --- Explorador de Linux abierto al elegir carpeta (caja_carpeta):
@@ -1807,6 +1879,8 @@ class Ventana(ctk.CTk):
         #     (incluida), porque las de encima se quitan en cada preparación;
         #     y las etiquetas de sus valores
         self.OECF: biboecf.OECF | None
+        self.carpetaVista: Path | None
+        self.preparada: bool
         self.propias_cam: int
         self.val_archivo: ctk.CTkLabel | None
         self.val_bits: ctk.CTkLabel | None
@@ -1943,6 +2017,8 @@ class Ventana(ctk.CTk):
         __init__): al arrancar y al quitar la caja.
         """
         self.OECF = None
+        self.carpetaVista = None
+        self.preparada = False
         self.propias_cam = 0
         self.val_archivo = None
         self.val_bits = None
@@ -2081,12 +2157,16 @@ class Ventana(ctk.CTk):
         Cierra la ventana. Sustituye al destroy() de Tk: el nombre es
         OBLIGATORIO (no sigue las normas de nombres) porque lo llaman Tk al
         pulsar la X de la ventana y el botón Salir. Antes de cerrar se cancela
-        la lectura pendiente de la serie (self.tarea): si no, Tk avisa de un
-        error al intentar seguir con una ventana que ya no existe.
-        super().destroy() es el de Tk, el que cierra de verdad.
+        todo lo que Tk tenga programado con after: la lectura pendiente de la
+        serie y lo de CustomTkinter (la animación del clic, el ajuste de
+        DPI…). Si no, Tk avisa de errores al intentar seguir con una ventana
+        que ya no existe (bgerror). super().destroy() es el de Tk, el que
+        cierra de verdad.
         """
-        if self.tarea is not None:
-            self.after_cancel(self.tarea)
+        kv = self.KV
+        for pendiente in self.tk.splitlist(
+                self.tk.call(kv.TCL_AFTER, kv.TCL_INFO)):
+            self.tk.call(kv.TCL_AFTER, kv.TCL_CANCEL, pendiente)
         super().destroy()
 
     # endregion Elementos de servicio general
@@ -2433,34 +2513,49 @@ class Ventana(ctk.CTk):
         self.btn_preparar.configure(
             state="normal" if preparar else "disabled")
 
-        # --- Analizar revelado: a la vista si la carpeta OECF ya tiene el
-        #     análisis; activo si además hay exportaciones del revelador.
-        #     Al aparecer o desaparecer, la caja Carpeta cambia de ancho: la
-        #     ventana se ajusta ya (si no, esperaba al siguiente Ajustar,
-        #     p. ej. al cambiar de idioma)
+        # --- Los que se ven, en orden: con el análisis en la carpeta
+        #     OECF, Analizar revelado si hay exportaciones del revelador;
+        #     si no, Abrir resultados, salvo que ya se vea otro (los tres
+        #     a la vez ensanchan demasiado la ventana); y Preparar o, en
+        #     una carpeta OECF ya preparada (restaurada), Analizar, si
+        #     están sus copias RAW (sin ellas, solo el revelado: Tony,
+        #     2026-10-19). Activos si además está libre. Al cambiar,
+        #     la caja Carpeta cambia de ancho: la ventana se ajusta ya (si
+        #     no, esperaba al siguiente Ajustar, p. ej. al cambiar de
+        #     idioma)
         oecf = self.OECF
-        hay = (oecf is not None) and hay_review(oecf.carpeta)
-        if hay and (not self.btn_revelado.winfo_ismapped()):
-            self.btn_revelado.pack(side="right", padx=(self.KV.MARGEN, 0),
-                                   after=self.btn_preparar)
+        analisis = (oecf is not None) and hay_review(oecf.carpeta)
+        tiff = analisis and bool(oecf.exportaciones)            # type: ignore
+        abrir = analisis and (not tiff) and (self.btn_resultados is None)
+        restaurada = (self.preparada and (oecf is not None)
+                      and oecf.copiasEnSitio)
+        vistos = [btn for btn, ver in (
+            (self.btn_revelado, tiff),
+            (self.btn_abrir_carpeta, abrir),
+            (self.btn_analizar_carpeta, restaurada),
+            (self.btn_preparar, not self.preparada)) if ver]
+        botones = self.botones_carpeta
+        if vistos != botones.pack_slaves():
+            for btn in botones.pack_slaves():
+                btn.pack_forget()
+            for btn in vistos:
+                btn.pack(side="left", padx=(self.KV.MARGEN, 0))
             self.Ajustar()
-        elif (not hay) and self.btn_revelado.winfo_ismapped():
-            self.btn_revelado.pack_forget()
-            self.Ajustar()
-        revelado = hay and libre and bool(oecf.exportaciones)   # type: ignore
-        self.btn_revelado.configure(
-            state="normal" if revelado else "disabled")
+        for btn in (self.btn_revelado, self.btn_abrir_carpeta,
+                    self.btn_analizar_carpeta):
+            btn.configure(state="normal" if libre else "disabled")
         if self.btn_resultados is not None:
             self.btn_resultados.configure(
                 state="normal" if resultados else "disabled")
+
 
     #
     def AnalizarRevelado(self) -> None:
         """
         Segunda parte del análisis: mide las exportaciones del revelador (las
-        TIFF de la carpeta OECF) en las mismas teselas que el análisis del
-        JSON. En su propia caja, encima de la Cámara (quita las que hubiera:
-        Serie, Lámina o un Revelado anterior)
+        TIFF de OECF/ZONAS) en las mismas teselas que el análisis del JSON. En
+        su propia caja, encima de la Cámara (quita las que hubiera: Serie,
+        Lámina o un Revelado anterior)
         """
         kv = self.KV
         oecf: biboecf.OECF = self.OECF                          # type: ignore
@@ -2517,7 +2612,8 @@ class Ventana(ctk.CTk):
         usables = sum(not math.isnan(v) for v in revelador)
         review = dataclasses.replace(review, revelador=revelador)
         guardado = grabar_review(oecf.carpeta, review)
-        ruta = oecf.carpeta / f"{K.NOMBRE}{kv.EXTENSION_EXCEL}"
+        ruta = (self._carpeta_analisis(oecf)
+                / f"{K.NOMBRE}{kv.EXTENSION_EXCEL}")
         # --- Cualquier fallo del libro se dice, con su error, y se sigue
         #     (si no, la caja se queda a medias)
         excel = None
@@ -2549,7 +2645,8 @@ class Ventana(ctk.CTk):
                                                           error=error))
         if excel is not None:
             grabar_resultados(oecf.carpeta, excel.resultados())
-            ficha, archivo, fallo = self.EscribirFicha(excel, oecf.carpeta)
+            ficha, archivo, fallo = self.EscribirFicha(
+                excel, oecf.carpetaAnalisis)
             lineas.append(K.tr(ficha).format(archivo=archivo, error=fallo))
         lineas += problemas
         self.Poner(self.val_revelado,                           # type: ignore
@@ -2585,15 +2682,16 @@ class Ventana(ctk.CTk):
         """
         oecf: biboecf.OECF = self.OECF                          # type: ignore
         tela: biboecf.Ventana = review.tela                     # type: ignore
-        zonas = {oecf.NombreZona(t): ruta
-                 for t, ruta in sorted(oecf.exportaciones.items())
-                 if isinstance(self.tiff_medidos.get(t), float)}
+        medidas = {t: ruta for t, ruta in oecf.exportaciones.items()
+                   if isinstance(self.tiff_medidos.get(t), float)}
+        zonas = {oecf.NombreZona(t): ruta for t, ruta
+                 in oecf.RellenarTercios(medidas).items()}
         prueba = biboecf.Psd(biboecf.RUTA_PLANTILLA, {}, tela,
                              biboecf.KTE.FACTORES,
                              (review.alto, review.ancho))
         factores = tuple(f for f in biboecf.KTE.FACTORES
                          if (f == biboecf.KTE.FACTORES[0])
-                         or (oecf.carpeta / prueba.nombre(f)).exists())
+                         or (oecf.carpetaAnalisis / prueba.nombre(f)).exists())
         self.psd_tiff = biboecf.Psd(
             biboecf.RUTA_PLANTILLA, zonas, tela,
             factores, (review.alto, review.ancho),
@@ -2631,7 +2729,7 @@ class Ventana(ctk.CTk):
                                archivo=nombre))
             self.update_idletasks()
             try:
-                psd.Escribir(factor, oecf.carpeta / nombre)
+                psd.Escribir(factor, oecf.carpetaAnalisis / nombre)
                 escritas.append(nombre)
                 self.escritos.append(nombre)
             except OSError:

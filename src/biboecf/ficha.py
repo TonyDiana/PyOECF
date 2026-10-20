@@ -45,6 +45,11 @@ from .teselas import Ventana
 class KFI(std.EnumMutable):
     """ Diseño de la ficha: página, colores, posiciones y textos. """
 
+    # --- Motor de dibujo de matplotlib: solo a archivo, sin ventanas. Sin
+    #     fijarlo, el depurador de VS Code lo engancha a Tk en modo
+    #     interactivo y el programa puede no cerrarse (2026-10-19)
+    MOTOR = "Agg"
+
     # --- Página A4 vertical, en pulgadas, y márgenes laterales (fracción)
     PAGINA = (8.27, 11.69)
     IZQUIERDA = 0.06
@@ -139,6 +144,10 @@ class KFI(std.EnumMutable):
     T_NEGRO_FICHA = "negro_ficha"
     T_PIE_FICHA = "pie_ficha"
     T_PAGINA = "pagina"
+
+
+# --- Ver KFI.MOTOR
+matplotlib.use(KFI.MOTOR)
 
 
 #

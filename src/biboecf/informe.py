@@ -3,7 +3,7 @@
     :Propósito: Incidencias de una serie ya leída: códigos con sus datos,
                 sin frases. Cada interfaz las traduce
     :Autor:     Tony Diana
-    :Versión:   26.10.18
+    :Versión:   26.10.19
 """
 
 # cSpell:ignore asim, kcom, oecf
@@ -19,6 +19,7 @@ from .constantes import COM as KCOM
 from .kernel import OECF
 from .secuencia import KS
 from .teselas import KTE, Select
+from .zonas import KP
 
 
 #
@@ -37,6 +38,12 @@ class KI(std.EnumMutable):
     """La 2.ª toma ya es de un lado: no se hizo el balance personalizado."""
 
     # --- Secuencia (ver OECF.secuencia)
+    MEDIO_PASO = "MEDIO_PASO"
+    """Serie por medios pasos: impide analizar."""
+
+    PASO_ENTERO = "PASO_ENTERO"
+    """Serie por pasos enteros, sin tercios: se analiza sin ellos."""
+
     INICIALES_SOBRAN = "INICIALES_SOBRAN"
     """Hay más Z-V iniciales de las que pide el protocolo."""
 
@@ -61,6 +68,10 @@ class KI(std.EnumMutable):
     # --- Tapadas y balances de cámara
     TAPADAS_MAL = "TAPADAS_MAL"
     """No hay las tomas tapadas que pide el protocolo."""
+
+    TAPADAS_CON_LUZ = "TAPADAS_CON_LUZ"
+    """Tapadas que no salieron casi negras: se taparon mal (no sirven
+    para el negro)."""
 
     ISO_TAPADAS = "ISO_TAPADAS"
     """Tapadas con otro ISO que la ZV (solo se avisa)."""
@@ -190,7 +201,12 @@ def incidencias(oecf: OECF) -> list[Incidencia]:
         lista.append(Incidencia(code=KI.MISMO_BALANCE if mismo
                                 else KI.SIN_BALANCE))
 
-    # --- Secuencia
+    # --- Secuencia. Por medios pasos, jamás; por pasos enteros, sí (Tony,
+    #     2026-10-19)
+    if oecf.medioPaso:
+        lista.append(Incidencia(code=KI.MEDIO_PASO, detiene=True))
+    elif sec.paso == KP.TERCIOS:
+        lista.append(Incidencia(code=KI.PASO_ENTERO))
     sobran = len(sec.iniciales) - KS.INICIALES
     if sobran > 0:
         lista.append(Incidencia(code=KI.INICIALES_SOBRAN, n=sobran))
@@ -215,6 +231,9 @@ def incidencias(oecf: OECF) -> list[Incidencia]:
     if tapadas != KS.TAPADAS:
         lista.append(Incidencia(code=KI.TAPADAS_MAL, n=tapadas,
                                 esperado=KS.TAPADAS))
+    if oecf.tapadasConLuz:
+        lista.append(Incidencia(code=KI.TAPADAS_CON_LUZ,
+                                tomas=tuple(oecf.tapadasConLuz)))
     if oecf.tapadasOtroISO and (oecf.isoSerie is not None):
         lista.append(Incidencia(code=KI.ISO_TAPADAS,
                                 tomas=tuple(oecf.tapadasOtroISO)))
@@ -222,10 +241,10 @@ def incidencias(oecf: OECF) -> list[Incidencia]:
         lista.append(Incidencia(code=KI.SIN_BALANCES))
 
     # --- Posiciones vacías y repetidas (fuera de ZV), tomas que no caben
-    #     y tomas desviadas
+    #     y tomas desviadas. Por pasos enteros, los tercios no son huecos
     lista += [Incidencia(code=KI.SIN_TOMA, detiene=oecf.EsNecesaria(t),
                          tercioEV=t)
-              for t in oecf.huecos]
+              for t in oecf.huecos if (t % sec.paso) == 0]
     lista += [Incidencia(code=KI.REPETIDA, n=len(idxs), tercioEV=t)
               for t, idxs in oecf.repetidas.items()]
     if oecf.fuera:

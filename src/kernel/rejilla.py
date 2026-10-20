@@ -163,6 +163,20 @@ class Rejilla(tk.Canvas):
                          K.EN: "The final Z-V is missing.",
                          K.CA: "Falta la Z-V final."}
 
+        # --- Paso de la serie: por pasos enteros se analiza sin tercios;
+        #     por medios pasos, nunca (Tony, 2026-10-19)
+        TXT_PASO_ENTERO = {
+            K.ES: "Serie por pasos enteros: se analiza sin tercios.",
+            K.EN: "Series in full stops: it is analyzed without thirds.",
+            K.CA: "Sèrie per passos sencers: s'analitza sense terços."}
+        TXT_MEDIO_PASO = {
+            K.ES: "Serie por medios pasos: no se puede analizar. Repítela "
+                  "por tercios o por pasos enteros.",
+            K.EN: "Series in half stops: it cannot be analyzed. Repeat it "
+                  "in thirds or in full stops.",
+            K.CA: "Sèrie per mitjos passos: no es pot analitzar. Repeteix-la "
+                  "per terços o per passos sencers."}
+
         # --- ISO distinto del de la ZV: en la serie impide analizar; en
         #     las tapadas, solo se avisa
         TXT_ISO_DISTINTO = {
@@ -178,6 +192,23 @@ class Rejilla(tk.Canvas):
                    "(s'esperava ISO {iso}).",
                    "L'ISO canvia en {n} preses de la sèrie: {idents} "
                    "(s'esperava ISO {iso}).")}
+        TXT_TAPADAS_CON_LUZ = {
+            K.ES: ("Hay {n} toma tapada que no salió negra: {idents}. Se "
+                   "tapó mal y no sirve para el negro.",
+                   "Hay {n} tomas tapadas que no salieron negras: {idents}. "
+                   "Se taparon mal y no sirven para el negro."),
+            K.EN: ("There is {n} covered shot that is not black: {idents}. "
+                   "It was badly covered and is not used for the black "
+                   "level.",
+                   "There are {n} covered shots that are not black: "
+                   "{idents}. They were badly covered and are not used for "
+                   "the black level."),
+            K.CA: ("Hi ha {n} presa tapada que no va sortir negra: "
+                   "{idents}. Es va tapar malament i no serveix per al "
+                   "negre.",
+                   "Hi ha {n} preses tapades que no van sortir negres: "
+                   "{idents}. Es van tapar malament i no serveixen per al "
+                   "negre.")}
         TXT_ISO_TAPADAS = {
             K.ES: ("Hay {n} toma tapada con otro ISO: {idents} (se "
                    "esperaba ISO {iso}).",
@@ -356,6 +387,8 @@ class Rejilla(tk.Canvas):
             _KI.ISO_DISTINTO: TXT_ISO_DISTINTO,
             _KI.MISMO_BALANCE: TXT_MISMO_BALANCE,
             _KI.SIN_BALANCE: TXT_SIN_BALANCE,
+            _KI.MEDIO_PASO: TXT_MEDIO_PASO,
+            _KI.PASO_ENTERO: TXT_PASO_ENTERO,
             _KI.INICIALES_SOBRAN: TXT_INICIALES_SOBRAN,
             _KI.LADOS: TXT_LADOS,
             _KI.SIN_CAMBIO: TXT_SIN_CAMBIO,
@@ -364,6 +397,7 @@ class Rejilla(tk.Canvas):
             _KI.SALTO: TXT_SALTO,
             _KI.SOBRANTES: TXT_SOBRANTES,
             _KI.TAPADAS_MAL: TXT_TAPADAS_MAL,
+            _KI.TAPADAS_CON_LUZ: TXT_TAPADAS_CON_LUZ,
             _KI.ISO_TAPADAS: TXT_ISO_TAPADAS,
             _KI.SIN_BALANCES: TXT_SIN_BALANCES,
             _KI.SIN_TOMA: TXT_SIN_TOMA,

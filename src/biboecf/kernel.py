@@ -28,7 +28,7 @@ import rawpy
 from bib import std
 from .cam import Cam, leer_cam
 from .constantes import COM as KCOM
-from .marcas import leer_balance, leer_kelvin
+from .marcas import KM, leer_balance, leer_kelvin
 from .secuencia import KS, Secuencia, balance_personalizado, secuencia
 from .review import Review, BalanceMedido, ZonaMedida
 from .teselas import (KTE, Select, Ventana, buscar_tela, exceso_negro,
@@ -37,7 +37,7 @@ from .teselas import (KTE, Select, Ventana, buscar_tela, exceso_negro,
                       seleccionar, temperatura)
 from .transferencia import ajustar_transferencia
 from .zonas import (KP, calcular_tercio_exacto, exp_relativa,
-                    zona_tercio)
+                    texto_zona, zona_tercio)
 
 
 #
@@ -57,13 +57,15 @@ class Toma(NamedTuple):
     nombreWB: su nombre, en inglés y mayúsculas (SUNNY, DAYLIGHT,
     5600K…). bits: profundidad de bits del RAW (12, 14…). kelvin:
     temperatura de color con que se hizo (Canon y Sony, en todas las
-    tomas; Nikon y Fujifilm, solo con el balance por Kelvin). oscura: a
-    1/160 y casi negra; es una tapada solo si va tras la Z-V final (ver
-    secuencia).
+    tomas; Nikon y Fujifilm, solo con el balance por Kelvin). tapada:
+    con la exposición de las tapadas (f/11 y 1/160); es una tapada solo
+    si va tras la Z-V final (ver secuencia). oscura: tapada y casi negra
+    (si no, se tapó mal).
     """
     exp: Exp | None
     fecha: datetime | None
     WB: tuple[float, ...] | None
+    tapada: bool
     oscura: bool
     nombreWB: str | None
     bits: int | None
@@ -76,15 +78,17 @@ class OECF(object):
         y los datos de la serie, y los ofrece. Cada carpeta tiene su
         objeto, así que puede haber varios a la vez. """
 
-    __slots__ = ["__review", "__balancePersonalizado", "__cam",
+    __slots__ = ["__review", "__balancePersonalizado", "__cam", "__carpeta",
                  "__celdas", "__copias", "__desviadas", "__devs",
                  "__errorCopia",
                  "__enRejilla", "__esCarpeta", "__fuera",
-                 "__isoDistintos", "__isoSerie", "__tela", "__partes",
+                 "__isoDistintos", "__isoSerie", "__medioPaso", "__tela",
+                 "__partes",
                  "__path", "__puedeLeer", "__raws", "__secuencia",
                  "__select",
-                 "__tapadas", "__tapadasOtroISO",
-                 "__tercioEVs", "__tomas", "__WBs", "__zonas"]
+                 "__tapadas", "__tapadasConLuz", "__tapadasOtroISO",
+                 "__tercioEVs", "__tomas", "__wbCtrl", "__WBs",
+                 "__zonas", "__zvs"]
 
     #
     # --- Constantes de la toma
@@ -98,12 +102,17 @@ class OECF(object):
         #     bits
         DECIMALES_F = 1
 
-        # --- Tomas tapadas (tapa puesta y visor cubierto): se disparan a
-        #     este tiempo y quedan casi en negro (la toma es «oscura»; es
-        #     tapada si va tras la Z-V final). Brillo: media del RAW
-        #     sobre el nivel de negro, en tanto por uno del rango útil. En
-        #     series reales, una tapada da 0.0003 y una toma normal, de
-        #     0.02 a 0.06
+        # --- Tomas tapadas (tapa puesta y visor cubierto): siempre a f/11
+        #     y 1/160, con el ISO de la serie; esa exposición las
+        #     identifica (Tony, 2026-10-19), con margen en el diafragma
+        #     (f/11 real es 11,31 y hay cámaras que guardan este).
+        #     Deben quedar casi en negro: si no, se tapó mal (no sirven
+        #     para el negro y se avisa). Brillo: media del RAW sobre el
+        #     nivel de negro, en tanto por uno del rango útil. En series
+        #     reales, una tapada da 0.0003 y una toma normal, de 0.02 a
+        #     0.06
+        F_TAPADA = 11
+        MARGEN_F_TAPADA = 0.05
         TV_TAPADA = 1 / 160
         BRILLO_TAPADA = 0.005
 
@@ -112,14 +121,26 @@ class OECF(object):
         CANAL_VERDE = 1
         DECIMALES_WB = 4
 
-        # --- Copias de la serie: carpeta dentro de la de la serie y
-        #     nombres de cada copia (llevan la extensión de su RAW). Zonas:
-        #     Z00 a Z10, con -3 y -7 en los tercios (Z05 es la ZV);
-        #     tapadas: DARK-1, DARK-2; balances de cámara: WB-01, WB-02…
-        #     con el nombre del balance si la cámara lo guarda
-        #     (WB-03-INCANDESCENT, WB-07-NATURAL-AUTO): en mayúsculas y
-        #     con un guion en lugar de lo que no sea letra o número
+        # --- Copias de la serie: carpeta dentro de la de la serie, con el
+        #     JSON en su raíz y una subcarpeta por papel, y nombres de cada
+        #     copia (llevan la extensión de su RAW). ZONAS: Z00 a Z10, con
+        #     -3 y -7 en los tercios (Z05 es la ZV), y las exportaciones
+        #     del revelador (TIFF), junto a su RAW. CTRL: balances de
+        #     cámara, WB-01, WB-02… con el nombre del balance si la cámara
+        #     lo guarda (WB-03-INCANDESCENT, WB-07-NATURAL-AUTO): en
+        #     mayúsculas y con un guion en lugar de lo que no sea letra o
+        #     número; el de Kelvin a mano, con sus K (WB-01-KELVIN-5600K);
+        #     de los repetidos (mismo nombre y multiplicadores), solo el
+        #     último. También las tapadas, DARK-1, DARK-2; la toma del
+        #     balance personalizado, WB-CTRL; las Z-V de control, ZV-INI,
+        #     ZV-MEDIO (cambio de lado) y ZV-FIN (de cada una, la última),
+        #     y las incidencias. ANALISIS: el libro, la ficha y las
+        #     láminas. JSON y ZONAS bastan para rehacer el análisis: es lo
+        #     que se lleva FE (Tony, 2026-10-19)
         CARPETA = "OECF"
+        CARPETA_ZONAS = "ZONAS"
+        CARPETA_CTRL = "CTRL"
+        CARPETA_ANALISIS = "ANALISIS"
         CIFRAS_ZONA = 2
         TERCIOS_ZONA = ("", "-3", "-7")
         NOMBRE_TAPADA = "DARK"
@@ -127,6 +148,13 @@ class OECF(object):
         PREFIJO_TAPADA = f"{NOMBRE_TAPADA}-"
         PREFIJO_BALANCE = "WB-"
         CIFRAS_BALANCE = 2
+        NOMBRE_WB_CTRL = f"{PREFIJO_BALANCE}{CARPETA_CTRL}"
+        ZV_INI = "INI"
+        """ Papel de la Z-V inicial (ver zvs). """
+        ZV_MEDIO = "MEDIO"
+        """ Papel de la Z-V del cambio de lado (ver zvs). """
+        ZV_FIN = "FIN"
+        """ Papel de la Z-V final (ver zvs). """
         SEP_NOMBRE = "-"
         REGEX_RARO = r"[^A-Z0-9]+"
 
@@ -141,9 +169,9 @@ class OECF(object):
         PARTE_BALANCE = "balance"
         PARTE_SOBRANTE = "sobrante"
 
-        # --- Z-V iniciales de más (desde la tercera): no van a la
-        #     rejilla, pero son Z-V de control (entran en la media de las
-        #     Z-V si la luz no cambió); el JSON lo dice (2026-10-16)
+        # --- Z-V iniciales de más: las repetidas (todas menos la del
+        #     balance personalizado y la última). No van a la rejilla ni
+        #     se miden: vale la última (Tony, 2026-10-19); el JSON lo dice
         PARTE_CONTROL = "control"
 
         # --- Para analizar, de Z1 a Z9 (con sus tercios) ninguna zona
@@ -151,18 +179,33 @@ class OECF(object):
         ZONA_MIN_REVIEW = 1
         ZONA_MAX_REVIEW = 9
 
+        # --- Serie por medios pasos (nunca se analiza: Tony, 2026-10-19):
+        #     medio paso es 1,5 tercios, y una de cada dos tomas de los
+        #     lados se aparta medio tercio del suyo (DESVIO_MEDIO, con
+        #     MARGEN_MEDIO). Lo es si son al menos PARTE_MEDIOS de las
+        #     tomas de los lados
+        DESVIO_MEDIO = 0.5
+        MARGEN_MEDIO = 0.1
+        PARTE_MEDIOS = 1 / 3
+
     #
-    # --- Si la carpeta no existe o no tiene RAW, no falla.
+    # --- Si la carpeta no existe o no tiene RAW, no falla. buscar: si se
+    #     buscan sus RAW (no, al restaurar una serie preparada: ver
+    #     Restaurar)
     #
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, buscar: bool = True) -> None:
         self.__path = path
         self.__esCarpeta = path.is_dir()
+
+        # --- Carpeta de las copias: OECF, dentro de la de la serie (al
+        #     restaurar, la elegida: ver Restaurar)
+        self.__carpeta: Path = path / self.KT.CARPETA
 
         # --- Leer los RAW, en orden ([] si no hay o si no hay permiso
         #     para leer la carpeta)
         self.__puedeLeer: bool = self.esCarpeta
         self.__raws: list[Path] = []
-        if self.esCarpeta:
+        if buscar and self.esCarpeta:
             try:
                 self.__raws = self.__buscar_raw()
             except OSError:
@@ -186,15 +229,19 @@ class OECF(object):
         self.__tapadas: list[Path] = []
         self.__WBs: list[Path] = []
         self.__zonas: dict[int, Path | None] = {}
+        self.__zvs: dict[str, Path] = {}
+        self.__wbCtrl: Path | None = None
         self.__balancePersonalizado: bool | None = None
         self.__partes: list[str | None] = []
         self.__enRejilla: list[bool] = []
         self.__celdas: dict[int, list[int]] = {}
         self.__fuera: list[int] = []
         self.__desviadas: list[int] = []
+        self.__medioPaso: bool = False
         self.__isoSerie: float | None = None
         self.__isoDistintos: list[int] = []
         self.__tapadasOtroISO: list[int] = []
+        self.__tapadasConLuz: list[int] = []
         if self.raws and self.esRead:
             self.__repartir()
 
@@ -307,16 +354,50 @@ class OECF(object):
         Saber el RAW de cada zona, de la más oscura a la más clara: las 31,
         con su tercioEV como clave (None si no hay toma; {} hasta leer la
         serie).
-        En la ZV, la Z-V del balance personalizado o, si no hay, la
-        primera; en las demás, la última que se hizo.
+        En la ZV, la del cambio de lado o, si no hay, la inicial (ver
+        zvs); en las demás, la última que se hizo.
         """
         return self.__zonas
 
     #
     @property
+    def zvs(self) -> dict[str, Path]:
+        """
+        Saber el RAW de cada Z-V de control, por su papel (KT.ZV_INI,
+        KT.ZV_MEDIO, KT.ZV_FIN), solo las que hay: de cada una, la última
+        que se hizo (si se repite, es que el estudiante no estaba seguro:
+        Tony, 2026-10-19). La inicial, sin la toma del balance
+        personalizado (ver wbCtrl). {} hasta leer la serie.
+        """
+        return self.__zvs
+
+    #
+    @property
+    def wbCtrl(self) -> Path | None:
+        """
+        Saber el RAW de la toma del balance personalizado: la primera, si
+        la serie empieza con dos Z-V (solo tarjeta, con otro encuadre).
+        None si no la hay o hasta leer la serie.
+        """
+        return self.__wbCtrl
+
+    #
+    @property
     def tapadas(self) -> list[Path]:
-        """ Saber los RAW de las tomas tapadas, en orden de disparo. """
+        """
+        Saber los RAW de las tomas tapadas, en orden de disparo: las que
+        salieron casi negras (las demás, ver tapadasConLuz).
+        """
         return self.__tapadas
+
+    #
+    @property
+    def tapadasConLuz(self) -> list[int]:
+        """
+        Saber las tomas tapadas que no salieron casi negras (índices en
+        raws): se taparon mal; no sirven para el negro ni se copian.
+        """
+        return self.__tapadasConLuz
 
     #
     @property
@@ -455,14 +536,18 @@ class OECF(object):
     @property
     def exportaciones(self) -> dict[int, Path]:
         """
-        Saber las exportaciones del revelador que hay en la carpeta OECF:
-        las TIFF con el nombre de una zona (ver NombreZona), {tercioEV:
+        Saber las exportaciones del revelador: las TIFF con el nombre de
+        una zona (ver NombreZona), junto a su RAW en la subcarpeta ZONAS
+        o, si se guardaron solas con el JSON, en la carpeta (Tony,
+        2026-10-19); si una está en las dos, la de ZONAS. {tercioEV:
         ruta}. No hace falta haber leído la serie.
         """
-        if not self.carpeta.is_dir():
-            return {}
-        por_nombre = {p.stem.upper(): p for p in self.carpeta.iterdir()
-                      if p.suffix.lower() in KCOM.EXTENSIONES_TIFF}
+        por_nombre: dict[str, Path] = {}
+        for donde in (self.carpeta, self.carpeta / self.KT.CARPETA_ZONAS):
+            if donde.is_dir():
+                por_nombre.update({
+                    p.stem.upper(): p for p in donde.iterdir()
+                    if p.suffix.lower() in KCOM.EXTENSIONES_TIFF})
         exportaciones = {}
         for tercioEV in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1):
             ruta = por_nombre.get(self.NombreZona(tercioEV).upper())
@@ -484,22 +569,73 @@ class OECF(object):
     def esAnalizable(self) -> bool:
         """
         Saber si la serie se puede analizar: de Z1 a Z9, ninguna zona sin
-        toma (las de zonas, que son las que se copian), y el mismo ISO en
-        toda la serie. Las repetidas no lo impiden.
+        toma (las de zonas, que son las que se copian; por pasos enteros,
+        solo las enteras), el mismo ISO en toda la serie y que no sea por
+        medios pasos. Las repetidas no lo impiden.
         """
-        if (not self.zonas) or self.isoDistintos:
+        if (not self.zonas) or self.isoDistintos or self.medioPaso:
             return False
         return all(self.zonas[t] is not None for t in self.zonas
                    if self.EsNecesaria(t))
 
     #
     @property
+    def paso(self) -> int:
+        """
+        Saber los tercios de cada paso de los lados: 1 (por tercios) o
+        KP.TERCIOS (por pasos enteros, sin tercios). 1 hasta leer la serie.
+        """
+        return self.secuencia.paso if self.secuencia else 1
+
+    #
+    @property
+    def medioPaso(self) -> bool:
+        """
+        Saber si la serie se hizo por medios pasos: no se puede analizar
+        (Tony, 2026-10-19). False hasta leer la serie.
+        """
+        return self.__medioPaso
+
+    #
+    @property
     def carpeta(self) -> Path:
         """
         Saber la carpeta de las copias de la serie: OECF, dentro de la de
-        la serie.
+        la serie (con el JSON en su raíz). En una serie restaurada, la que
+        se eligió, se llame como se llame (ver Restaurar).
         """
-        return self.path / self.KT.CARPETA
+        return self.__carpeta
+
+    #
+    @property
+    def copiasEnSitio(self) -> bool:
+        """
+        Saber si están todas las copias (las RAW de ZONAS y CTRL): sin
+        ellas no se puede medir. En una serie restaurada pueden faltar si
+        solo se guardó el JSON con las exportaciones del revelador (Tony,
+        2026-10-19).
+        """
+        return bool(self.copias) and all(copia.is_file()
+                                          for copia in self.copias.values())
+
+    #
+    @property
+    def carpetaCtrl(self) -> Path:
+        """
+        Saber la subcarpeta de control de la carpeta OECF: CTRL, con los
+        balances de cámara, las tapadas, las Z-V de control y las
+        incidencias.
+        """
+        return self.carpeta / self.KT.CARPETA_CTRL
+
+    #
+    @property
+    def carpetaAnalisis(self) -> Path:
+        """
+        Saber la subcarpeta de la carpeta OECF con lo que escribe el
+        análisis: ANALISIS, con el libro, la ficha y las láminas.
+        """
+        return self.carpeta / self.KT.CARPETA_ANALISIS
 
     #
     @property
@@ -509,6 +645,21 @@ class OECF(object):
         {original: copia} ({} hasta copiar o si la copia falló).
         """
         return self.__copias
+
+    #
+    @property
+    def zonasCopia(self) -> dict[int, Path | None]:
+        """
+        Saber la copia de cada zona, en la subcarpeta ZONAS: las mismas
+        claves que zonas, con la copia en vez del RAW ({} hasta copiar o
+        si la copia falló). Con las zonas se trabaja siempre en sus
+        copias (Tony, 2026-10-19).
+        """
+        if not self.copias:
+            return {}
+        return {tercioEV: (self.copias.get(raw) if (raw is not None)
+                           else None)
+                for tercioEV, raw in self.zonas.items()}
 
     #
     @property
@@ -561,12 +712,31 @@ class OECF(object):
     def EsNecesaria(self, tercioEV: int) -> bool:
         """
         Saber si una posición (tercioEV) es necesaria para analizar: de
-        Z1 a Z9, con sus tercios.
+        Z1 a Z9, con sus tercios (por pasos enteros, sin ellos).
         """
         kt = self.KT
         desde = (kt.ZONA_MIN_REVIEW - KP.ZONA_REF) * KP.TERCIOS
         hasta = (kt.ZONA_MAX_REVIEW - KP.ZONA_REF) * KP.TERCIOS
-        return desde <= tercioEV <= hasta
+        return (desde <= tercioEV <= hasta) and ((tercioEV % self.paso) == 0)
+
+    #
+    def RellenarTercios(self, rutas: dict[int, Path | None]
+                        ) -> dict[int, Path]:
+        """
+        Rutas por tercioEV (zonasCopia, exportaciones…) sin las vacías y,
+        en una serie por pasos enteros, cada tercio sin ruta con la de su
+        zona entera (Z03-3 y Z03-7, la de Z03), si la hay: así la lámina
+        tiene todos sus cuadros (Tony, 2026-10-19). Por tercios, como
+        vienen.
+        """
+        llenas = {t: ruta for t, ruta in rutas.items() if ruta is not None}
+        if self.paso != KP.TERCIOS:
+            return llenas
+        for tercioEV in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1):
+            entera = tercioEV - zona_tercio(tercioEV)[1]
+            if (tercioEV not in llenas) and (entera in llenas):
+                llenas[tercioEV] = llenas[entera]
+        return dict(sorted(llenas.items()))
 
     #
     def Leer(self) -> Iterator[int]:
@@ -593,10 +763,10 @@ class OECF(object):
     def Seleccionar(self) -> None:
         """
         Mide las teselas de la Z-V: busca el paño y elige las teselas
-        buenas de la tarjeta (ver tela y select). Sin Z-V, sin paño ni
-        tarjeta.
+        buenas de la tarjeta (ver tela y select), en su copia. Sin Z-V
+        copiada, sin paño ni tarjeta.
         """
-        zv = self.zonas.get(0)
+        zv = self.zonasCopia.get(0)
         if zv is None:
             self.__tela = KTE.SIN_TELA
             self.__select = None
@@ -610,12 +780,12 @@ class OECF(object):
     #
     def Medir(self) -> Iterator[tuple[int, int]]:
         """
-        Mide la serie en los RAW, una toma cada vez: las 31 zonas y las
-        demás Z-V, en las teselas buenas de la Z-V (antes, Seleccionar,
-        si no se hizo). Dice cuántas lleva y cuántas son (para el
-        progreso), empezando por (0, total) antes de medir nada (ver
-        Copiar), y después tras cada una. Al terminar, el resultado en
-        review.
+        Mide la serie en las copias, una toma cada vez: las 31 zonas y
+        las demás Z-V de control (ver zvs), en las teselas buenas de la
+        Z-V (antes, Seleccionar, si no se hizo). Dice cuántas lleva y
+        cuántas son (para el progreso), empezando por (0, total) antes de
+        medir nada (ver Copiar), y después tras cada una. Al terminar, el
+        resultado en review.
         """
         if self.select is None:
             self.Seleccionar()
@@ -624,30 +794,28 @@ class OECF(object):
             return
         tela = tela_zv if isinstance(tela_zv, Ventana) else None
 
-        # --- Z-V de control: las demás Z-V de la serie. Con dos iniciales,
-        #     la primera no: es la del balance personalizado, solo tarjeta
-        #     y con otro encuadre (sus teselas caerían en otro sitio)
-        sec: Secuencia = self.secuencia                         # type: ignore
-        solo_tarjeta = (sec.iniciales[:1]
-                        if (len(sec.iniciales) >= KS.INICIALES) else [])
-        otras = [self.raws[i]
-                 for i in sec.iniciales + sec.cambios + sec.finales
-                 if (self.raws[i] != zv) and (i not in solo_tarjeta)]
+        # --- Z-V de control: las demás de zvs (inicial, cambio y final; de
+        #     cada una, la última). La del balance personalizado no: solo
+        #     tarjeta y con otro encuadre (sus teselas caerían en otro
+        #     sitio)
+        otras = [raw for raw in self.zvs.values() if raw != zv]
         tomas = [(t, raw) for t, raw in sorted(self.zonas.items())
                  if raw is not None] + [(0, raw) for raw in otras]
 
         # --- Primero, cuántas son; luego, el negro, el ruido y la matriz
         #     de la Z-V (que también tardan) y cada toma
         yield 0, len(tomas)
-        oscuro = oscuridad(zv, self.tapadas)
-        matriz = matriz_color(zv)
+        zv_copia = self.__copia(zv)
+        oscuro = oscuridad(zv_copia,
+                           [self.__copia(raw) for raw in self.tapadas])
+        matriz = matriz_color(zv_copia)
 
         # --- Cada toma: la tarjeta, su paño (con su histograma, para
         #     contar los recortados al final) y la temperatura
         medidas = []
         for hechas, (tercio_ev, raw) in enumerate(tomas, 1):
             medidas.append((tercio_ev, raw, medir_toma(
-                raw, select, oscuro.negro, tela)))
+                self.__copia(raw), select, oscuro.negro, tela)))
             if hechas < len(tomas):
                 yield hechas, len(tomas)
 
@@ -719,16 +887,16 @@ class OECF(object):
             if zona_zv and (zona_zv.nivelRGB[1] > 0) and (z.nivelRGB[1] > 0)
             and (abs(math.log2(z.nivelRGB[1] / zona_zv.nivelRGB[1]))
                  <= KCOM.TOLERANCIA_LINEAL)), None)
-        aleatorio = (ruido_temporal(zv, pareja, select, oscuro.negro)
+        aleatorio = (ruido_temporal(zv_copia, self.__copia(pareja), select,
+                                    oscuro.negro)
                      if pareja else None)
 
         # --- Tomas de balance de la cámara: los Kelvin que guarda y los
         #     que de verdad aplica (la luz que sus multiplicadores dejan
-        #     neutra: la inversa de cada uno)
-        pos_raw = {raw: i for i, raw in enumerate(self.raws)}
+        #     neutra: la inversa de cada uno). Las copiadas: sin repetidos
         balances = []
-        for raw in self.WBs:
-            toma = self.tomas[pos_raw[raw]]
+        for i in self.__balances_sin_repetir():
+            raw, toma = self.raws[i], self.tomas[i]
             wb = toma.WB
             kelvin: float | None = None
             if wb:
@@ -741,7 +909,7 @@ class OECF(object):
                 kelvin=kelvin,
                 multiplicadores=tuple(float(x) for x in wb) if wb else None))
 
-        alto, ancho = self.__medida(zv)
+        alto, ancho = self.__medida(zv_copia)
         exp_zv = self.ZV
         self.__review = Review(
             lado=KTE.LADO,
@@ -771,6 +939,37 @@ class OECF(object):
         yield len(tomas), len(tomas)
 
     #
+    @classmethod
+    def Restaurar(cls, carpeta: Path, archivos: list[str],
+                  tomas: list[Toma], copias: dict[str, str],
+                  cam: Cam | None = None) -> "OECF":
+        """
+        Serie ya preparada, sin leer ningún RAW (los originales pueden no
+        estar: Tony, 2026-10-19): carpeta, la de sus copias (la OECF, o la
+        que se guardó con su JSON, se llame como se llame); archivos y
+        tomas, los de cada toma en orden de disparo (los nombres de los
+        originales y sus datos, como los dejó Leer); copias, {archivo:
+        copia}, la copia relativa a la carpeta de la serie (la que
+        contiene a carpeta). Se reparte como al leerla, así que zonas,
+        zvs, tapadas… salen igual. La cámara, de la primera copia que
+        esté o, si no hay ninguna, cam. Puede faltar alguna copia (ver
+        copiasEnSitio).
+        """
+        path = carpeta.parent
+        oecf = cls(path, buscar=False)
+        oecf.__carpeta = carpeta
+        oecf.__raws = [path / archivo for archivo in archivos]
+        oecf.__tomas = list(tomas)
+        oecf.__copias = {path / archivo: path / copia
+                         for archivo, copia in copias.items()}
+        primera = next((copia for copia in oecf.__copias.values()
+                        if copia.is_file()), None)
+        oecf.__cam = leer_cam(primera) if primera else cam
+        if oecf.raws:
+            oecf.__repartir()
+        return oecf
+
+    #
     @staticmethod
     def NombreZona(tercioEV: int) -> str:
         """
@@ -786,17 +985,20 @@ class OECF(object):
     #
     def Copiar(self) -> Iterator[tuple[int, int]]:
         """
-        Copia a la carpeta OECF las tomas que sirven, con su nombre: una
-        por zona, las tapadas y los balances de cámara. Solo el RAW, copia
-        exacta: los originales no se tocan. Antes vacía la carpeta OECF
-        anterior, si la hay, salvo las exportaciones del revelador y las
-        subcarpetas (ver Vaciar). Copia una cada vez y dice cuántas lleva y
+        Copia a la carpeta OECF las tomas que sirven, con su nombre y
+        cada una en la subcarpeta de su papel: una por zona (ZONAS), y
+        los balances de cámara sin repetidos, las tapadas, la toma del
+        balance personalizado y las Z-V de control (CTRL; la ZV va
+        también en ZONAS, como su zona). Solo el RAW, copia exacta: los
+        originales no se tocan. Antes vacía la carpeta OECF anterior, si
+        la hay, salvo las exportaciones del revelador y las subcarpetas
+        del usuario (ver Vaciar). Copia una cada vez y dice cuántas lleva y
         cuántas son, (hechas, total), empezando por (0, total): se pueden
         ir pidiendo con next() para mostrar el progreso sin congelarse, o
         copiarlas todas seguidas con un for. Al terminar, copias dice la
-        copia de cada RAW; si la serie aún no está leída o algo falla, se
-        para y copias queda vacío (y, si fue el sistema, errorCopia dice
-        por qué).
+        copia de cada RAW (la de la ZV, la de ZONAS); si la serie aún no
+        está leída o algo falla, se para y copias queda vacío (y, si fue
+        el sistema, errorCopia dice por qué).
         """
         self.__copias = {}
         self.__errorCopia = None
@@ -804,31 +1006,42 @@ class OECF(object):
             return
         kt = self.KT
 
-        # --- Nombre de cada copia, sin extensión: {RAW: nombre}
-        nombres: dict[Path, str] = {}
+        # --- Ruta de cada copia, sin extensión: (RAW, subcarpeta/nombre).
+        #     La ZV sale dos veces: primero en ZONAS, que es la que apunta
+        #     copias
+        zonas = self.carpeta / kt.CARPETA_ZONAS
+        ctrl = self.carpetaCtrl
+        nombres: list[tuple[Path, Path]] = []
         for tercioEV, raw in self.zonas.items():
             if raw is not None:
-                nombres[raw] = self.NombreZona(tercioEV)
+                nombres.append((raw, zonas / self.NombreZona(tercioEV)))
+        for papel, raw in self.zvs.items():
+            nombres.append((raw, ctrl / f"{texto_zona(0)}"
+                                        f"{kt.SEP_NOMBRE}{papel}"))
+        if self.wbCtrl is not None:
+            nombres.append((self.wbCtrl, ctrl / kt.NOMBRE_WB_CTRL))
         for n, raw in enumerate(self.tapadas, 1):
-            nombres[raw] = f"{kt.PREFIJO_TAPADA}{n}"
-        for n, i in enumerate(self.secuencia.balances, 1):      # type: ignore
-            raw = self.raws[i]
-            nombre = f"{kt.PREFIJO_BALANCE}{n:0{kt.CIFRAS_BALANCE}d}"
-            balance = self.tomas[i].nombreWB
-            if balance:
-                limpio = re.sub(kt.REGEX_RARO, kt.SEP_NOMBRE,
-                                balance.upper()).strip(kt.SEP_NOMBRE)
-                nombre = f"{nombre}{kt.SEP_NOMBRE}{limpio}"
-            nombres[raw] = nombre
+            nombres.append((raw, ctrl / f"{kt.PREFIJO_TAPADA}{n}"))
+        for n, i in enumerate(self.__balances_sin_repetir(), 1):
+            nombres.append((self.raws[i],
+                            ctrl / self.__nombre_balance(n, i)))
 
-        copias = {raw: self.carpeta / f"{nombre}{raw.suffix}"
-                  for raw, nombre in nombres.items()}
-        total = len(copias)
+        destinos = [(raw, ruta.with_name(f"{ruta.name}{raw.suffix}"))
+                    for raw, ruta in nombres]
+        copias: dict[Path, Path] = {}
+        for raw, copia in destinos:
+            copias.setdefault(raw, copia)
+        total = len(destinos)
         try:
             if self.carpeta.is_dir():
                 self.Vaciar()
             else:
                 self.carpeta.mkdir()
+            # --- CTRL y ANALISIS, siempre: en ellas escriben las
+            #     incidencias y el análisis
+            for subcarpeta in ({copia.parent for _, copia in destinos}
+                               | {self.carpetaCtrl, self.carpetaAnalisis}):
+                subcarpeta.mkdir(exist_ok=True)
         except OSError as e:
             self.__errorCopia = e
             return
@@ -836,7 +1049,7 @@ class OECF(object):
 
         # --- Las copias se apuntan solo si se hicieron todas, y ANTES del
         #     último yield (ver Leer)
-        for hechas, (raw, copia) in enumerate(copias.items(), 1):
+        for hechas, (raw, copia) in enumerate(destinos, 1):
             try:
                 shutil.copy2(raw, copia)
             except OSError as e:
@@ -850,16 +1063,23 @@ class OECF(object):
     def Vaciar(self) -> None:
         """
         Vacía la carpeta OECF para prepararla de nuevo: borra lo que hizo
-        el programa (copias, JSON, incidencias, libro, ficha, láminas) y
-        conserva las TIFF (las exportaciones del revelador: Tony,
-        2026-10-16) y las subcarpetas (el programa no las crea: son del
+        el programa (copias, JSON, incidencias, libro, ficha, láminas),
+        también dentro de sus subcarpetas (ZONAS, CTRL y ANALISIS, que
+        borra si quedan vacías), y conserva las TIFF (las exportaciones del
+        revelador: Tony, 2026-10-16) y las demás subcarpetas (son del
         usuario).
         """
+        kt = self.KT
+        propias = {kt.CARPETA_ZONAS, kt.CARPETA_CTRL, kt.CARPETA_ANALISIS}
         for ruta in self.carpeta.iterdir():
-            if (ruta.is_dir()
-                    or (ruta.suffix.lower() in KCOM.EXTENSIONES_TIFF)):
-                continue
-            ruta.unlink()
+            if not ruta.is_dir():
+                self.__borrar(ruta)
+            elif ruta.name in propias:
+                for archivo in ruta.iterdir():
+                    if not archivo.is_dir():
+                        self.__borrar(archivo)
+                if not any(ruta.iterdir()):
+                    ruta.rmdir()
 
     #
     @staticmethod
@@ -889,6 +1109,48 @@ class OECF(object):
     #
     # region Métodos privados
 
+    # --- Copia de un RAW de la serie (o el propio RAW, si no se copió)
+    def __copia(self, raw: Path) -> Path:
+        return self.copias.get(raw, raw)
+
+    #
+    # --- Borra un archivo que hizo el programa: no las TIFF, que son las
+    #     exportaciones del revelador (ver Vaciar)
+    @staticmethod
+    def __borrar(archivo: Path) -> None:
+        if archivo.suffix.lower() not in KCOM.EXTENSIONES_TIFF:
+            archivo.unlink()
+
+    #
+    # --- Balances de cámara que se copian, en orden de disparo
+    #     (índices de raws): de los repetidos (mismo nombre y mismos
+    #     multiplicadores), solo el último (Tony, 2026-10-19)
+    def __balances_sin_repetir(self) -> list[int]:
+        ultimo: dict[tuple[str | None, tuple[float, ...] | None], int] = {}
+        for i in self.secuencia.balances:                       # type: ignore
+            toma = self.tomas[i]
+            ultimo[(toma.nombreWB, toma.WB)] = i
+        return sorted(ultimo.values())
+
+    #
+    # --- Nombre de la copia del balance de cámara n.º n (la toma i), sin
+    #     extensión: WB-01, con el nombre del balance si lo hay
+    #     (WB-03-INCANDESCENT) y, si es de Kelvin a mano, sus K
+    #     (WB-01-KELVIN-5600K)
+    def __nombre_balance(self, n: int, i: int) -> str:
+        kt = self.KT
+        toma = self.tomas[i]
+        nombre = f"{kt.PREFIJO_BALANCE}{n:0{kt.CIFRAS_BALANCE}d}"
+        if toma.nombreWB:
+            limpio = re.sub(kt.REGEX_RARO, kt.SEP_NOMBRE,
+                            toma.nombreWB.upper()).strip(kt.SEP_NOMBRE)
+            nombre = f"{nombre}{kt.SEP_NOMBRE}{limpio}"
+            if (toma.nombreWB == KM.B_KELVIN) and (toma.kelvin is not None):
+                nombre = (f"{nombre}{kt.SEP_NOMBRE}{toma.kelvin}"
+                          f"{KM.UNIDAD_KELVIN}")
+        return nombre
+
+    #
     # --- RAW de la carpeta, ordenados por nombre (lista vacía si no hay).
     #     El definitivo, por fecha, lo pone __ordenar al leer la serie
     def __buscar_raw(self) -> list[Path]:
@@ -941,11 +1203,15 @@ class OECF(object):
                 wb = tuple(round(m / verde, OECF.KT.DECIMALES_WB)
                            for m in bruto)
 
-                # --- Brillo: media del RAW sobre el nivel de negro, en tanto
-                #     por uno del rango útil
+                # --- Tapada: por su exposición. Y, solo entonces, su
+                #     brillo: media del RAW sobre el nivel de negro, en
+                #     tanto por uno del rango útil
+                tapada = (math.isclose(exp.tv, OECF.KT.TV_TAPADA,
+                                       rel_tol=KCOM.MARGEN_TV)
+                          and math.isclose(exp.f, OECF.KT.F_TAPADA,
+                                           rel_tol=OECF.KT.MARGEN_F_TAPADA))
                 oscura = False
-                if math.isclose(exp.tv, OECF.KT.TV_TAPADA,
-                                rel_tol=KCOM.MARGEN_TV):
+                if tapada:
                     negro = sum(raw.black_level_per_channel) / len(
                         raw.black_level_per_channel)
                     brillo = ((raw.raw_image_visible.mean() - negro)
@@ -968,6 +1234,7 @@ class OECF(object):
                 exp=None,
                 fecha=None,
                 WB=None,
+                tapada=False,
                 oscura=False,
                 nombreWB=None,
                 bits=None,
@@ -976,6 +1243,7 @@ class OECF(object):
             exp=exp,
             fecha=fecha,
             WB=wb,
+            tapada=tapada,
             oscura=oscura,
             nombreWB=leer_balance(archivo),
             bits=bits,
@@ -984,8 +1252,9 @@ class OECF(object):
     #
     # --- Reparte la serie ya leída: el tercioEV de cada toma respecto a la
     #     primera que se pudo leer (la Z-V), sus partes según el protocolo,
-    #     las tapadas, los WB y una toma por zona (ver la property zonas).
-    #     La Z-V de cambio de lado y las sobrantes no van a ninguna zona
+    #     las tapadas, los WB, las Z-V de control (ver zvs y wbCtrl) y una
+    #     toma por zona (ver la property zonas). Las sobrantes no van a
+    #     ninguna zona
     def __repartir(self) -> None:
         relativas = [exp_relativa(t.exp.tv, t.exp.f, t.exp.iso) if t.exp
                      else None for t in self.tomas]
@@ -999,20 +1268,36 @@ class OECF(object):
                        for x, t in zip(exactos, self.tercioEVs)]
 
         partes = self.__secuencia = secuencia(
-            self.tercioEVs, [t.oscura for t in self.tomas])
-        self.__tapadas = [self.raws[i] for i in partes.tapadas]
+            self.tercioEVs, [t.tapada for t in self.tomas],
+            [t.WB for t in self.tomas])
+        self.__tapadas = [self.raws[i] for i in partes.tapadas
+                          if self.tomas[i].oscura]
+        self.__tapadasConLuz = [i for i in partes.tapadas
+                                if not self.tomas[i].oscura]
         self.__WBs = [self.raws[i] for i in partes.balances]
 
-        # --- Las 31 zonas, vacías; la ZV y, después, los lados en orden de
-        #     disparo: si una zona se repite, queda la última
+        # --- Z-V de control, de cada una la última (índices en raws). Si
+        #     la serie empieza con dos Z-V, la primera es la del balance
+        #     personalizado y la inicial es la última de las demás
+        kt = self.KT
+        iniciales = partes.iniciales
+        wb_ctrl = iniciales[0] if (len(iniciales) >= KS.INICIALES) else None
+        ini = iniciales[-1] if iniciales else None
+        papeles = {kt.ZV_INI: ini,
+                   kt.ZV_MEDIO: partes.cambios[-1] if partes.cambios else None,
+                   kt.ZV_FIN: partes.finales[-1] if partes.finales else None}
+        self.__zvs = {papel: self.raws[i] for papel, i in papeles.items()
+                      if i is not None}
+        self.__wbCtrl = self.raws[wb_ctrl] if (wb_ctrl is not None) else None
+
+        # --- Las 31 zonas, vacías; la ZV (ver Secuencia) y, después, los
+        #     lados en orden de disparo: si una zona se repite, queda la
+        #     última
         zonas: dict[int, Path | None] = {
             tercioEV: None
             for tercioEV in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1)}
-        iniciales = partes.iniciales
-        zv: int | None = None
-        if iniciales:
-            zv = (iniciales[KS.INICIALES - 1]
-                  if (len(iniciales) >= KS.INICIALES) else iniciales[0])
+        zv = partes.zv
+        if zv is not None:
             zonas[0] = self.raws[zv]
         for lado in partes.lados:
             for i in lado:
@@ -1024,9 +1309,9 @@ class OECF(object):
             self.tercioEVs, [t.WB for t in self.tomas[:KS.INICIALES]])
 
         # --- Parte de cada toma. Si una toma está en varias, gana la
-        #     última de esta lista
-        kt = self.KT
-        de_mas = set(partes.iniciales[KS.INICIALES:])
+        #     última de esta lista. Iniciales de más: las repetidas (todas
+        #     menos la del balance personalizado y la última)
+        de_mas = set(iniciales) - {wb_ctrl, ini}
         nombres: dict[int, str] = {
             i: kt.PARTE_CONTROL if (i in de_mas) else kt.PARTE_INICIAL
             for i in partes.iniciales}
@@ -1061,6 +1346,14 @@ class OECF(object):
         self.__desviadas = [i for i, (d, va) in enumerate(
             zip(self.devs, self.enRejilla))
             if va and (d is not None) and (abs(d) > KP.DEV_MAX)]
+
+        # --- Por medios pasos: en los lados, al menos PARTE_MEDIOS de las
+        #     tomas se apartan medio tercio del suyo
+        de_lados = [self.devs[i] for lado in partes.lados for i in lado]
+        medias = [d for d in de_lados if (d is not None) and (
+            abs(abs(d) - kt.DESVIO_MEDIO) <= kt.MARGEN_MEDIO)]
+        self.__medioPaso = bool(de_lados) and (
+            len(medias) >= (kt.PARTE_MEDIOS * len(de_lados)))
 
         # --- ISO: el de la ZV. Las tomas de la serie con otro ISO impiden
         #     analizar; las tapadas con otro, solo se avisan

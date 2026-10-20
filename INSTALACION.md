@@ -11,7 +11,7 @@ No necesita instalar nada más.
 
     - **Windows**: aparece «Windows protegió su PC». Pulse **Más información** y después **Ejecutar de todas formas**.
 
-    - **macOS**: solo para equipos con Apple Silicon (M1 o posterior). Si dice que no se puede abrir, haga **clic derecho** sobre la aplicación y elija **Abrir**. Es posible que necesite dar permiso al programa en la gestión de seguridad del sistema operativo.
+    - **macOS**: solo para equipos con Apple Silicon (M1 o posterior). Si dice que no se puede abrir, vaya a **Ajustes del Sistema → Privacidad y seguridad** (en versiones anteriores, **Preferencias del Sistema → Seguridad y privacidad**) y pulse **Abrir igualmente**. Hace falta una cuenta de administrador.
 
     - **Linux**: descomprima el archivo y haga doble clic en `PyOECF`.
 

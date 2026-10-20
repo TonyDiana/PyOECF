@@ -9,7 +9,7 @@
         <link rel="prev" href="3-lanzar.html">
       
       
-        <link rel="next" href="5-analisis.html">
+        <link rel="next" href="5-disco.html">
       
       
         
@@ -541,7 +541,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../2%29%20Preparaci%C3%B3n/4-fotemetria.html" class="md-nav__link">
+      <a href="../2%29%20Preparaci%C3%B3n/4-fotometria.html" class="md-nav__link">
         
   
   
@@ -1061,14 +1061,14 @@
   
   
     <li class="md-nav__item">
-      <a href="5-analisis.html" class="md-nav__link">
+      <a href="5-disco.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Análisis de los datos
+    Archivos en disco
   
 
     
@@ -1089,7 +1089,89 @@
   
   
     <li class="md-nav__item">
-      <a href="6-resultados.html" class="md-nav__link">
+      <a href="6-analisis.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Análisis de los datos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6">
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5) Resultados
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    5) Resultados
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5%29%20Resultados/1-resultados.html" class="md-nav__link">
         
   
   
@@ -1097,6 +1179,34 @@
     
   
     Primeros resultados del análisis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5%29%20Resultados/2-revelado.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Análisis del revelado
   
 
     
@@ -1226,7 +1336,7 @@
 <thead>
 <tr>
 <th style="text-align: center;"><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="img/4/4-03.png" data-desc-position="bottom"><img alt="img" src="img/4/4-03.png"></a></th>
-<th>Nº de fotografías analizadas y zonas lumínicas encontradas.</th>
+<th>N.º de fotografías analizadas y zonas lumínicas encontradas.</th>
 </tr>
 </thead>
 <tbody>
@@ -1248,33 +1358,16 @@
 <p>Se pueden consultar las incidencias encontradas para decidir si continuar el proceso o mejorar algún aspecto y repetirlo.</p>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="img/4/4-07.png" data-desc-position="bottom"><img alt="img" src="img/4/4-07.png"></a></p>
 <h2 id="consulta-previa-de-los-resultados-del-analisis">Consulta previa de los resultados del análisis<a class="headerlink" href="#consulta-previa-de-los-resultados-del-analisis" title="Permanent link">¶</a></h2>
-<p>Tras realizar el proceso de preparación, el software habrá generado una carpeta con todas las imágenes que servirán para realizar el análisis final. Esta carpeta se encuentra junto a las fotografías originales. Las fotografías originales permanecen intactas: el software trabaja siempre sobre copias.</p>
+<p>Tras realizar el proceso de preparación, el software habrá generado la carpeta <code>OECF</code> con todas las imágenes que servirán para realizar el análisis final. Esta carpeta se encuentra dentro de la carpeta de las fotografías originales. Las fotografías originales permanecen intactas: el software trabaja siempre sobre copias y, a partir de este momento, ya no las necesita. Pueden guardarse en otro lugar o borrarse: para volver a analizar la serie bastará con seleccionar la carpeta <code>OECF</code>.</p>
 <p>En este punto se habrá activado un botón al lado al que lanza el proceso de análisis, el cual permitirá abrir la carpeta y consultar su contenido.</p>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="img/4/4-08.png" data-desc-position="bottom"><img alt="img" class="centrada" src="img/4/4-08.png"></a></p>
-<p>El contenido de esta carpeta está compuesto por los siguientes elementos:</p>
-<ul>
-<li>Un archivo <code>estudio.json</code>; su contenido no está pensado para ser consultado por humanos y modificarlo comprometerá el proceso de análisis.</li>
-<li>Un archivo <code>incidencias.txt</code> contiene las incidencias en prosa, pensado para ser consultado, analizado, borrado o modificado sin problema<sup id="fnref:inci"><a class="footnote-ref" href="#fn:inci">2</a></sup>.</li>
-<li>Un archivo por cada balance de blancos capturado. El nombre de estos archivos comienza con <code>WB</code> y continúa con el nombre que asigna la cámara, en inglés<sup id="fnref:BW"><a class="footnote-ref" href="#fn:BW">3</a></sup>.</li>
-<li>Cada una de las tomas con la tapa puesta (si se realizaron), denominadas <code>DARK-1</code> y <code>DARK-2</code>.</li>
-<li>Las 31 fotografías, renombradas según la zona lumínica a la que corresponden.</li>
-</ul>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="img/4/4-09.png" data-desc-position="bottom"><img alt="img" class="centrada" src="img/4/4-09.png"></a></p>
-<blockquote>
-<p><strong>NO DEBE MANIPULAR, BORRAR NI RENOMBRAR NINGUNO DE ESTOS ARCHIVOS</strong></p>
-</blockquote>
+<p>El contenido de esta carpeta se describe en <a class="autorefs autorefs-internal" href="5-disco.html#disco">Archivos en disco</a>.</p>
 <h2 id="notas-a-pie-de-pagina">Notas a pie de página<a class="headerlink" href="#notas-a-pie-de-pagina" title="Permanent link">¶</a></h2>
 <div class="footnote">
 <hr>
 <ol>
 <li id="fn:contador">
 <p>No es recomendable utilizar una llave USB para realizar el proceso, y mucho menos hacerlo directamente desde la tarjeta de memoria de la cámara, pero en un entorno académico con varios estudiantes, es habitual recurrir a uno de estos soportes. Conviene tener presente que el proceso podría ser más lento de lo habitual si se decide utilizarlos.&nbsp;<a class="footnote-backref" href="#fnref:contador" title="Jump back to footnote 1 in the text">↩</a></p>
-</li>
-<li id="fn:inci">
-<p>Su contenido es idéntico al mostrado en la ventana de incidencias.&nbsp;<a class="footnote-backref" href="#fnref:inci" title="Jump back to footnote 2 in the text">↩</a></p>
-</li>
-<li id="fn:BW">
-<p>Cada marca tiene su propia manera de indicar este contenido. En ocasiones podría darse el caso de no poder ofrecer un nombre correcto por ser desconocido para el programa, por lo que en este escenario se asignará el número o el nombre/valor que el fabricate de la cámara utilice para identificarlo.&nbsp;<a class="footnote-backref" href="#fnref:BW" title="Jump back to footnote 3 in the text">↩</a></p>
 </li>
 </ol>
 </div>
@@ -1330,13 +1423,13 @@
         
         
           
-          <a href="5-analisis.html" class="md-footer__link md-footer__link--next" aria-label="Siguiente: Análisis de los datos">
+          <a href="5-disco.html" class="md-footer__link md-footer__link--next" aria-label="Siguiente: Archivos en disco">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Siguiente
               </span>
               <div class="md-ellipsis">
-                Análisis de los datos
+                Archivos en disco
               </div>
             </div>
             <div class="md-footer__button md-icon">

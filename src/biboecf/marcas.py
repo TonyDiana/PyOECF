@@ -3,7 +3,7 @@
     :Propósito: Constantes y lecturas propias de cada marca de cámara: lo
                 que cada una guarda a su manera en su RAW
     :Autor:     Tony Diana
-    :Versión:   26.10.18
+    :Versión:   26.10.19
 """
 
 # cSpell:ignore colordata, desplaz, exif, fuji, kcom, makernote, nikon
@@ -122,8 +122,11 @@ class KM(std.EnumMutable):
     ETIQUETA_KELVIN_FUJI = 0x1005
 
     # --- Nikon: en balance por temperatura de color, el nombre son los
-    #     Kelvin seguidos de K (5600K)
-    REGEX_KELVIN = r"^(\d+)K$"
+    #     Kelvin seguidos de K (5600K). Los Kelvin se escriben igual en
+    #     el nombre de las copias (ver OECF.Copiar)
+    UNIDAD_KELVIN = "K"
+    """ Unidad de los Kelvin, detrás del número: 5600K. """
+    REGEX_KELVIN = rf"^(\d+){UNIDAD_KELVIN}$"
 
 
 #
