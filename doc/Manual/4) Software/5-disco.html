@@ -1241,17 +1241,29 @@
 <p>Al preparar las fotografías, el software crea la carpeta <code>OECF</code> dentro de la carpeta de las fotografías originales.</p>
 <p>El contenido de esta carpeta está compuesto por los siguientes elementos:</p>
 <ul>
-<li>Un archivo <code>estudio.json</code>; su contenido no está pensado para ser consultado por humanos y modificarlo comprometerá el proceso de análisis.</li>
-<li>La carpeta <code>ZONAS</code>, con las 31 fotografías renombradas según la zona lumínica a la que corresponden: <code>Z00</code>, <code>Z00-3</code>, <code>Z00-7</code>… <code>Z05</code>… <code>Z10</code>. En ella se guardarán más adelante las exportaciones del revelador (ver <a class="autorefs autorefs-internal" href="../5%29%20Resultados/2-revelado.html#revelado">Análisis del revelado</a>).</li>
-<li>La carpeta <code>CTRL</code>, con las tomas de control:<ul>
-<li>Una por cada balance de blancos capturado. El nombre de estos archivos comienza con <code>WB</code> y continúa con el nombre que asigna la cámara, en inglés<sup id="fnref:BW"><a class="footnote-ref" href="#fn:BW">2</a></sup>; los de temperatura de color fijada a mano llevan además los Kelvin, por ejemplo <code>WB-01-KELVIN-5600K</code>.</li>
-<li><code>WB-CTRL</code>: la fotografía de la tarjeta gris utilizada para personalizar el balance de blancos, si se realizó.</li>
+<li>
+<p>Un archivo estudio.json; su contenido no está pensado para ser consultado por humanos, y modificarlo comprometerá el proceso de análisis.</p>
+</li>
+<li>
+<p>La carpeta ZONAS, con las 31 fotografías renombradas según la zona lumínica a la que corresponden: <code>Z00</code>, <code>Z00-3</code>, <code>…</code>, <code>Z10</code>. En ella se guardarán más adelante las exportaciones del revelador (véase <a class="autorefs autorefs-internal" href="../5%29%20Resultados/2-revelado.html#revelado">Análisis del revelado</a>).</p>
+</li>
+<li>
+<p>La carpeta <code>CTRL</code>, con las tomas de control:</p>
+<ul>
+<li>
+<p>Una por cada balance de blancos capturado. El nombre de estos archivos comienza con <code>WB</code> y continúa con el nombre que asigna la cámara, en inglés<sup id="fnref:BW"><a class="footnote-ref" href="#fn:BW">1</a></sup>; los de temperatura de color fijada a mano llevan además los Kelvin, por ejemplo <code>WB-01-KELVIN-5600K</code>.</p>
+</li>
+<li>
+<p><code>WB-CTRL</code>: la fotografía de la tarjeta gris utilizada para personalizar el balance de blancos, si se realizó.</p>
+</li>
 <li><code>ZV-INI</code>, <code>ZV-MEDIO</code> y <code>ZV-FIN</code>: las ZV del inicio, del cambio de dirección y del final de la serie, que permiten comprobar que la luz no cambió.</li>
 <li><code>DARK-1</code> y <code>DARK-2</code>: las tomas con la tapa puesta, si se realizaron.</li>
-<li>El archivo <code>incidencias.txt</code>, con las incidencias en prosa, pensado para ser consultado, analizado, borrado o modificado sin problema<sup id="fnref:inci"><a class="footnote-ref" href="#fn:inci">1</a></sup>.</li>
+<li>El archivo <code>incidencias.txt</code>, con las incidencias en prosa, pensado para ser consultado, analizado, borrado o modificado sin problema<sup id="fnref:inci"><a class="footnote-ref" href="#fn:inci">2</a></sup>.</li>
 </ul>
 </li>
-<li>La carpeta <code>ANALISIS</code>, vacía hasta realizar el análisis: en ella se guardarán sus resultados (ver <a class="autorefs autorefs-internal" title="Resultados" href="4-preparar.html#resultados">Primeros resultados del análisis</a>).</li>
+<li>
+<p>La carpeta <code>ANALISIS</code>, vacía hasta realizar el análisis: en ella se guardarán sus resultados (ver <a class="autorefs autorefs-internal" title="Resultados" href="4-preparar.html#resultados">Primeros resultados del análisis</a>).</p>
+</li>
 </ul>
 <p>Si alguna fotografía se repitió durante la captura, solo se habrá copiado la última.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>TD/                         ← carpeta de las fotografías originales
@@ -1287,11 +1299,11 @@
 <div class="footnote">
 <hr>
 <ol>
-<li id="fn:inci">
-<p>Su contenido es idéntico al mostrado en la ventana de incidencias.&nbsp;<a class="footnote-backref" href="#fnref:inci" title="Jump back to footnote 1 in the text">↩</a></p>
-</li>
 <li id="fn:BW">
-<p>Cada marca tiene su propia manera de indicar este contenido. En ocasiones podría darse el caso de no poder ofrecer un nombre correcto por ser desconocido para el programa, por lo que en este escenario se asignará el número o el nombre/valor que el fabricante de la cámara utilice para identificarlo.&nbsp;<a class="footnote-backref" href="#fnref:BW" title="Jump back to footnote 2 in the text">↩</a></p>
+<p>Cada marca tiene su propia manera de indicar este contenido. En ocasiones podría darse el caso de no poder ofrecer un nombre correcto por ser desconocido para el programa, por lo que en este escenario se asignará el número o el nombre/valor que el fabricante de la cámara utilice para identificarlo.&nbsp;<a class="footnote-backref" href="#fnref:BW" title="Jump back to footnote 1 in the text">↩</a></p>
+</li>
+<li id="fn:inci">
+<p>Su contenido es idéntico al mostrado en la ventana de incidencias.&nbsp;<a class="footnote-backref" href="#fnref:inci" title="Jump back to footnote 2 in the text">↩</a></p>
 </li>
 </ol>
 </div>

@@ -1280,7 +1280,7 @@
 
 
 <h1 id="revelado">Análisis del revelado<a class="headerlink" href="#revelado" title="Permanent link">¶</a></h1>
-<p>La información del primer análisis representa el comportamiento del sensor, pero la imagen que contiene no deja de ser una <em>imagen latente</em>, la cual debe ser procesada por un revelador. La diferencia entre el procesado del revelador y la imagen latente puede ser analizada sin problemas por este software, pero hay que realizar un proceso manual, ya que el software no puede revelar las imágenes exactamente como lo haría el revelador seleccionado.</p>
+<p>La información del primer análisis representa el comportamiento del sensor, pero la imagen que contiene no deja de ser una <em>imagen latente</em>, la cual debe ser procesada por un revelador. La diferencia entre el procesado del revelador y la imagen latente puede ser analizada sin problemas por este software, pero hay que realizar un proceso manual, ya que el software no puede revelar las imágenes exactamente como lo haría el revelador que se utilice por parte del fotógrafo.</p>
 <p>Para realizar este proceso, se deben seguir estos pasos:</p>
 <ul>
 <li>Se importarán en el editor de preferencia las imágenes renombradas como zonas, que se encuentran en la carpeta <code>OECF/ZONAS</code>.</li>
@@ -1308,7 +1308,21 @@
 <h2 id="resultado">Resultado<a class="headerlink" href="#resultado" title="Permanent link">¶</a></h2>
 <p>El programa mide cada exportación en las mismas zonas de la tarjeta gris que el análisis del sensor y rehace con ello la hoja de cálculo y el PDF. Si el análisis encontró el paño gris, ofrece además generar los archivos PSD con las texturas reveladas.</p>
 <h2 id="que-conservar">Qué conservar<a class="headerlink" href="#que-conservar" title="Permanent link">¶</a></h2>
-<p>Una vez terminado, basta con conservar el archivo <code>estudio.json</code> y la carpeta <code>ZONAS</code>: con ellos puede repetirse el análisis del revelado y obtenerse de nuevo la hoja de cálculo, el PDF y los PSD. Para repetir también el análisis del sensor, debe conservarse la carpeta <code>OECF</code> completa. Si solo interesa el revelado, es suficiente con <code>estudio.json</code> y las exportaciones <code>TIFF</code>, juntos en una misma carpeta.</p>
+<ul>
+<li>
+<p>Una vez terminado, basta con conservar el archivo <code>estudio.json</code> y la carpeta <code>ZONAS</code>: con ellos puede repetirse el análisis del revelado y obtenerse de nuevo la hoja de cálculo, el PDF y los PSD.</p>
+</li>
+<li>
+<p>Para repetir también el análisis del sensor, debe conservarse la carpeta <code>OECF</code> completa. Si solo interesa el revelado, es suficiente con <code>estudio.json</code> y las exportaciones <code>TIFF</code>, juntos en una misma carpeta.</p>
+</li>
+<li>
+<p>Si sólo desea conectar con <code>FotoEstacion</code>, puede conservar únicamente el archivo <code>estudio.json</code>.</p>
+</li>
+<li>
+<p>De todas, maneras, se recomienda siempre conservar la carpeta <code>ANALISIS</code>.</p>
+</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="img/1-00.png" data-desc-position="bottom"><img alt="img" class="centrada" src="img/1-00.png"></a></p>
 
 
 
