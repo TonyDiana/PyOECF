@@ -1,0 +1,11 @@
+# --- Elementos Python innecesarios ---
+**/__pycache__/
+**/*.pyc
+.venv/
+
+# --- Salida de PyInstaller (pyinstaller PyOECF.spec)
+/build/
+/dist/
+
+# --- Permisos de Claude Code propios de cada máquina
+.claude/settings.local.json

@@ -1,0 +1,51 @@
+# mkdocs.yml propio de <<REPO>> - solo lo especial de este repo.
+# Todo lo común viene por INHERIT desde Repo/doc/mkdocs/base.yml.
+
+INHERIT: ../../../../Bibliotecas/Repo/doc/mkdocs/base.yml
+
+extra_css:
+  - _rec/local/local.css
+
+site_name: PyOECF
+
+# --- Destino del HTML: obligatorio (ver Repo/doc/mkdocs/USO.md)
+#     Manual de usuario: es lo que se despliega en GitHub
+#     OJO: mismo destino que "path" en .github/workflows/publicar_web.yml
+site_dir: ../Manual
+
+theme:
+  logo: &logo _rec/local/logo_slp.png
+  favicon: *logo
+
+plugins:
+  - search
+  - offline
+  - autorefs
+  - macros:
+      # --- {{ version }} y demás variables comunes (Repo/doc/mkdocs/doc/_rec/compartidos)
+      module_name: doc/_rec/compartidos_slr/macros_td
+  - glightbox
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - ../../
+          options:
+            show_if_no_docstring: false
+            docstring_style: sphinx
+            summary: true
+            heading_level: 3
+  - to-pdf:
+      # Preparado pero apagado por defecto - no lo usamos en <<REPO>> todavia.
+      # Para generarlo puntualmente: PDF_ENABLED=true bash mk_slr.sh build
+      enabled: !ENV [PDF_ENABLED, false]
+      author: Tony Diana
+      # back_cover con QR necesita site_url (no aplica si <<REPO>> no se
+      # publica en ningun dominio) - desactivado para que no falle si se activa.
+      back_cover: false
+      output_path: "<<REPO>>.pdf"
+      cover_title: "<<REPO>>"
+      cover_subtitle: "<<DESCRIPCION>>"
+      cover_logo: *logo
+      toc_title: "Tabla de contenidos"
+      toc_level: 3

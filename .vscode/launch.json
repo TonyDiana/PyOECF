@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // --- Se lanza src/main.py (F5)
+      "name": "Depurar",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/main.py",
+      // --- Sin "python": usa el intérprete de settings.json (el .venv),
+      //     así la ruta del venv no se repite aquí
+      // --- true = Sólo mi código, nada del venv
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

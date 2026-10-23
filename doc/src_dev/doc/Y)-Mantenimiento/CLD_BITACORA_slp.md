@@ -1,0 +1,1 @@
+../../../../rec/estrategias/bitacora/CLD_BITACORA.md

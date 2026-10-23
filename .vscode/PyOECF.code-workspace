@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "name": "PyOECF",
+      "path": "..",
+    },
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+    },
+    "cSpell.words": ["umbralización"],
+  },
+}

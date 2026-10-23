@@ -1,0 +1,1 @@
+../../../../Bibliotecas/Repo/rec/estrategias/Estrategia.md

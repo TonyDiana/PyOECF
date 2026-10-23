@@ -1,0 +1,25 @@
+.centrada {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+.definicion {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 0.4em;
+  margin-bottom: 1em;
+}
+
+
+<div class="definicion">
+  <strong>Tarjeta gris:</strong>
+  <span>No se precisa una tarjeta gris calibrada, pero disponer de ella hará que el proceso sea más rápido. Cualquier tarjeta o cartulina suficientemente gris nos servirá para este propósito y ofrecerá idénticos resultados[^gris], siempre y cuando no sea ni brillante, ni demasiado clara. Debe evitarse utilizar una tarjeta que no sea plana o que tenga algún tipo de relieve o textura.</span>
+</div>
+
+<div class="definicion">
+  <strong>Tarjeta gris:</strong> No se precisa una tarjeta gris calibrada, pero disponer de ella hará que el proceso sea más rápido. Cualquier tarjeta o cartulina suficientemente gris nos servirá para este propósito y ofrecerá idénticos resultados<sup><a href="#fn1" id="ref1">1</a></sup>, siempre y cuando no sea ni brillante, ni demasiado clara.
+</div>
+
+<p id="fn1"><small>1. Cada uno <a href="#ref1">↩</a></small></p>

@@ -1,0 +1,35 @@
+{
+  // ========== Corrector ortográfico: español + inglés ==========
+  //   Necesita la extensión "streetsidesoftware.code-spell-checker-spanish".
+  "cSpell.language": "es,en-US",
+
+  // ========== venv dentro del repo (.venv) ==========
+  //   Mismo valor que RUTA_VENV en rec/requirements/requirements.conf:
+  //   si cambia allí, cambiar también las 3 rutas de este archivo
+  //   (requirements_slr.sh avisa si no coinciden).
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.activateEnvInCurrentTerminal": true,
+
+  // ========== Terminal: activar el venv ==========
+  "terminal.integrated.env.linux": {
+    "VIRTUAL_ENV": "${workspaceFolder}/.venv",
+    "PATH": "${workspaceFolder}/.venv/bin:${env:PATH}"
+  },
+
+  // ========== MkDocs: autocompletado y validación de los mkdocs.yml ==========
+  "yaml.schemas": {
+    "https://squidfunk.github.io/mkdocs-material/schema.json": [
+      "${workspaceFolder}/doc/src_dev/mkdocs.yml",
+      "${workspaceFolder}/doc/src_manual/mkdocs.yml"
+    ]
+  },
+
+  "python-envs.pythonProjects": [
+    {
+      "path": ".",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
+}

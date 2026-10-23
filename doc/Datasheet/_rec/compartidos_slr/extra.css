@@ -1,0 +1,41 @@
+table.campos-cabecera {
+  border-collapse: collapse;
+  font-size: 0.8em;
+  margin: 0.5em 0 1em 0;
+}
+table.campos-cabecera th {
+  text-align: right;
+  padding: 2px 8px;
+  color: var(--md-default-fg-color--light);
+  font-weight: 600;
+  white-space: nowrap;
+}
+table.campos-cabecera td {
+  padding: 2px 8px;
+}
+
+/* Tabla usada solo como maquetacion (p.ej. logo + titulo en dos columnas),
+   sin lineas ni fondo de celda - Material pinta bordes a toda tabla por
+   defecto, hay que quitarselos a mano. */
+table.sin-borde,
+table.sin-borde tr,
+table.sin-borde th,
+table.sin-borde td {
+  border: none;
+  background: transparent;
+}
+
+/* Subtitulo tipo "tagline": fino, sin negrita, en gris claro y con aire
+   respecto al elemento de al lado (p.ej. el logo en la cabecera). */
+h1.tagline, h2.tagline, h3.tagline {
+  font-size: 1.1em;
+  font-weight: 400;
+  color: var(--md-default-fg-color--light);
+  margin: 0 0 0 1.5em;
+}
+
+/* Utilidad para alinear el contenido de una celda de tabla contra el
+   fondo de la fila (p.ej. el texto junto a un logo mas alto). */
+td.abajo {
+  vertical-align: bottom;
+}

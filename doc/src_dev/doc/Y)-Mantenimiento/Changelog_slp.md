@@ -1,0 +1,1 @@
+/home/tony/Dev/Python/Aplicaciones/PyOECF/rec/estrategias/bitacora/Versiones/Changelog.md

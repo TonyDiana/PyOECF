@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -34 800 2824" width="800" height="2824">
+  <defs>
+    <style>
+      .bg { fill: #1e1e1e; }
+      .text-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: bold; fill: #ffffff; }
+      .text-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 10px; fill: #888888; }
+      .text-badge { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; }
+    </style>
+    <clipPath id="clip-a41ef751">
+      <rect x="150" y="2078" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-095aeb47">
+      <rect x="150" y="2154" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-b1ad19c9">
+      <rect x="150" y="2230" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-cb883160">
+      <rect x="150" y="2306" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-de40df68">
+      <rect x="70" y="2306" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-a681f7ab">
+      <rect x="70" y="2382" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-6086e27f">
+      <rect x="70" y="2458" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-144d4807">
+      <rect x="70" y="2534" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-64a7add5">
+      <rect x="70" y="2610" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-08b1d32b">
+      <rect x="240" y="26" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-0c3461e4">
+      <rect x="240" y="102" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-00f489b3">
+      <rect x="240" y="178" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-04f13cfa">
+      <rect x="240" y="254" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-418b4d22">
+      <rect x="240" y="330" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-4a92cc7e">
+      <rect x="240" y="406" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-57371df0">
+      <rect x="240" y="482" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-ad5c11ae">
+      <rect x="240" y="558" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-26fc5499">
+      <rect x="240" y="634" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-0ab49a91">
+      <rect x="175" y="2382" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-1c0bba31">
+      <rect x="175" y="2458" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-bd3a4be2">
+      <rect x="175" y="2534" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-ec694efd">
+      <rect x="175" y="2610" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-f676f36e">
+      <rect x="265" y="710" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-7c52fbad">
+      <rect x="265" y="786" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-aaae67f7">
+      <rect x="265" y="862" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-5c14f15d">
+      <rect x="265" y="938" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-656c1347">
+      <rect x="265" y="1014" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-f177008a">
+      <rect x="265" y="1090" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-289adc47">
+      <rect x="265" y="1166" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-fdeeda5d">
+      <rect x="265" y="1242" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-08738efc">
+      <rect x="265" y="1318" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-6660e5c5">
+      <rect x="265" y="1394" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-5fb676f8">
+      <rect x="265" y="1470" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-5bef66ed">
+      <rect x="265" y="1546" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-d415c1e1">
+      <rect x="265" y="1622" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-eac4bdfd">
+      <rect x="265" y="1698" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-dac8b0fd">
+      <rect x="265" y="1774" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-f629df76">
+      <rect x="265" y="1850" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-3f2f8c6a">
+      <rect x="265" y="1926" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-e347c835">
+      <rect x="265" y="2002" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-6e2e636c">
+      <rect x="265" y="2078" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-7826b4a7">
+      <rect x="290" y="2154" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-6fef538a">
+      <rect x="265" y="2230" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-5a22acf4">
+      <rect x="265" y="2306" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-60eeba94">
+      <rect x="265" y="2382" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-1a16d956">
+      <rect x="265" y="2458" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-46658e76">
+      <rect x="265" y="2534" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-44908dee">
+      <rect x="265" y="2610" width="280" height="44" rx="6" />
+    </clipPath>
+    <clipPath id="clip-162afe1a">
+      <rect x="175" y="2686" width="280" height="44" rx="6" />
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect x="-20" y="-34" width="800" height="2824" class="bg" />
+  <!-- Edges -->
+  <g id="edges">
+    <path d="M 128 2100 Q 128 2138 128 2138 Q 128 2138 128 2157 L 128 2176" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 128 2176 Q 128 2214 128 2214 Q 128 2214 128 2233 L 128 2252" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 128 2252 Q 128 2290 128 2290 Q 128 2290 128 2309 L 128 2328" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 128 2328 Q 128 2366 140.5 2366 Q 153 2366 153 2385 L 153 2404" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 48 2328 Q 48 2366 48 2366 Q 48 2366 48 2385 L 48 2404" fill="none" stroke="hsl(312, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 48 2404 Q 48 2442 48 2442 Q 48 2442 48 2461 L 48 2480" fill="none" stroke="#569cd6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 48 2480 Q 48 2518 48 2518 Q 48 2518 48 2537 L 48 2556" fill="none" stroke="#569cd6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 48 2556 Q 48 2594 48 2594 Q 48 2594 48 2613 L 48 2632" fill="none" stroke="#569cd6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 48 2632 Q 48 2670 100.5 2670 Q 153 2670 153 2689 L 153 2708" fill="none" stroke="#569cd6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 48 Q 218 86 218 86 Q 218 86 218 105 L 218 124" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 124 Q 218 162 218 162 Q 218 162 218 181 L 218 200" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 200 Q 218 238 218 238 Q 218 238 218 257 L 218 276" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 276 Q 218 314 218 314 Q 218 314 218 333 L 218 352" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 352 Q 218 390 218 390 Q 218 390 218 409 L 218 428" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 428 Q 218 466 218 466 Q 218 466 218 485 L 218 504" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 504 Q 218 542 218 542 Q 218 542 218 561 L 218 580" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 580 Q 218 618 218 618 Q 218 618 218 637 L 218 656" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 656 Q 218 694 230.5 694 Q 243 694 243 713 L 243 732" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 218 656 Q 218 1530 185.5 1530 Q 153 1530 153 1967 L 153 2404" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 153 2404 Q 153 2442 153 2442 Q 153 2442 153 2461 L 153 2480" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 153 2480 Q 153 2518 153 2518 Q 153 2518 153 2537 L 153 2556" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 153 2556 Q 153 2594 153 2594 Q 153 2594 153 2613 L 153 2632" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 153 2632 Q 153 2670 153 2670 Q 153 2670 153 2689 L 153 2708" fill="none" stroke="hsl(48, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 732 Q 243 770 243 770 Q 243 770 243 789 L 243 808" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 808 Q 243 846 243 846 Q 243 846 243 865 L 243 884" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 884 Q 243 922 243 922 Q 243 922 243 941 L 243 960" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 960 Q 243 998 243 998 Q 243 998 243 1017 L 243 1036" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1036 Q 243 1074 243 1074 Q 243 1074 243 1093 L 243 1112" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1112 Q 243 1150 243 1150 Q 243 1150 243 1169 L 243 1188" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1188 Q 243 1226 243 1226 Q 243 1226 243 1245 L 243 1264" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1264 Q 243 1302 243 1302 Q 243 1302 243 1321 L 243 1340" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1340 Q 243 1378 243 1378 Q 243 1378 243 1397 L 243 1416" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1416 Q 243 1454 243 1454 Q 243 1454 243 1473 L 243 1492" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1492 Q 243 1530 243 1530 Q 243 1530 243 1549 L 243 1568" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1568 Q 243 1606 243 1606 Q 243 1606 243 1625 L 243 1644" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1644 Q 243 1682 243 1682 Q 243 1682 243 1701 L 243 1720" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1720 Q 243 1758 243 1758 Q 243 1758 243 1777 L 243 1796" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1796 Q 243 1834 243 1834 Q 243 1834 243 1853 L 243 1872" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1872 Q 243 1910 243 1910 Q 243 1910 243 1929 L 243 1948" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 1948 Q 243 1986 243 1986 Q 243 1986 243 2005 L 243 2024" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2024 Q 243 2062 243 2062 Q 243 2062 243 2081 L 243 2100" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2100 Q 243 2176 243 2176 Q 243 2176 243 2214 L 243 2252" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2100 Q 243 2138 255.5 2138 Q 268 2138 268 2157 L 268 2176" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 268 2176 Q 268 2214 255.5 2214 Q 243 2214 243 2233 L 243 2252" fill="none" stroke="hsl(80, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2252 Q 243 2290 243 2290 Q 243 2290 243 2309 L 243 2328" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2328 Q 243 2366 243 2366 Q 243 2366 243 2385 L 243 2404" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2404 Q 243 2442 243 2442 Q 243 2442 243 2461 L 243 2480" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2480 Q 243 2518 243 2518 Q 243 2518 243 2537 L 243 2556" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2556 Q 243 2594 243 2594 Q 243 2594 243 2613 L 243 2632" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+    <path d="M 243 2632 Q 243 2670 198 2670 Q 153 2670 153 2689 L 153 2708" fill="none" stroke="hsl(358, 70%, 55%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+  </g>
+
+  <!-- Plaques -->
+  <g id="plaques">
+    <line x1="137" y1="2100" x2="150" y2="2100" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-a41ef751)">
+      <rect x="150" y="2078" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="158" y="2084" width="52" height="16" rx="3" fill="#144234" />
+      <text x="184" y="2096" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="216" y="2096" class="text-title">1.2a</text>
+      <text x="158" y="2112" class="text-sub">Tony Diana • 21 oct, 10:07 (GMT-6)</text>
+    </g>
+    <line x1="137" y1="2176" x2="150" y2="2176" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-095aeb47)">
+      <rect x="150" y="2154" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="158" y="2160" width="52" height="16" rx="3" fill="#144234" />
+      <text x="184" y="2172" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="216" y="2172" class="text-title">1.2</text>
+      <text x="158" y="2188" class="text-sub">Tony Diana • 20 oct, 10:34 (GMT-6)</text>
+    </g>
+    <line x1="137" y1="2252" x2="150" y2="2252" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-b1ad19c9)">
+      <rect x="150" y="2230" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="158" y="2236" width="52" height="16" rx="3" fill="#144234" />
+      <text x="184" y="2248" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="216" y="2248" class="text-title">1.1</text>
+      <text x="158" y="2264" class="text-sub">Tony Diana • 19 oct, 22:00 (GMT-6)</text>
+    </g>
+    <line x1="137" y1="2328" x2="150" y2="2328" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-cb883160)">
+      <rect x="150" y="2306" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="158" y="2312" width="52" height="16" rx="3" fill="#144234" />
+      <text x="184" y="2324" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="216" y="2324" class="text-title">1.0a</text>
+      <text x="158" y="2340" class="text-sub">Tony Diana • 19 oct, 09:02 (GMT-6)</text>
+    </g>
+    <line x1="56" y1="2328" x2="70" y2="2328" stroke="hsl(312, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-de40df68)">
+      <rect x="70" y="2306" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="78" y="2312" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="104" y="2324" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="136" y="2324" class="text-title">deploy: versión 1.2</text>
+      <text x="78" y="2340" class="text-sub">Tony Diana • 20 oct, 10:35 (GMT-6)</text>
+    </g>
+    <line x1="56" y1="2404" x2="70" y2="2404" stroke="#569cd6" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-a681f7ab)">
+      <rect x="70" y="2382" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="78" y="2388" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="104" y="2400" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="136" y="2400" class="text-title">deploy: versión 1.1</text>
+      <text x="78" y="2416" class="text-sub">Tony Diana • 19 oct, 22:00 (GMT-6)</text>
+    </g>
+    <line x1="56" y1="2480" x2="70" y2="2480" stroke="#569cd6" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-6086e27f)">
+      <rect x="70" y="2458" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="78" y="2464" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="104" y="2476" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="136" y="2476" class="text-title">deploy: versión 1.0a</text>
+      <text x="78" y="2492" class="text-sub">Tony Diana • 19 oct, 09:02 (GMT-6)</text>
+    </g>
+    <line x1="56" y1="2556" x2="70" y2="2556" stroke="#569cd6" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-144d4807)">
+      <rect x="70" y="2534" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="78" y="2540" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="104" y="2552" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="136" y="2552" class="text-title">deploy: versión 1.0</text>
+      <text x="78" y="2568" class="text-sub">Tony Diana • 19 oct, 08:54 (GMT-6)</text>
+    </g>
+    <line x1="56" y1="2632" x2="70" y2="2632" stroke="#569cd6" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-64a7add5)">
+      <rect x="70" y="2610" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="78" y="2616" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="104" y="2628" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="136" y="2628" class="text-title">deploy: versión 0.6</text>
+      <text x="78" y="2644" class="text-sub">Tony Diana • 16 oct, 22:12 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="48" x2="240" y2="48" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-08b1d32b)">
+      <rect x="240" y="26" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="32" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="44" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="44" class="text-title">1.2</text>
+      <text x="248" y="60" class="text-sub">Tony Diana • 20 oct, 10:34 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="124" x2="240" y2="124" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-0c3461e4)">
+      <rect x="240" y="102" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="108" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="120" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="120" class="text-title">1.2</text>
+      <text x="248" y="136" class="text-sub">Tony Diana • 20 oct, 10:33 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="200" x2="240" y2="200" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-00f489b3)">
+      <rect x="240" y="178" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="184" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="196" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="196" class="text-title">1.1</text>
+      <text x="248" y="212" class="text-sub">Tony Diana • 19 oct, 21:59 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="276" x2="240" y2="276" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-04f13cfa)">
+      <rect x="240" y="254" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="260" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="272" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="272" class="text-title">genial</text>
+      <text x="248" y="288" class="text-sub">Tony Diana • 19 oct, 21:09 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="352" x2="240" y2="352" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-418b4d22)">
+      <rect x="240" y="330" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="336" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="348" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="348" class="text-title">.</text>
+      <text x="248" y="364" class="text-sub">Tony Diana • 19 oct, 18:35 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="428" x2="240" y2="428" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-4a92cc7e)">
+      <rect x="240" y="406" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="412" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="424" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="424" class="text-title">documentación</text>
+      <text x="248" y="440" class="text-sub">Tony Diana • 19 oct, 10:33 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="504" x2="240" y2="504" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-57371df0)">
+      <rect x="240" y="482" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="488" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="500" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="500" class="text-title">..</text>
+      <text x="248" y="516" class="text-sub">Tony Diana • 19 oct, 09:56 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="580" x2="240" y2="580" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-ad5c11ae)">
+      <rect x="240" y="558" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="564" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="274" y="576" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="306" y="576" class="text-title">1.0a</text>
+      <text x="248" y="592" class="text-sub">Tony Diana • 19 oct, 09:02 (GMT-6)</text>
+    </g>
+    <line x1="226" y1="656" x2="240" y2="656" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-26fc5499)">
+      <rect x="240" y="634" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="248" y="640" width="46" height="16" rx="3" fill="#1e3a5f" />
+      <text x="271" y="652" text-anchor="middle" class="text-badge" fill="#60a5fa">MERGE</text>
+      <text x="300" y="652" class="text-title">Merge branch &apos;master&apos; into d…</text>
+      <text x="248" y="668" class="text-sub">Tony Diana • 19 oct, 08:55 (GMT-6)</text>
+    </g>
+    <line x1="162" y1="2404" x2="175" y2="2404" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-0ab49a91)">
+      <rect x="175" y="2382" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="183" y="2388" width="52" height="16" rx="3" fill="#144234" />
+      <text x="209" y="2400" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="241" y="2400" class="text-title">1.0</text>
+      <text x="183" y="2416" class="text-sub">Tony Diana • 19 oct, 08:53 (GMT-6)</text>
+    </g>
+    <line x1="162" y1="2480" x2="175" y2="2480" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-1c0bba31)">
+      <rect x="175" y="2458" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="183" y="2464" width="52" height="16" rx="3" fill="#144234" />
+      <text x="209" y="2476" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="241" y="2476" class="text-title">1.0</text>
+      <text x="183" y="2492" class="text-sub">Tony Diana • 19 oct, 08:52 (GMT-6)</text>
+    </g>
+    <line x1="162" y1="2556" x2="175" y2="2556" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-bd3a4be2)">
+      <rect x="175" y="2534" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="183" y="2540" width="52" height="16" rx="3" fill="#144234" />
+      <text x="209" y="2552" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="241" y="2552" class="text-title">0.6</text>
+      <text x="183" y="2568" class="text-sub">Tony Diana • 16 oct, 22:11 (GMT-6)</text>
+    </g>
+    <line x1="162" y1="2632" x2="175" y2="2632" stroke="hsl(48, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-ec694efd)">
+      <rect x="175" y="2610" width="280" height="44" rx="6" fill="#252526" stroke="#4ec9b0" stroke-width="1.2" />
+      <rect x="183" y="2616" width="52" height="16" rx="3" fill="#144234" />
+      <text x="209" y="2628" text-anchor="middle" class="text-badge" fill="#34d399">COMMIT</text>
+      <text x="241" y="2628" class="text-title">0.0</text>
+      <text x="183" y="2644" class="text-sub">Tony Diana • 16 oct, 12:04 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="732" x2="265" y2="732" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-f676f36e)">
+      <rect x="265" y="710" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="716" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="728" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="728" class="text-title">1.0</text>
+      <text x="273" y="744" class="text-sub">Tony Diana • 19 oct, 08:52 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="808" x2="265" y2="808" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-7c52fbad)">
+      <rect x="265" y="786" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="792" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="804" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="804" class="text-title">0.7a</text>
+      <text x="273" y="820" class="text-sub">Tony Diana • 19 oct, 08:26 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="884" x2="265" y2="884" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-aaae67f7)">
+      <rect x="265" y="862" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="868" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="880" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="880" class="text-title">0.7a</text>
+      <text x="273" y="896" class="text-sub">Tony Diana • 19 oct, 08:26 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="960" x2="265" y2="960" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-5c14f15d)">
+      <rect x="265" y="938" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="944" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="956" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="956" class="text-title">Avance en documentación</text>
+      <text x="273" y="972" class="text-sub">Tony Diana • 18 oct, 20:58 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1036" x2="265" y2="1036" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-656c1347)">
+      <rect x="265" y="1014" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1020" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1032" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1032" class="text-title">otro pasito</text>
+      <text x="273" y="1048" class="text-sub">Tony Diana • 18 oct, 19:03 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1112" x2="265" y2="1112" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-f177008a)">
+      <rect x="265" y="1090" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1096" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1108" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1108" class="text-title">Funcionar, funciona</text>
+      <text x="273" y="1124" class="text-sub">Tony Diana • 18 oct, 18:58 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1188" x2="265" y2="1188" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-289adc47)">
+      <rect x="265" y="1166" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1172" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1184" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1184" class="text-title">Súper cambio normalizador</text>
+      <text x="273" y="1200" class="text-sub">Tony Diana • 18 oct, 18:28 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1264" x2="265" y2="1264" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-fdeeda5d)">
+      <rect x="265" y="1242" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1248" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1260" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1260" class="text-title">Creo que funicona</text>
+      <text x="273" y="1276" class="text-sub">Tony Diana • 17 oct, 20:06 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1340" x2="265" y2="1340" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-08738efc)">
+      <rect x="265" y="1318" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1324" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1336" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1336" class="text-title">.</text>
+      <text x="273" y="1352" class="text-sub">Tony Diana • 17 oct, 07:26 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1416" x2="265" y2="1416" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-6660e5c5)">
+      <rect x="265" y="1394" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1400" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1412" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1412" class="text-title">.</text>
+      <text x="273" y="1428" class="text-sub">Tony Diana • 16 oct, 22:03 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1492" x2="265" y2="1492" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-5fb676f8)">
+      <rect x="265" y="1470" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1476" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1488" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1488" class="text-title">Docu</text>
+      <text x="273" y="1504" class="text-sub">Tony Diana • 16 oct, 20:15 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1568" x2="265" y2="1568" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-5bef66ed)">
+      <rect x="265" y="1546" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1552" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1564" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1564" class="text-title">Preparar 0.6</text>
+      <text x="273" y="1580" class="text-sub">Tony Diana • 16 oct, 12:03 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1644" x2="265" y2="1644" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-d415c1e1)">
+      <rect x="265" y="1622" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1628" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1640" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1640" class="text-title">sin bib</text>
+      <text x="273" y="1656" class="text-sub">Tony Diana • 16 oct, 09:16 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1720" x2="265" y2="1720" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-eac4bdfd)">
+      <rect x="265" y="1698" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1704" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1716" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1716" class="text-title">PRE cambios de lugar</text>
+      <text x="273" y="1732" class="text-sub">Tony Diana • 16 oct, 08:47 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1796" x2="265" y2="1796" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-dac8b0fd)">
+      <rect x="265" y="1774" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1780" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1792" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1792" class="text-title">pdf</text>
+      <text x="273" y="1808" class="text-sub">Tony Diana • 15 oct, 22:21 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1872" x2="265" y2="1872" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-f629df76)">
+      <rect x="265" y="1850" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1856" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1868" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1868" class="text-title">.</text>
+      <text x="273" y="1884" class="text-sub">Tony Diana • 15 oct, 21:53 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="1948" x2="265" y2="1948" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-3f2f8c6a)">
+      <rect x="265" y="1926" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="1932" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="1944" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="1944" class="text-title">por sia</text>
+      <text x="273" y="1960" class="text-sub">Tony Diana • 15 oct, 21:52 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2024" x2="265" y2="2024" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-e347c835)">
+      <rect x="265" y="2002" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2008" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="2020" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="2020" class="text-title">Update .gitignore / %2 {1?}</text>
+      <text x="273" y="2036" class="text-sub">Tony Diana • 15 oct, 20:10 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2100" x2="265" y2="2100" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-6e2e636c)">
+      <rect x="265" y="2078" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2084" width="46" height="16" rx="3" fill="#1e3a5f" />
+      <text x="296" y="2096" text-anchor="middle" class="text-badge" fill="#60a5fa">MERGE</text>
+      <text x="325" y="2096" class="text-title">Merge commit &apos;7826b4a75f127b…</text>
+      <text x="273" y="2112" class="text-sub">Tony Diana • 15 oct, 20:09 (GMT-6)</text>
+    </g>
+    <line x1="276" y1="2176" x2="290" y2="2176" stroke="hsl(80, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-7826b4a7)">
+      <rect x="290" y="2154" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="298" y="2160" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="324" y="2172" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="356" y="2172" class="text-title">Correcciones NIKON</text>
+      <text x="298" y="2188" class="text-sub">Tony Diana • 14 oct, 21:25 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2252" x2="265" y2="2252" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-6fef538a)">
+      <rect x="265" y="2230" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2236" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="2248" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="2248" class="text-title">...</text>
+      <text x="273" y="2264" class="text-sub">Tony Diana • 14 oct, 17:12 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2328" x2="265" y2="2328" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-5a22acf4)">
+      <rect x="265" y="2306" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2312" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="2324" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="2324" class="text-title">.</text>
+      <text x="273" y="2340" class="text-sub">Tony Diana • 14 oct, 09:35 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2404" x2="265" y2="2404" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-60eeba94)">
+      <rect x="265" y="2382" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2388" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="2400" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="2400" class="text-title">.</text>
+      <text x="273" y="2416" class="text-sub">Tony Diana • 14 oct, 08:50 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2480" x2="265" y2="2480" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-1a16d956)">
+      <rect x="265" y="2458" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2464" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="2476" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="2476" class="text-title">Monitores y estabilización</text>
+      <text x="273" y="2492" class="text-sub">Tony Diana • 14 oct, 08:42 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2556" x2="265" y2="2556" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-46658e76)">
+      <rect x="265" y="2534" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2540" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="2552" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="2552" class="text-title">0.5b</text>
+      <text x="273" y="2568" class="text-sub">Tony Diana • 14 oct, 08:18 (GMT-6)</text>
+    </g>
+    <line x1="251" y1="2632" x2="265" y2="2632" stroke="hsl(358, 70%, 55%)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-44908dee)">
+      <rect x="265" y="2610" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="273" y="2616" width="52" height="16" rx="3" fill="#1e3a5f" />
+      <text x="299" y="2628" text-anchor="middle" class="text-badge" fill="#60a5fa">COMMIT</text>
+      <text x="331" y="2628" class="text-title">0.0</text>
+      <text x="273" y="2644" class="text-sub">Tony Diana • 3 oct, 13:07 (GMT-6)</text>
+    </g>
+    <line x1="161" y1="2708" x2="175" y2="2708" stroke="#569cd6" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6" />
+    <g clip-path="url(#clip-162afe1a)">
+      <rect x="175" y="2686" width="280" height="44" rx="6" fill="#252526" stroke="#3c3c3c" stroke-width="1.2" />
+      <rect x="183" y="2692" width="58" height="16" rx="3" fill="#1e3a5f" />
+      <text x="212" y="2704" text-anchor="middle" class="text-badge" fill="#60a5fa">INITIAL</text>
+      <text x="247" y="2704" class="text-title">Initial commit</text>
+      <text x="183" y="2720" class="text-sub">Tony Diana • 3 oct, 13:07 (GMT-6)</text>
+    </g>
+  </g>
+
+  <!-- Nodes -->
+  <g id="nodes">
+    <circle cx="128" cy="2100" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="128" cy="2100" r="14" fill="none" stroke="#4ec9b0" stroke-width="2" stroke-dasharray="3,3" />
+    <circle cx="128" cy="2176" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="128" cy="2252" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="128" cy="2328" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="48" cy="2328" r="8" fill="hsl(312, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="48" cy="2328" r="13" fill="none" stroke="#4ec9b0" stroke-width="2" stroke-dasharray="3,3" />
+    <circle cx="48" cy="2404" r="8" fill="#569cd6" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="48" cy="2480" r="8" fill="#569cd6" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="48" cy="2556" r="8" fill="#569cd6" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="48" cy="2632" r="8" fill="#569cd6" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="48" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="124" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="200" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="276" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="352" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="428" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="504" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="580" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="218" cy="656" r="10" fill="hsl(358, 70%, 55%)" stroke="#1e1e1e" stroke-width="2" />
+    <circle cx="218" cy="656" r="6" fill="#1e1e1e" />
+    <circle cx="153" cy="2404" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="153" cy="2480" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="153" cy="2556" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="153" cy="2632" r="9" fill="hsl(48, 70%, 55%)" stroke="#ffffff" stroke-width="2" />
+    <circle cx="243" cy="732" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="808" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="884" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="960" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1036" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1112" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1188" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1264" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1340" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1416" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1492" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1568" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1644" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1720" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1796" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1872" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="1948" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2024" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2100" r="10" fill="hsl(358, 70%, 55%)" stroke="#1e1e1e" stroke-width="2" />
+    <circle cx="243" cy="2100" r="6" fill="#1e1e1e" />
+    <circle cx="268" cy="2176" r="8" fill="hsl(80, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2252" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2328" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2404" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2480" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2556" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="243" cy="2632" r="8" fill="hsl(358, 70%, 55%)" stroke="#2d2d2d" stroke-width="1.5" />
+    <circle cx="153" cy="2708" r="9" fill="#4ec9b0" stroke="#ffffff" stroke-width="2" />
+  </g>
+</svg>

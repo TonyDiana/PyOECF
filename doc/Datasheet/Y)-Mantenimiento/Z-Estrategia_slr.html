@@ -1,0 +1,2681 @@
+<!DOCTYPE html><html lang="es" class="no-js"><head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="Todo_slp.html">
+      
+      
+        <link rel="next" href="../Z%29-C%C3%B3digo/1-src.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../_rec/local/logo_slp.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Estrategia de programación - PyOECF</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+        <script src="https://unpkg.com/iframe-worker/shim"></script>
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../_rec/local/local.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            .gscrollbar-fixer { padding-right: 15px; }
+            .gdesc-inner { font-size: 0.75rem; }
+            body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color); }
+            body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color); }
+            body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color); }
+        </style></head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#estrategia-de-programacion" class="md-skip">
+          Saltar a contenido
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabecera">
+    <a href="../index.html" title="PyOECF" class="md-header__button md-logo" aria-label="PyOECF" data-md-component="logo">
+      
+  <img src="../_rec/local/logo_slp.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyOECF
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Estrategia de programación
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo" aria-label="Modo claro" type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Modo claro" for="__palette_1" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo" aria-label="Modo oscuro" type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Modo oscuro" for="__palette_0" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"></path></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Búsqueda" placeholder="Búsqueda" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required="">
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Buscar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpiar" aria-label="Limpiar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix="">
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando búsqueda
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navegación" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="PyOECF" class="md-nav__button md-logo" aria-label="PyOECF" data-md-component="logo">
+      
+  <img src="../_rec/local/logo_slp.png" alt="logo">
+
+    </a>
+    PyOECF
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix="">
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inicio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2">
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A) Información
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    A) Información
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../A%29-Informaci%C3%B3n/1-Presentacion.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presentación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../A%29-Informaci%C3%B3n/Y-Requerimientos.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requerimientos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked="">
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Y) Mantenimiento
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Y) Mantenimiento
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="CLD_BITACORA_slp.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memoria · PyOECF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="CLD_TODO_slp.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pendientes · PyOECF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Changelog_slp.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registro de cambios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Todo_slp.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TODO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estrategia de programación
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="Z-Estrategia_slr.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estrategia de programación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#filosofia-y-principios-generales-tep-8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filosofía y principios generales (TEP-8)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#escritura-de-la-codificacion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escritura de la codificación
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Escritura de la codificación">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#idioma-de-codificacion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idioma de codificación
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentacion-del-proyecto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentación del proyecto
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#principios-innegociables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principios innegociables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#literales-magicos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literales mágicos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Python">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#principios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principios
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orden" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Orden
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paquete-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paquete hub
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nomenclatura-de-modulos-y-paquetes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nomenclatura de módulos y paquetes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#funciones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Funciones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constantes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constantes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#carpeta-rec-recursos-no-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carpeta rec (recursos no Python)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#organizacion-del-repositorio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Organización del repositorio
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Organización del repositorio">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carpetas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carpetas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ramas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ramas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#versiones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versiones
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flujo-operativo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flujo operativo
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Flujo operativo">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resultados-del-despliegue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resultados del despliegue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#herramientas-proporcionadas-al-mantenedor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Herramientas proporcionadas al mantenedor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Herramientas proporcionadas al mantenedor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#h1-remotosh-despliegue-a-un-remoto-publico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H1 - Remoto.sh (Despliegue a un remoto público)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h2-requirementssh-entorno-y-dependencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H2 - requirements.sh (Entorno y dependencias)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h3-mkgensh-documentacion-mkdocs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H3 - mkgen.sh (Documentación MkDocs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h4-bibsh-bibliotecas-vendorizadas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H4 - bib.sh (Bibliotecas vendorizadas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h5-symlinkslocalsh-enlaces-simbolicos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H5 - SymlinksLocal.sh (Enlaces simbólicos)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h6-generar_uesh-y-reponer_reposh-proyectos-nuevos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H6 - Generar_UE.sh y Reponer_REPO.sh (Proyectos nuevos)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#un-poco-de-los-80" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Un poco de los 80
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Un poco de los 80">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#evolucion-el-patron-_d-con-entedatos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evolución: el patrón _d* con EnteDatos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4">
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Z) Código
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Z) Código
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Z%29-C%C3%B3digo/1-src.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    main — Arranque de la aplicación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Z%29-C%C3%B3digo/2-bib.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bib — Bibliotecas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Z%29-C%C3%B3digo/3-biboecf.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    biboecf — Biblioteca Propia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Z%29-C%C3%B3digo/4-kernel.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    kernel — Kernel del proceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#filosofia-y-principios-generales-tep-8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filosofía y principios generales (TEP-8)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#escritura-de-la-codificacion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escritura de la codificación
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Escritura de la codificación">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#idioma-de-codificacion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idioma de codificación
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentacion-del-proyecto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentación del proyecto
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#principios-innegociables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principios innegociables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#literales-magicos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literales mágicos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Python">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#principios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principios
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orden" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Orden
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paquete-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paquete hub
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nomenclatura-de-modulos-y-paquetes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nomenclatura de módulos y paquetes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#funciones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Funciones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constantes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constantes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#carpeta-rec-recursos-no-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carpeta rec (recursos no Python)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#organizacion-del-repositorio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Organización del repositorio
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Organización del repositorio">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carpetas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carpetas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ramas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ramas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#versiones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versiones
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flujo-operativo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flujo operativo
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Flujo operativo">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resultados-del-despliegue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resultados del despliegue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#herramientas-proporcionadas-al-mantenedor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Herramientas proporcionadas al mantenedor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Herramientas proporcionadas al mantenedor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#h1-remotosh-despliegue-a-un-remoto-publico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H1 - Remoto.sh (Despliegue a un remoto público)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h2-requirementssh-entorno-y-dependencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H2 - requirements.sh (Entorno y dependencias)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h3-mkgensh-documentacion-mkdocs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H3 - mkgen.sh (Documentación MkDocs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h4-bibsh-bibliotecas-vendorizadas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H4 - bib.sh (Bibliotecas vendorizadas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h5-symlinkslocalsh-enlaces-simbolicos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H5 - SymlinksLocal.sh (Enlaces simbólicos)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h6-generar_uesh-y-reponer_reposh-proyectos-nuevos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H6 - Generar_UE.sh y Reponer_REPO.sh (Proyectos nuevos)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#un-poco-de-los-80" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Un poco de los 80
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Un poco de los 80">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#evolucion-el-patron-_d-con-entedatos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evolución: el patrón _d* con EnteDatos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="estrategia-de-programacion">Estrategia de programación<a class="headerlink" href="#estrategia-de-programacion" title="Permanent link">¶</a></h1>
+<p><strong>Ámbito:</strong> Este documento define el estándar general de desarrollo TD. Es aplicable a cualquier proyecto, sea biblioteca o aplicación.
+<strong>Versión:</strong> 26.10</p>
+<h2 id="filosofia-y-principios-generales-tep-8">Filosofía y principios generales (TEP-8)<a class="headerlink" href="#filosofia-y-principios-generales-tep-8" title="Permanent link">¶</a></h2>
+<p>El proyecto se rige por principios que priorizan la claridad, la accesibilidad y la ausencia de ambigüedad. Son la base de todas las decisiones técnicas y de estilo.</p>
+<p>El <a href="https://peps.python.org/pep-0008/">PEP8</a> será respetado siempre, a menos que entre en conflicto con la capacidad de comprensión del código.</p>
+<blockquote>
+<p>La claridad visual no es un lujo. Para un disléxico, el código desordenado es una tortura visual y mental, es como intentar leer un libro cuyo texto se reordena solo.</p>
+<p><strong>Respeta esta necesidad.</strong></p>
+</blockquote>
+<h2 id="escritura-de-la-codificacion">Escritura de la codificación<a class="headerlink" href="#escritura-de-la-codificacion" title="Permanent link">¶</a></h2>
+<h3 id="idioma-de-codificacion">Idioma de codificación<a class="headerlink" href="#idioma-de-codificacion" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>El idioma fundamental de la codificación será el español.</p>
+</li>
+<li>
+<p><strong>JAMÁS</strong> se utilizarán tildes ni la letra <code>ñ</code> en ninguna variable o constante. Se utilizará el inglés para resolver cualquier conflicto.</p>
+</li>
+<li>
+<p>Se utilizará el inglés para variables y constantes típicas de programación ya acostumbradas (next, aux, time, temp, etc...).</p>
+</li>
+<li>
+<p>Siempre se comentará en español, jamás en inglés.</p>
+</li>
+<li>
+<p>Si se toma parte de una biblioteca externa y se acondiciona o ajusta, la documentación y docstrings se respetarán en el idioma original. Podría añadirse una versión traducida.</p>
+</li>
+</ul>
+<h3 id="documentacion-del-proyecto">Documentación del proyecto<a class="headerlink" href="#documentacion-del-proyecto" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Se utilizan docstrings en el código fuente de forma prioritaria.</p>
+</li>
+<li>
+<p>Los docstrings nunca acaban en punto, la documentación siempre se escribe correctamente.</p>
+</li>
+<li>
+<p>Evitar los dobles comentarios, tienen prioridad los comentarios que sirven para documentar con MkDocs (los docstrings, que lee <code>mkdocstrings</code>).</p>
+</li>
+<li>
+<p>MkDocs será el eje de la documentación del desarrollador, desplegada en formato <em>HTML</em>.</p>
+</li>
+<li>
+<p>MkDocs presenta adecuadamente el texto de los <code>.md</code> cuyas líneas disponen de más de 80 caracteres de largo. No se perderá el tiempo arreglando las líneas en <strong>VSC</strong> ya que el editor también ayuda con este principio.</p>
+</li>
+</ul>
+<h3 id="principios-innegociables">Principios innegociables<a class="headerlink" href="#principios-innegociables" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Mejor legible que compacto.</p>
+</li>
+<li>
+<p>Mejor comprensible que pragmático.</p>
+</li>
+<li>
+<p>Mejor explícito que implícito.</p>
+</li>
+<li>
+<p>Todo código o página de manual debe pasar corrector ortográfico, <strong>SIEMPRE</strong>.</p>
+</li>
+<li>
+<p>Se usan comillas dobles en vez de comillas simples, <strong>SIEMPRE</strong>. Tengamos presente que <code>'A'</code> representa el número decimal 65 en muchos lenguajes de programación; parece más universal utilizar las comillas dobles para strings, aunque la tradición pythónica es utilizar la simple. La comilla simple pasa desapercibida en muchas ocasiones para un disléxico.</p>
+</li>
+</ul>
+<h2 id="literales-magicos">Literales mágicos<a class="headerlink" href="#literales-magicos" title="Permanent link">¶</a></h2>
+<blockquote>
+<p>Se denominan <em>literales mágicos</em> los valores literales dispersos en el código sin nombre ni constante que los represente. No confundir con los métodos especiales (<em>dunder</em>) de Python.</p>
+</blockquote>
+<ul>
+<li>
+<p>Están prohibidos, mejor usar diccionarios de constantes o clases.</p>
+</li>
+<li>
+<p>Estarán colocados en el lugar más visible posible, normalmente al principio del código.</p>
+</li>
+<li>
+<p>En caso de que un literal mágico se use una sola vez, se podrá utilizar para simplificar el código, pero se comentará de manera inequívoca. Ejemplo:</p>
+</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-0-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-0-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-0-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#__codelineno-0-16">16</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="c1">#</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">hipo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="c1"># --- Literales mágicos</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">lm</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>        <span class="c1"># --- Rutas de la interfaz</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>        <span class="s2">"r_conf"</span><span class="p">:</span> <span class="s2">"RUTA_CONFIG"</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>        <span class="s2">"r_web"</span><span class="p">:</span> <span class="s2">"RUTA_WEB"</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="p">}</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="o">...</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="c1">#</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="k">def</span><span class="w"> </span><span class="nf">lipo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="c1"># --- HAY Literales mágicos en ...</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="o">...</span>
+</code></pre></div></td></tr></tbody></table></div>
+<h2 id="python">Python<a class="headerlink" href="#python" title="Permanent link">¶</a></h2>
+<h3 id="principios">Principios<a class="headerlink" href="#principios" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Se denomina <strong>módulo</strong> a un archivo <code>.py</code>; <strong>paquete</strong> a una carpeta con <code>__init__.py</code> y sus módulos; <strong>biblioteca</strong> a un conjunto abstracto diseñado para ser consumido por otras aplicaciones; <strong>suite</strong> a un conjunto de bibliotecas relacionadas; y <strong>aplicación</strong> al código Python ejecutable de forma autónoma por un usuario final.</p>
+</li>
+<li>
+<p>Los paquetes y bibliotecas siempre se denominarán en minúsculas, según se establece en el <a href="https://peps.python.org/pep-0008/">PEP8</a>.</p>
+</li>
+<li>
+<p>Las anotaciones de tipo son obligatorias en toda función, método y propiedad. Nunca se omitirán.</p>
+</li>
+<li>
+<p>El <code># type: ignore</code> se usará exclusivamente cuando Pylance no pueda inferir el tipo por limitaciones del análisis estático, nunca para ocultar errores reales.</p>
+</li>
+<li>
+<p>Las variables locales de método nunca usarán __ (doble guión bajo); se usará _ como máximo.</p>
+</li>
+<li>
+<p>Mejor pedir perdón que permiso. Las excepciones generadas serán parte aceptable en los códigos.</p>
+</li>
+</ul>
+<h3 id="orden">Orden<a class="headerlink" href="#orden" title="Permanent link">¶</a></h3>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-1-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-1-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-1-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-1-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-1-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-1-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-1-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-1-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-1-10">10</a></span>
+<span class="normal"><a href="#__codelineno-1-11">11</a></span>
+<span class="normal"><a href="#__codelineno-1-12">12</a></span>
+<span class="normal"><a href="#__codelineno-1-13">13</a></span>
+<span class="normal"><a href="#__codelineno-1-14">14</a></span>
+<span class="normal"><a href="#__codelineno-1-15">15</a></span>
+<span class="normal"><a href="#__codelineno-1-16">16</a></span>
+<span class="normal"><a href="#__codelineno-1-17">17</a></span>
+<span class="normal"><a href="#__codelineno-1-18">18</a></span>
+<span class="normal"><a href="#__codelineno-1-19">19</a></span>
+<span class="normal"><a href="#__codelineno-1-20">20</a></span>
+<span class="normal"><a href="#__codelineno-1-21">21</a></span>
+<span class="normal"><a href="#__codelineno-1-22">22</a></span>
+<span class="normal"><a href="#__codelineno-1-23">23</a></span>
+<span class="normal"><a href="#__codelineno-1-24">24</a></span>
+<span class="normal"><a href="#__codelineno-1-25">25</a></span>
+<span class="normal"><a href="#__codelineno-1-26">26</a></span>
+<span class="normal"><a href="#__codelineno-1-27">27</a></span>
+<span class="normal"><a href="#__codelineno-1-28">28</a></span>
+<span class="normal"><a href="#__codelineno-1-29">29</a></span>
+<span class="normal"><a href="#__codelineno-1-30">30</a></span>
+<span class="normal"><a href="#__codelineno-1-31">31</a></span>
+<span class="normal"><a href="#__codelineno-1-32">32</a></span>
+<span class="normal"><a href="#__codelineno-1-33">33</a></span>
+<span class="normal"><a href="#__codelineno-1-34">34</a></span>
+<span class="normal"><a href="#__codelineno-1-35">35</a></span>
+<span class="normal"><a href="#__codelineno-1-36">36</a></span>
+<span class="normal"><a href="#__codelineno-1-37">37</a></span>
+<span class="normal"><a href="#__codelineno-1-38">38</a></span>
+<span class="normal"><a href="#__codelineno-1-39">39</a></span>
+<span class="normal"><a href="#__codelineno-1-40">40</a></span>
+<span class="normal"><a href="#__codelineno-1-41">41</a></span>
+<span class="normal"><a href="#__codelineno-1-42">42</a></span>
+<span class="normal"><a href="#__codelineno-1-43">43</a></span>
+<span class="normal"><a href="#__codelineno-1-44">44</a></span>
+<span class="normal"><a href="#__codelineno-1-45">45</a></span>
+<span class="normal"><a href="#__codelineno-1-46">46</a></span>
+<span class="normal"><a href="#__codelineno-1-47">47</a></span>
+<span class="normal"><a href="#__codelineno-1-48">48</a></span>
+<span class="normal"><a href="#__codelineno-1-49">49</a></span>
+<span class="normal"><a href="#__codelineno-1-50">50</a></span>
+<span class="normal"><a href="#__codelineno-1-51">51</a></span>
+<span class="normal"><a href="#__codelineno-1-52">52</a></span>
+<span class="normal"><a href="#__codelineno-1-53">53</a></span>
+<span class="normal"><a href="#__codelineno-1-54">54</a></span>
+<span class="normal"><a href="#__codelineno-1-55">55</a></span>
+<span class="normal"><a href="#__codelineno-1-56">56</a></span>
+<span class="normal"><a href="#__codelineno-1-57">57</a></span>
+<span class="normal"><a href="#__codelineno-1-58">58</a></span>
+<span class="normal"><a href="#__codelineno-1-59">59</a></span>
+<span class="normal"><a href="#__codelineno-1-60">60</a></span>
+<span class="normal"><a href="#__codelineno-1-61">61</a></span>
+<span class="normal"><a href="#__codelineno-1-62">62</a></span>
+<span class="normal"><a href="#__codelineno-1-63">63</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="c1"># -*- coding: utf-8 *-*</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="sd">"""</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="sd">    :Propósito: &lt;Explicación&gt;.</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="sd">    :Autor:     Tony Diana</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="sd">    :Versión:   &lt;Se recomienda versión proto o fecha AA.MM.DD&gt;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="sd">"""</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="c1"># cSpell:ignore &lt;según orden de aparición indicado por Prettier&gt;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"nombre_a"</span><span class="p">,</span> <span class="s2">"nombre_b"</span><span class="p">]</span>  <span class="c1"># alfabético por nombre expuesto</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11"></a>
+<a id="__codelineno-1-12" name="__codelineno-1-12"></a><span class="c1"># --- Bibliotecas estándar Python</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13"></a><span class="kn">import</span><span class="w"> </span><span class="nn">calendar</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15"></a><span class="c1"># --- Bibliotecas externas</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16"></a><span class="kn">from</span><span class="w"> </span><span class="nn">bib</span><span class="w"> </span><span class="kn">import</span> <span class="n">std</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17"></a><span class="kn">from</span><span class="w"> </span><span class="nn">bib.net</span><span class="w"> </span><span class="kn">import</span> <span class="n">mi_ip</span>          <span class="c1"># excepción permitida: claro y explícito</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18"></a>
+<a id="__codelineno-1-19" name="__codelineno-1-19"></a><span class="c1"># --- Hub</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">FE_ENV</span><span class="p">,</span> <span class="n">WS_ENV</span>      <span class="c1"># Orden alfabético</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21"></a>
+<a id="__codelineno-1-22" name="__codelineno-1-22"></a><span class="c1"># --- Módulos del paquete propio</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.modulo</span><span class="w"> </span><span class="kn">import</span> <span class="n">funtion</span><span class="p">,</span> <span class="n">Objeto</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24"></a>
+<a id="__codelineno-1-25" name="__codelineno-1-25"></a><span class="c1"># --- Abreviaturas</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26"></a><span class="n">Field</span> <span class="o">=</span> <span class="n">std</span><span class="o">.</span><span class="n">FieldEnteDatos</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27"></a>
+<a id="__codelineno-1-28" name="__codelineno-1-28"></a><span class="c1"># --- Constantes internas (guión bajo simple)</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29"></a><span class="n">_KM</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">6</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30"></a>
+<a id="__codelineno-1-31" name="__codelineno-1-31"></a><span class="c1">#</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32"></a><span class="c1"># --- Comentario inicial de un bloque filosófico u operativo</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33"></a><span class="c1">#</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34"></a>
+<a id="__codelineno-1-35" name="__codelineno-1-35"></a><span class="c1"># &lt;--- Este # siempre aparece y siempre sin comentario asociado</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36"></a><span class="c1"># --- Comentario a función o clase sin docstring</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37"></a><span class="k">def</span><span class="w"> </span><span class="nf">funcion</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-1-38" name="__codelineno-1-38"></a>    <span class="k">return</span> <span class="kc">None</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39"></a>
+<a id="__codelineno-1-40" name="__codelineno-1-40"></a>  <span class="o">&lt;---</span> <span class="n">Elemento</span> <span class="n">con</span> <span class="n">docstring</span><span class="o">.</span> <span class="n">Esta</span> <span class="n">línea</span> <span class="n">en</span> <span class="n">blanco</span> <span class="n">siempre</span> <span class="n">aparece</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41"></a><span class="c1"># &lt;--- Esto siempre aparece y siempre sin comentario asociado</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42"></a><span class="k">def</span><span class="w"> </span><span class="nf">nowString</span><span class="p">(</span><span class="n">compacta</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">mc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43"></a><span class="w">    </span><span class="sd">"""</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44"></a><span class="sd">    &lt;&gt;</span>
+<a id="__codelineno-1-45" name="__codelineno-1-45"></a>
+<a id="__codelineno-1-46" name="__codelineno-1-46"></a><span class="sd">    :Autor:     Tony Diana</span>
+<a id="__codelineno-1-47" name="__codelineno-1-47"></a><span class="sd">    :Versión:   &lt;Se recomienda versión proto o fecha AA.MM.DD&gt;</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48"></a><span class="sd">    """</span>
+<a id="__codelineno-1-49" name="__codelineno-1-49"></a>
+<a id="__codelineno-1-50" name="__codelineno-1-50"></a>    <span class="c1"># --- Comentario interno</span>
+<a id="__codelineno-1-51" name="__codelineno-1-51"></a>    <span class="n">ms_fmt</span> <span class="o">=</span> <span class="s2">":</span><span class="si">%f</span><span class="s2">"</span> <span class="k">if</span> <span class="n">mc</span> <span class="k">else</span> <span class="s2">""</span>        <span class="c1"># Posible micro comentario</span>
+<a id="__codelineno-1-52" name="__codelineno-1-52"></a>
+<a id="__codelineno-1-53" name="__codelineno-1-53"></a>    <span class="n">ms_fmt</span> <span class="o">=</span> <span class="s2">":</span><span class="si">%f</span><span class="s2">"</span> <span class="k">if</span> <span class="n">mc</span> <span class="k">else</span> <span class="s2">""</span>
+<a id="__codelineno-1-54" name="__codelineno-1-54"></a>    <span class="c1">#       Comentario explicativo al desplazamiento lateral</span>
+<a id="__codelineno-1-55" name="__codelineno-1-55"></a>    <span class="c1">#       necesario y con la longitud necesaria, siempre debajo del</span>
+<a id="__codelineno-1-56" name="__codelineno-1-56"></a>    <span class="c1">#       elemento que está comentando.</span>
+<a id="__codelineno-1-57" name="__codelineno-1-57"></a>
+<a id="__codelineno-1-58" name="__codelineno-1-58"></a>    <span class="c1">#</span>
+<a id="__codelineno-1-59" name="__codelineno-1-59"></a>    <span class="c1"># --- Comentario inicial de un bloque filosófico u operativo</span>
+<a id="__codelineno-1-60" name="__codelineno-1-60"></a>    <span class="c1">#</span>
+<a id="__codelineno-1-61" name="__codelineno-1-61"></a>
+<a id="__codelineno-1-62" name="__codelineno-1-62"></a>    <span class="c1"># --- Comentario al retorno, si es pertinente</span>
+<a id="__codelineno-1-63" name="__codelineno-1-63"></a>    <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div></td></tr></tbody></table></div>
+<h3 id="__all__"><code>__all__</code><a class="headerlink" href="#__all__" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Declara el contrato público del módulo: qué existe para el exterior.</p>
+</li>
+<li>
+<p>Presentará los elementos ordenados según se declaren.</p>
+</li>
+<li>
+<p>Cuando un módulo no deba exportar nada, se declarará explícitamente vacío:</p>
+</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[]</span>
+</code></pre></div></td></tr></tbody></table></div>
+<h3 id="imports">Imports<a class="headerlink" href="#imports" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Los imports dentro de un paquete serán siempre relativos.</p>
+</li>
+<li>
+<p>Un módulo conoce la profundidad de sus propios hermanos, no la de los ajenos. Por tanto:</p>
+</li>
+<li>
+<p>Dentro del paquete propio → imports relativos (<code>.</code>, <code>..</code>) según la profundidad real.</p>
+</li>
+<li>
+<p>Hacia paquetes ajenos dentro de la misma aplicación → import desnudo (<code>import bib</code>, <code>import hub</code>), nunca relativo cruzado.</p>
+</li>
+<li>
+<p>El entry point de la aplicación (<code>src/__main__.py</code>) es responsable de añadir <code>src/</code> al <code>sys.path</code> para hacer posible este esquema.</p>
+</li>
+<li>
+<p>Las bibliotecas independientes no pueden asumir ningún <code>sys.path</code> externo. Todos sus imports serán siempre relativos.</p>
+</li>
+<li>
+<p>Ningún paquete busca nada fuera de sí mismo, salvo bibliotecas externas o el paquete <code>hub</code>.</p>
+</li>
+<li>
+<p>Todo paquete expone en su <code>__init__.py</code> aquello que puede compartir. Lo que no se expone, no se busca desde fuera.</p>
+</li>
+<li>
+<p>Los imports desde fuera de un paquete van siempre a su <code>__init__</code>, nunca al módulo interno. La forma canónica es:</p>
+</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="o">&lt;</span><span class="n">paquete</span><span class="o">&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="o">&lt;</span><span class="n">modulo</span><span class="o">&gt;</span>
+</code></pre></div></td></tr></tbody></table></div>
+<ul>
+<li><strong>Excepción:</strong> se permite entrar al módulo interno de una biblioteca externa si la sintaxis resultante es clara y explícita, y evita una abreviatura que de otro modo sería necesaria. La profundidad máxima permitida son dos niveles antes del <code>import</code>:</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">bib.net</span><span class="w"> </span><span class="kn">import</span> <span class="n">mi_ip</span>   <span class="c1"># válido: claro, explícito, evita abreviatura</span>
+</code></pre></div></td></tr></tbody></table></div>
+<ul>
+<li>
+<p>Los imports que no estén al principio del módulo, sino dentro de funciones o métodos, se colocarán junto a su uso, nunca dispersos al inicio del archivo.</p>
+</li>
+<li>
+<p>Los nombres importados en una misma línea (<code>from &lt;paquete&gt; import a, b, c</code>) se ordenarán siempre alfabéticamente.</p>
+</li>
+</ul>
+<h3 id="paquete-hub">Paquete <code>hub</code><a class="headerlink" href="#paquete-hub" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Todo elemento que deba ser compartido por más de un paquete de la aplicación vivirá en el paquete <code>hub</code>.</p>
+</li>
+<li>
+<p><code>hub</code> <strong>no busca nada fuera de su propio paquete</strong>: sin imports de paquetes hermanos, sin imports de <code>kernel</code>, <code>website</code> ni ningún otro. Esta restricción es la que elimina la posibilidad de referencias circulares.</p>
+</li>
+<li>
+<p>El criterio de entrada es estricto: si algo lo necesita un solo paquete, se queda en ese paquete. En cuanto un segundo paquete lo necesita, se mueve a <code>hub</code>.</p>
+</li>
+<li>
+<p>Las bibliotecas independientes no utilizan este patrón.</p>
+</li>
+</ul>
+<h3 id="nomenclatura-de-modulos-y-paquetes">Nomenclatura de módulos y paquetes<a class="headerlink" href="#nomenclatura-de-modulos-y-paquetes" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Los nombres de módulos y paquetes serán suficientemente descriptivos. Sin abreviaciones crípticas: el nombre debe explicarse solo.</p>
+</li>
+<li>
+<p>Ningún módulo se llamará igual que su paquete. Si existe un módulo central que da nombre conceptual al paquete, ese módulo se llamará <code>núcleo</code> o <code>kernel</code> a elección del desarrollador.</p>
+</li>
+<li>
+<p>Se preferirá un paquete pequeño de un solo módulo con nombre preciso, antes que alojar un módulo en un paquete al que no pertenece semánticamente.</p>
+</li>
+<li>
+<p>Los paquetes pueden contener subpaquetes cuando existe una unidad lógica que lo justifica. La granularidad la dicta la semántica, no una regla de profundidad.</p>
+</li>
+<li>
+<p>Las funciones, constantes y variables de un dominio llevan el prefijo del ente en mayúsculas: <code>BD_nombre</code>, <code>WS_nombre</code>. Los módulos usan el orden inverso: <code>naturaleza_BD</code>, <code>naturaleza_WS</code>. Esto agrupa visualmente por naturaleza en el árbol de archivos y por dominio en el código.</p>
+</li>
+<li>
+<p>Los módulos de entorno, configuración y ajuste siguen esta nomenclatura fija:</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Nombre</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>env</code></td>
+<td>ENVIRONMENT DIVISION — lo que el sistema conoce de sí mismo al arrancar</td>
+</tr>
+<tr>
+<td><code>setup</code></td>
+<td>Configuración interna sin intervención del usuario</td>
+</tr>
+<tr>
+<td><code>conf</code></td>
+<td>Configuración que requiere decisión del usuario</td>
+</tr>
+</tbody>
+</table>
+<h3 id="funciones">Funciones<a class="headerlink" href="#funciones" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Nombres de funciones en minúsculas separadas por guión bajo <code>_</code>.</p>
+</li>
+<li>
+<p>Esta regla de los guiones puede romperse usando capitalize, comenzando en minúscula, si el nombre produce "<strong>cacofonía visual</strong>".</p>
+</li>
+<li>
+<p>Si no hay persistencia, función siempre.</p>
+</li>
+<li>
+<p>Si varias funciones están interrelacionadas entre sí, usar clases.</p>
+</li>
+<li>
+<p>Si un método tiene sentido separado de la clase, mejor no usar clases.</p>
+</li>
+<li>
+<p>Ante la duda, usar clases.</p>
+</li>
+<li>
+<p>Las funciones que se pasen como <code>target</code> a un <code>Thread</code> no serán lambdas — los tracebacks no las identifican. Se nombrarán así:</p>
+</li>
+<li>
+<p><code>th_nombre</code> — lanzadora de hilo a nivel de módulo.</p>
+</li>
+<li>
+<p><code>ith_nombre</code> — lanzadora de hilo interna a otra función o clase.</p>
+</li>
+<li>
+<p>Si una función o un método tiene <strong>un solo consumidor</strong>, no se crea: su código va dentro de quien lo usa, como un bloque con su comentario. Se separa cuando aparece el segundo consumidor.</p>
+</li>
+<li>
+<p><strong>Funciones internas</strong> (definidas dentro de otra función o método, para ordenar el código de una sola pieza):</p>
+</li>
+<li>
+<p>Nombre en minúsculas con guión bajo y <strong>empezando por <code>_</code></strong> (<code>_elegir</code>, <code>_leer_toma</code>), para que se vea a primera vista que son internas y no métodos.</p>
+</li>
+<li>
+<p><strong>Sin cierres</strong> (<em>closures</em>): no leen ni escriben variables locales de la función que las contiene, y nunca usan <code>nonlocal</code>. Una variable que viaja escondida de una función a otra no se ve al leer la línea que la usa. Solo pueden usar <code>self</code> y el alias de las constantes de la clase (<code>kv = self.KV</code>). El estado que compartan va como variable de instancia declarada (ver <em>Clases</em>) o como variable de clase, o se pasa como parámetro.</p>
+</li>
+<li>
+<p>Una variable local no puede llamarse igual que una función interna ni que un parámetro: dentro de su ámbito, el nombre deja de ser la función y el error no avisa hasta que se ejecuta.</p>
+</li>
+</ul>
+<h3 id="clases">Clases<a class="headerlink" href="#clases" title="Permanent link">¶</a></h3>
+<p><strong>Denominaciones:</strong></p>
+<ul>
+<li>
+<p>Nombre de las clases en <code>capitalize</code> comenzando en <strong>MAYÚSCULAS</strong>. Puede contener la palabra <code>Class</code> al final de su nombre para indicar visualmente que es una clase.</p>
+</li>
+<li>
+<p>Nombre de los objetos instanciados de una clase, <code>capitalize</code> comenzando en <strong>minúsculas</strong>.</p>
+</li>
+<li>
+<p>Las propiedades comenzarán por minúsculas, los métodos por mayúsculas y usarán un verbo en infinitivo.</p>
+</li>
+<li>
+<p>Las propiedades booleanas empiezan con <code>es</code> (por ejemplo: <code>objeto.esActivo</code>).</p>
+</li>
+<li>
+<p>Los métodos decorados como propiedades se nombrarán como si fuesen otras propiedades.</p>
+</li>
+<li>
+<p>Los métodos de solo lectura comenzarán <strong>SIEMPRE</strong> con la palabra <code>get</code>.</p>
+</li>
+<li>
+<p>Los métodos de solo escritura comenzarán <strong>SIEMPRE</strong> con la palabra <code>set</code>.</p>
+</li>
+<li>
+<p>Si existe lectura y escritura para una propiedad, <strong>SIEMPRE</strong> se usará <code>@property</code> y <code>setter</code> con el mismo nombre, para que parezcan una propiedad y no dos métodos separados.</p>
+</li>
+</ul>
+<p><strong>Orden innegociable del código de la clase:</strong></p>
+<ul>
+<li>
+<p><code>__slots__</code> será lo primero que aparecerá codificado en la clase, aunque esté vacío.</p>
+</li>
+<li>
+<p>La excepción a esta norma se dará en las clases que van a soportar herencia múltiple. Para evitar el error <code>multiple bases have instance lay-out conflict</code>, dichas clases no tendrán <code>__slots__</code>, pero sí comentario que indique que esta es la razón por la cual no lo tienen.</p>
+</li>
+<li>
+<p>Se podrán crear clases sin <code>__slots__</code> cuando su herencia deba cambiar dinámicamente en tiempo de ejecución.</p>
+</li>
+<li>
+<p>Si la clase hereda de otra que <strong>no usa <code>__slots__</code></strong> (por ejemplo, las ventanas de <code>tkinter</code> o <code>customtkinter</code>), su <code>__slots__</code> <strong>no tiene efecto</strong>: la clase sigue teniendo <code>__dict__</code> y admite cualquier atributo nuevo. Se mantiene <code>__slots__ = []</code> por esta norma, con un comentario que diga que ahí no tiene efecto y por qué, y la protección se consigue con la declaración de todas las variables de instancia en el <code>__init__</code> (ver más abajo).</p>
+</li>
+<li>
+<p>Los literales mágicos serán lo segundo que se codificará, si es necesario.</p>
+</li>
+<li>
+<p><code>__new__</code> será el tercer elemento codificado, cuando sea necesario.</p>
+</li>
+<li>
+<p><code>__init__</code> será el cuarto elemento codificado.</p>
+</li>
+<li>
+<p><strong>Variables de instancia:</strong> todas se declaran en el <code>__init__</code>, justo después de <code>super().__init__()</code> y <strong>antes de cualquier lógica</strong>, en una sección propia <code># region Variables de instancia</code>, cada una con su tipo y su comentario. Nunca se crea un <code>self.algo</code> nuevo en mitad de un método. Las que toman su valor más tarde (al crear un elemento, o en un método que las reinicia) llevan solo la anotación de tipo (<code>self.ruta: ctk.StringVar</code>); su valor inicial se escribe una sola vez, donde corresponda, y los métodos que las reinician solo asignan, no declaran.</p>
+</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-5-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-5-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-5-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-5-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-5-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-5-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-5-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-5-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-5-10">10</a></span>
+<span class="normal"><a href="#__codelineno-5-11">11</a></span>
+<span class="normal"><a href="#__codelineno-5-12">12</a></span>
+<span class="normal"><a href="#__codelineno-5-13">13</a></span>
+<span class="normal"><a href="#__codelineno-5-14">14</a></span>
+<span class="normal"><a href="#__codelineno-5-15">15</a></span>
+<span class="normal"><a href="#__codelineno-5-16">16</a></span>
+<span class="normal"><a href="#__codelineno-5-17">17</a></span>
+<span class="normal"><a href="#__codelineno-5-18">18</a></span>
+<span class="normal"><a href="#__codelineno-5-19">19</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4"></a>    <span class="c1">#</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5"></a>    <span class="c1"># --- Variables de instancia: TODAS aquí, con su tipo, antes de</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6"></a>    <span class="c1">#     cualquier lógica</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7"></a>    <span class="c1">#</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8"></a>    <span class="c1"># region Variables de instancia</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9"></a>
+<a id="__codelineno-5-10" name="__codelineno-5-10"></a>    <span class="c1"># --- Cajas montadas, en el orden en que se crean</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">cajas</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ctk</span><span class="o">.</span><span class="n">CTkFrame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12"></a>
+<a id="__codelineno-5-13" name="__codelineno-5-13"></a>    <span class="c1"># --- Variable de la casilla de la ruta (se crea al montar su caja)</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">ruta</span><span class="p">:</span> <span class="n">ctk</span><span class="o">.</span><span class="n">StringVar</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15"></a>
+<a id="__codelineno-5-16" name="__codelineno-5-16"></a>    <span class="c1"># endregion Variables de instancia</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17"></a>
+<a id="__codelineno-5-18" name="__codelineno-5-18"></a>    <span class="c1"># --- A partir de aquí, la lógica</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">Reiniciar</span><span class="p">()</span>
+</code></pre></div></td></tr></tbody></table></div>
+<ul>
+<li>
+<p><strong>Variables de clase:</strong> el estado que comparten varios métodos de una clase de la que solo habrá un objeto (por ejemplo, la ventana principal) puede declararse como variable de clase privada (<code>__espera: str | None = None</code>), al principio de la clase y con su comentario.</p>
+</li>
+<li>
+<p>Se usará siempre <code>super()</code> simple, dejando al MRO resolver el orden de herencia. Si en algún caso excepcional se llama explícito, se documentará con comentario inline — nunca en docstring.</p>
+</li>
+<li>
+<p>El orden de los elementos tras <code>__init__</code> es innegociable: primero los atributos (getter/setter con sus funciones pegadas), después los métodos, y al final el bloque REG/INIT. El bloque REG/INIT es fontanería interna y no debe interferir con la lectura del código operativo.</p>
+</li>
+<li>
+<p>Cada sección lógica se marca con <strong><code># region Nombre</code></strong> al principio y <strong><code># endregion Nombre</code></strong> al final, para poder plegarla en el editor (en VS Code, <code>Ctrl+K Ctrl+8</code> pliega todas). Sustituye al antiguo <code>if True:</code>, que añadía un nivel de sangría y una línea de código que no hace nada. El código que genera <code>dclgen</code> todavía usa <code>if True:</code> (ver <em>Un poco de los 80</em>).</p>
+</li>
+<li>
+<p>En clases que hereden <code>EnteDatos</code>, el <code>MontarPROTO</code> del <code>__init__</code> se protegerá siempre con <code>if not (self.PROTO):</code>. Esto permite colapsar el bloque en el editor, deja claro semánticamente dónde ocurre la inicialización única, y permite añadir lógica adicional en el <code>__init__</code> con seguridad:</p>
+</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-6-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-6-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-6-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-6-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-6-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-6-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-6-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-6-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-6-10">10</a></span>
+<span class="normal"><a href="#__codelineno-6-11">11</a></span>
+<span class="normal"><a href="#__codelineno-6-12">12</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PROTO</span><span class="p">):</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">MontarPROTO</span><span class="p">([</span><span class="o">...</span><span class="p">])</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">PtrFORM</span> <span class="o">=</span> <span class="n">formstd</span><span class="o">.</span><span class="n">FormSTD</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8"></a>    <span class="c1"># --- Identidad</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">esNOSQL</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">MontarTABLA</span><span class="p">(</span><span class="n">NameTbl</span><span class="o">.</span><span class="n">XXX</span><span class="p">)</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">KEY</span> <span class="o">=</span> <span class="n">NameTbl</span><span class="o">.</span><span class="n">KXX</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">Read</span><span class="p">()</span>
+</code></pre></div></td></tr></tbody></table></div>
+<ul>
+<li>Las subclases de <code>EnteDatos</code> que necesiten un manejador de multiproceso (<code>__MPR</code>) independiente del resto usarán <code>__init_subclass__</code> para aislarlo. Si no se declara, el <code>__MPR</code> de cada subclase es <code>None</code> propio y no comparte estado con sus hermanas.</li>
+</ul>
+<p><strong>Principios de operatividad:</strong></p>
+<ul>
+<li>
+<p>Las clases no deben permitir añadir propiedades en tiempo de ejecución, por esa razón utilizan siempre <code>__slots__</code>.</p>
+</li>
+<li>
+<p>En caso de necesitar una clase que aumente sus propiedades en tiempo de ejecución, no se modificará una clase ya creada, sino que se creará una nueva clase que heredará las clases necesarias, pero no se modificará el comportamiento previsto de las clases definidas previamente.</p>
+</li>
+<li>
+<p>La excepción a esta norma se aplicará cuando exista necesidad de aplicar técnicas como el <a href="https://en.wikipedia.org/wiki/Monkey_patch">monkey patching</a> o el <a href="https://es.wikipedia.org/wiki/Enlace_din%C3%A1mico_(programaci%C3%B3n_orientada_a_objetos)">dynamic dispatch</a>.</p>
+</li>
+</ul>
+<h3 id="constantes">Constantes<a class="headerlink" href="#constantes" title="Permanent link">¶</a></h3>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-7-1">1</a></span>
+<span class="normal"><a href="#__codelineno-7-2">2</a></span>
+<span class="normal"><a href="#__codelineno-7-3">3</a></span>
+<span class="normal"><a href="#__codelineno-7-4">4</a></span>
+<span class="normal"><a href="#__codelineno-7-5">5</a></span>
+<span class="normal"><a href="#__codelineno-7-6">6</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="c1"># --- Módulos propios</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.const</span><span class="w"> </span><span class="kn">import</span> <span class="n">constantes</span> <span class="k">as</span> <span class="n">KMENU</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.const</span><span class="w"> </span><span class="kn">import</span> <span class="n">FUNC_MONTA_KONST</span><span class="p">,</span> <span class="n">CLASS_MONTA_KONST</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5"></a><span class="c1"># --- Constantes del módulo</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6"></a><span class="n">__K1</span> <span class="o">=</span> <span class="s2">"Algo"</span>
+</code></pre></div></td></tr></tbody></table></div>
+<ul>
+<li>
+<p>Constantes en mayúsculas y comenzarán por la letra <code>K</code>.</p>
+</li>
+<li>
+<p>Si las constantes son internas a un módulo <code>.py</code>, no es necesario nombrarlas con <code>K</code>.</p>
+</li>
+<li>
+<p>Sus <code>import</code> usarán también espacios de nombres que comiencen por la letra <code>K</code>.</p>
+</li>
+<li>
+<p>Las funciones que actúan como constantes o que montan el valor de constantes estarán siempre declaradas en los módulos de constantes y se declararán como nombres de constantes.</p>
+</li>
+<li>
+<p>Si varias funciones constantes se pueden unir filosóficamente (por ejemplo, para configuración o montaje propio), <strong>y necesitan un tratamiento unificado e interrelacionado</strong>, se usará una clase, nunca funciones que interactúen entre sí.</p>
+</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-8-1">1</a></span>
+<span class="normal"><a href="#__codelineno-8-2">2</a></span>
+<span class="normal"><a href="#__codelineno-8-3">3</a></span>
+<span class="normal"><a href="#__codelineno-8-4">4</a></span>
+<span class="normal"><a href="#__codelineno-8-5">5</a></span>
+<span class="normal"><a href="#__codelineno-8-6">6</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1"></a><span class="c1"># --- Módulos propios</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.const</span><span class="w"> </span><span class="kn">import</span> <span class="n">constantes</span> <span class="k">as</span> <span class="n">KMENU</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4"></a><span class="o">...</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5"></a><span class="n">KMENU</span><span class="o">.</span><span class="n">Montar</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6"></a><span class="n">opcion</span> <span class="o">=</span> <span class="n">KMENU</span><span class="o">.</span><span class="n">OPCION</span>
+</code></pre></div></td></tr></tbody></table></div>
+<ul>
+<li>Si se codifican dentro de una clase, siempre como <em>constantes de clase</em> y después de <code>__slots__</code>.</li>
+</ul>
+<h3 id="carpeta-rec-recursos-no-python">Carpeta <code>rec</code> (recursos no Python)<a class="headerlink" href="#carpeta-rec-recursos-no-python" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>Los recursos necesarios para la aplicación que no sean código Python (plantillas, imágenes, archivos de configuración, fuentes, CSS, JS, etc.) vivirán en una carpeta llamada <code>rec</code> (opcional <code>_rec</code> con guión bajo al frente).</p>
+</li>
+<li>
+<p>El guión bajo la distingue visualmente del código y la sitúa primera en el orden alfabético, evitando que se confunda con un paquete.</p>
+</li>
+<li>
+<p><code>rec</code> <strong>no tendrá</strong> <code>__init__.py</code> ni ningún archivo <code>.py</code>. Si algo necesita código Python, no pertenece ahí.</p>
+</li>
+<li>
+<p>Su ubicación sigue el mismo principio que <code>hub</code>:</p>
+</li>
+<li>
+<p><code>&lt;paquete&gt;/rec/</code> → recursos exclusivos de ese paquete.</p>
+</li>
+<li><code>src/rec/</code> → recursos compartidos por más de un paquete.</li>
+</ul>
+<h2 id="organizacion-del-repositorio">Organización del repositorio<a class="headerlink" href="#organizacion-del-repositorio" title="Permanent link">¶</a></h2>
+<h3 id="carpetas">Carpetas<a class="headerlink" href="#carpetas" title="Permanent link">¶</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>App o Biblioteca
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>├── index.html          ← Lanzador de la documentación de desarrollo
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>├── LICENSE.md
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>├── README.md
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>├── VERSION             ← Versión actual del proyecto
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>│
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>├── main.sh             ← Lanzador de app para el usuario final
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>│                         (actualiza y arranca)
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>├── config.ini          ← Permite acceso ENVIRONMENT DIVISION
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>│
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>├── doc                 ← Documentación del desarrollador
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>│   ├── Datasheet       ← HTML final (generado por MkDocs)
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>│   └── mkdocs          ← mkdocs
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>│
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>├── manual              ← Documentación del usuario final
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>│                         Esta ubicación puede ser modificada en caso de
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>│                         ser un proyecto que utilice un servidor web y se
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>│                         precisen colocar los archivos en otra carpeta
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>│
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>├── rec                 ← Recursos para el mantenimiento del proyecto
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>│   │
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>│   │   --- Se puede modificar este espacio según necesidades -------------
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a>│   │   --- Nunca mantener caótico ----------------------------------------
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>│   │
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>│   ├── _purgatorio/    ← Elementos esperando incorporación o eliminación
+<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>│   │
+<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a>│   ├── estrategias/    ← Notas y decisiones de diseño
+<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>│   │   ├── Estrategia_slr.md       ← Este archivo (enlace a Repo)
+<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a>│   │   └── bitacora/
+<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a>│   │       ├── Todo.md             ← Hoja de ruta general
+<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a>│   │       ├── Bitácora.md         ← Bitácora personal del mantenedor
+<a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a>│   │       └── Changelog.md        ← Historial de cambios
+<a id="__codelineno-9-33" name="__codelineno-9-33" href="#__codelineno-9-33"></a>│   │
+<a id="__codelineno-9-34" name="__codelineno-9-34" href="#__codelineno-9-34"></a>│   ├── requirements/   ← Dependencias del proyecto
+<a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a>│   │   ├── requirements.conf       ← Paquetes (pip y apt) y ruta del venv
+<a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a>│   │   ├── requirements.md         ← Comentarios humanos
+<a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a>│   │   └── requirements_slr.sh     ← Instalador (enlace a Repo)
+<a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a>│   │
+<a id="__codelineno-9-39" name="__codelineno-9-39" href="#__codelineno-9-39"></a>│   ├── scripts/        ← Scripts diversos
+<a id="__codelineno-9-40" name="__codelineno-9-40" href="#__codelineno-9-40"></a>│   │   ├── Remoto_slr.sh           ← Despliegue a un remoto público (enlace a Repo)
+<a id="__codelineno-9-41" name="__codelineno-9-41" href="#__codelineno-9-41"></a>│   │   ├── remoto.conf             ← Su configuración (si se publica fuera de Gitea)
+<a id="__codelineno-9-42" name="__codelineno-9-42" href="#__codelineno-9-42"></a>│   │   ├── Reponer_REPO_slr.sh     ← Repone los enlaces de Repo (enlace a Repo)
+<a id="__codelineno-9-43" name="__codelineno-9-43" href="#__codelineno-9-43"></a>│   │   └── sl/                     ← Enlaces simbólicos del proyecto
+<a id="__codelineno-9-44" name="__codelineno-9-44" href="#__codelineno-9-44"></a>│   │       ├── Symlinks_slr.md         ← Comentarios del mantenedor (enlace a Repo)
+<a id="__codelineno-9-45" name="__codelineno-9-45" href="#__codelineno-9-45"></a>│   │       ├── SymlinksLocal_slr.sh    ← Gestor de los enlaces (enlace a Repo)
+<a id="__codelineno-9-46" name="__codelineno-9-46" href="#__codelineno-9-46"></a>│   │       └── SymlinksLocal.txt       ← Registro local de los enlaces
+<a id="__codelineno-9-47" name="__codelineno-9-47" href="#__codelineno-9-47"></a>│   │
+<a id="__codelineno-9-48" name="__codelineno-9-48" href="#__codelineno-9-48"></a>│   ├── logo_b.png      ← Logo de la solución, en blanco
+<a id="__codelineno-9-49" name="__codelineno-9-49" href="#__codelineno-9-49"></a>│   └── logo_n.png      ← Logo de la solución, en negro
+<a id="__codelineno-9-50" name="__codelineno-9-50" href="#__codelineno-9-50"></a>│
+<a id="__codelineno-9-51" name="__codelineno-9-51" href="#__codelineno-9-51"></a>└── src                 ← Código fuente Python, formato biblioteca
+<a id="__codelineno-9-52" name="__codelineno-9-52" href="#__codelineno-9-52"></a>    ├── main.py         ← Entrada a la aplicación
+<a id="__codelineno-9-53" name="__codelineno-9-53" href="#__codelineno-9-53"></a>    ├── __init__.py     ← Marcador de paquete
+<a id="__codelineno-9-54" name="__codelineno-9-54" href="#__codelineno-9-54"></a>    │
+<a id="__codelineno-9-55" name="__codelineno-9-55" href="#__codelineno-9-55"></a>    ├── rec             ← Recursos compartidos (no Python, sin __init__)
+<a id="__codelineno-9-56" name="__codelineno-9-56" href="#__codelineno-9-56"></a>    │
+<a id="__codelineno-9-57" name="__codelineno-9-57" href="#__codelineno-9-57"></a>    ├── hub             ← Elementos compartidos entre paquetes
+<a id="__codelineno-9-58" name="__codelineno-9-58" href="#__codelineno-9-58"></a>    │
+<a id="__codelineno-9-59" name="__codelineno-9-59" href="#__codelineno-9-59"></a>    ├── bib             ← Bibliotecas varias
+<a id="__codelineno-9-60" name="__codelineno-9-60" href="#__codelineno-9-60"></a>    │   └───vendor      ← Librerías vendorizadas (Opción 1)
+<a id="__codelineno-9-61" name="__codelineno-9-61" href="#__codelineno-9-61"></a>    ├───vendor          ← Librerías vendorizadas (Opción 2)
+<a id="__codelineno-9-62" name="__codelineno-9-62" href="#__codelineno-9-62"></a>    │                   --- Una única opción en cada aplicación ---
+<a id="__codelineno-9-63" name="__codelineno-9-63" href="#__codelineno-9-63"></a>    │
+<a id="__codelineno-9-64" name="__codelineno-9-64" href="#__codelineno-9-64"></a>    │   --- Paquetes de la aplicación -----------------------
+<a id="__codelineno-9-65" name="__codelineno-9-65" href="#__codelineno-9-65"></a>    ├── kernel          ← Kernel de la aplicación
+<a id="__codelineno-9-66" name="__codelineno-9-66" href="#__codelineno-9-66"></a>    │   └── rec         ← Recursos exclusivos de kernel (si los hay)
+<a id="__codelineno-9-67" name="__codelineno-9-67" href="#__codelineno-9-67"></a>    └── website         ← Servidor web
+<a id="__codelineno-9-68" name="__codelineno-9-68" href="#__codelineno-9-68"></a>        └── rec         ← Recursos exclusivos de website (jinjaja, static...)
+</code></pre></div>
+<h3 id="ramas">Ramas<a class="headerlink" href="#ramas" title="Permanent link">¶</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">dev</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">Rama/s en desarrollo.</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nt">PROTO:      Rama de prototipos (opcional</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">según cómo trabaje cada proyecto).</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nt">deploy</span><span class="p">:</span><span class="w">     </span><span class="l l-Scalar l-Scalar-Plain">Producto listo para el usuario final (aplicaciones).</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nt">Submodule</span><span class="p">:</span><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Biblioteca lista para vendorizarse como submódulo (desarrolladores).</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nt">master</span><span class="p">:</span><span class="w">     </span><span class="l l-Scalar l-Scalar-Plain">Versión estable, nunca usar para desarrollo.</span>
+</code></pre></div>
+<h3 id="versiones">Versiones<a class="headerlink" href="#versiones" title="Permanent link">¶</a></h3>
+<ul>
+<li>
+<p>La versión del proyecto vive en un único fichero <code>VERSION</code> en la raíz del repositorio — una sola línea sin <code>\r</code> y única fuente de verdad.</p>
+</li>
+<li>
+<p><code>src/main.py</code> la lee al arrancar y la expone como <code>__version__</code>.</p>
+</li>
+<li>
+<p>La ayuda (MkDocs) la muestra con <code>1.3</code> (ver <code>Repo/doc/mkdocs/USO.md</code>).</p>
+</li>
+<li>
+<p><code>Remoto.sh</code> la lee para el mensaje del commit de despliegue.</p>
+</li>
+<li>
+<p>El versionado facilita la comprensión sin necesidad de conocimiento técnico:</p>
+</li>
+<li>
+<p>Versión principal año y mes. Ejemplo: <code>26.05</code> (mayo del año 2026).</p>
+</li>
+<li>
+<p>En caso de corrección de errores, aparecerá una letra pegada al mes de la versión que corrige. Ejemplo: <code>26.05b</code> (segunda revisión de errores de la versión de mayo del 2026).</p>
+</li>
+<li>
+<p>En caso de añadir mejoras en el mismo mes (altamente desaconsejado), se añadirá el día de la publicación. Ejemplo: <code>26.05.12</code>.</p>
+</li>
+<li>
+<p>En caso de correcciones sobre una versión de mejoras, letra pegada al día. Ejemplo: <code>26.05.12c</code> (tercera revisión de errores de la versión de ese día).</p>
+</li>
+</ul>
+<blockquote>
+<p><strong>MUY IMPORTANTE</strong>
+- <strong>JAMÁS SE OFRECERÁ UNA VERSIÓN DE CORRECCIÓN CON APARIENCIA DE VERSIÓN DE MEJORAS.</strong></p>
+<ul>
+<li><strong>JAMÁS LAS VERSIONES DE DESPLIEGUE SE SOBREPONDRÁN LAS UNAS A LAS OTRAS. SI APARECE UNA VERSIÓN DE MEJORAS, LAS CORRECCIONES SE HARÁN SIEMPRE SOBRE LA ÚLTIMA VERSIÓN DESPLEGADA REALMENTE, NO SOBRE LA VERSIÓN BASE.</strong></li>
+</ul>
+</blockquote>
+<h2 id="flujo-operativo">Flujo operativo<a class="headerlink" href="#flujo-operativo" title="Permanent link">¶</a></h2>
+<h3 id="resultados-del-despliegue">Resultados del despliegue<a class="headerlink" href="#resultados-del-despliegue" title="Permanent link">¶</a></h3>
+<p><strong>Proyecto para desarrollo:</strong></p>
+<ul>
+<li>
+<p>Los mantenedores del proyecto utilizan la rama <code>master</code> como base.</p>
+</li>
+<li>
+<p>Los usuarios de una biblioteca utilizan la rama <code>Submodule</code> como base.</p>
+</li>
+<li>
+<p>La documentación generada con <code>MkDocs</code> (<code>doc/Datasheet</code>) se ofrece a los usuarios de la biblioteca. Puede eliminarse pero deberán gestionarse de manera personal los conflictos <code>Git</code> que esto origine.</p>
+</li>
+<li>
+<p>Sólo el director del proyecto tiene permitido hacer <code>push</code> sobre la rama <code>master</code>.</p>
+</li>
+</ul>
+<p><strong>Aplicación para usuario final:</strong></p>
+<ul>
+<li>
+<p>El arranque de la aplicación estará en el archivo <code>./main.sh</code>.</p>
+</li>
+<li>
+<p>Este script lo primero que realizará serán las verificaciones, copias previas y actualizaciones necesarias, desde el repositorio <code>Git</code> público.</p>
+</li>
+<li>
+<p>El arranque de la aplicación será 100% transparente y sin pantalla de terminal alguna.</p>
+</li>
+</ul>
+<h3 id="herramientas-proporcionadas-al-mantenedor">Herramientas proporcionadas al mantenedor<a class="headerlink" href="#herramientas-proporcionadas-al-mantenedor" title="Permanent link">¶</a></h3>
+<p>Viven en Repo y cada proyecto las usa a través de su enlace simbólico. Lo propio de cada proyecto va en su archivo de configuración, junto al enlace.</p>
+<h4 id="h1-remotosh-despliegue-a-un-remoto-publico">H1 - Remoto.sh (Despliegue a un remoto público)<a class="headerlink" href="#h1-remotosh-despliegue-a-un-remoto-publico" title="Permanent link">¶</a></h4>
+<ul>
+<li>
+<p>Copia una foto exacta de la rama de origen en la rama de destino y la sube a un remoto <strong>fuera de Gitea</strong> (GitHub, GitLab). Solo la usan los proyectos que se publican fuera.</p>
+</li>
+<li>
+<p>Configuración propia: <code>rec/scripts/remoto.conf</code> (<code>URL_REMOTO</code>, <code>REMOTO</code>, <code>RAMA_ORIGEN</code>, <code>RAMA_DESTINO</code>, <code>ARCHIVO_VERSION</code>, <code>ARCHIVO_REQUIREMENTS</code> y <code>REMOVE_PATHS</code>, obligatoria aunque esté vacía).</p>
+</li>
+<li>
+<p>Debe ejecutarse desde la rama de origen, sin cambios ni commit pendientes.</p>
+</li>
+</ul>
+<p><strong>Flujo:</strong></p>
+<ul>
+<li>Verifica el estado del repositorio, el remoto (lo crea si no existe) y los archivos necesarios.</li>
+<li>Descarga la rama de destino, o la crea si no existe.</li>
+<li>Copia la foto exacta de la rama de origen, sin merge.</li>
+<li>Genera <code>ARCHIVO_REQUIREMENTS</code> en la raíz, si se pide.</li>
+<li>Quita los enlaces <code>BIB_REAL_slr</code>: nunca se despliegan.</li>
+<li>Convierte el resto de enlaces simbólicos en archivos reales.</li>
+<li>Quita el bytecode versionado (<code>.pyc</code>, <code>.pyo</code>).</li>
+<li>Quita <code>REMOVE_PATHS</code>.</li>
+<li>Commit con la versión de <code>VERSION</code> y push al remoto.</li>
+<li>Vuelve a la rama de origen y borra la rama de destino local.</li>
+</ul>
+<h4 id="h2-requirementssh-entorno-y-dependencias">H2 - requirements.sh (Entorno y dependencias)<a class="headerlink" href="#h2-requirementssh-entorno-y-dependencias" title="Permanent link">¶</a></h4>
+<ul>
+<li>
+<p>Configuración propia, obligatoria: <code>rec/requirements/requirements.conf</code> (<code>RUTA_VENV</code>, <code>DESPLIEGUE</code>, <code>DESARROLLO</code> y <code>SISTEMA</code>). Plantilla en Repo.</p>
+</li>
+<li>
+<p>Suma las dependencias de cada biblioteca vendorizada, leídas de su propio <code>requirements.conf</code> a través de su <code>BIB_REAL_slr</code>. Si a alguna le falta, se para.</p>
+</li>
+<li>
+<p>No genera archivos: <code>pip</code> lee las listas directamente de memoria.</p>
+</li>
+<li>
+<p>Opciones: <code>--mostrar</code>, <code>--deploy</code>, <code>--dev</code> y <code>--pip-despliegue</code> (la usa <code>Remoto.sh</code>).</p>
+</li>
+</ul>
+<h4 id="h3-mkgensh-documentacion-mkdocs">H3 - mkgen.sh (Documentación MkDocs)<a class="headerlink" href="#h3-mkgensh-documentacion-mkdocs" title="Permanent link">¶</a></h4>
+<ul>
+<li>
+<p>Genera la documentación del proyecto con el venv de Repo, a través de su enlace en la carpeta de MkDocs del proyecto.</p>
+</li>
+<li>
+<p><code>serve</code> muestra la documentación mientras se edita; al cortar con Ctrl+C genera el HTML final. <code>build</code> solo genera.</p>
+</li>
+<li>
+<p>Las normas de uso están en <code>Repo/doc/mkdocs/USO.md</code>.</p>
+</li>
+</ul>
+<h4 id="h4-bibsh-bibliotecas-vendorizadas">H4 - bib.sh (Bibliotecas vendorizadas)<a class="headerlink" href="#h4-bibsh-bibliotecas-vendorizadas" title="Permanent link">¶</a></h4>
+<ul>
+<li>
+<p>Sincroniza cada biblioteca de <code>src/bib/</code> con su repositorio real, alcanzado a través de su enlace <code>BIB_REAL_slr</code>.</p>
+</li>
+<li>
+<p>Copia <code>src/</code> y los archivos de la raíz de la biblioteca; nunca toca nada más.</p>
+</li>
+<li>
+<p>Trae cambios (Suite → Local), los lleva (Local → Suite) y detecta conflictos.</p>
+</li>
+</ul>
+<h4 id="h5-symlinkslocalsh-enlaces-simbolicos">H5 - SymlinksLocal.sh (Enlaces simbólicos)<a class="headerlink" href="#h5-symlinkslocalsh-enlaces-simbolicos" title="Permanent link">¶</a></h4>
+<ul>
+<li>
+<p>Registro de los enlaces del proyecto en <code>rec/scripts/sl/SymlinksLocal.txt</code>.</p>
+</li>
+<li>
+<p>Sufijos según el destino: <code>_slp</code> dentro del propio repo, <code>_slr</code> dentro de <code>$HOME/Dev</code>, <code>_sla</code> fuera.</p>
+</li>
+<li>
+<p>Opciones: <code>--leer</code> (actualiza el registro), <code>--montar</code> (recrea los enlaces), <code>--verificar</code> (solo lectura) y <code>--deducir</code> (corrige sufijo y destino).</p>
+</li>
+</ul>
+<h4 id="h6-generar_uesh-y-reponer_reposh-proyectos-nuevos">H6 - Generar_UE.sh y Reponer_REPO.sh (Proyectos nuevos)<a class="headerlink" href="#h6-generar_uesh-y-reponer_reposh-proyectos-nuevos" title="Permanent link">¶</a></h4>
+<ul>
+<li>
+<p><code>Generar_UE.sh</code> (solo en Repo) genera <code>__UsarEste</code>, la base para crear un proyecto nuevo: copia los archivos de Repo y crea enlaces para los que tienen hermano <code>_sl</code>. Lo que está en <code>SOLO_REPO</code> nunca pasa.</p>
+</li>
+<li>
+<p><code>Reponer_REPO.sh</code> crea en un proyecto existente los enlaces <code>_sl</code> que tenga Repo: tras clonar un proyecto limpio o al migrar uno antiguo.</p>
+</li>
+</ul>
+<h2 id="un-poco-de-los-80">Un poco de los 80<a class="headerlink" href="#un-poco-de-los-80" title="Permanent link">¶</a></h2>
+<p>En los años 80, antes de las bases de datos relacionales tipo SQL, los programadores gestionaban ficheros físicos directamente en su código. No existían gestores que protegieran los nombres de los campos ni herramientas de refactorización.</p>
+<p>El mayor peligro era la <strong>invisibilidad</strong>: no saber si una variable era un dato temporal de memoria o un campo real que se persistía en disco. Cambiar un nombre implicaba buscar a mano en cientos de ficheros de texto (Git ni siquiera se había pensado).</p>
+<p>Para resolverlo se adoptó una convención de prefijos que permitía identificar la naturaleza del dato con solo mirar la variable:</p>
+<ul>
+<li><code>K</code> para las claves.</li>
+<li><code>D</code> para los datos.</li>
+</ul>
+<p>Gracias a los objetos, la confusión entre memoria y disco desaparece, pero dentro del objeto ocurre el mismo problema: invisibilidad de código y cambios de nombre obligan a revisar toda la clase.</p>
+<p>Se recupera esa visibilidad dentro de los objetos con la misma convención. El ejemplo histórico:</p>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-11-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-11-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-11-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-11-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-11-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-11-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-11-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-11-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-11-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-11-10">10</a></span>
+<span class="normal"><a href="#__codelineno-11-11">11</a></span>
+<span class="normal"><a href="#__codelineno-11-12">12</a></span>
+<span class="normal"><a href="#__codelineno-11-13">13</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="c1"># --- Objeto cámara</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">Camara</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4"></a>    <span class="c1"># --- Registro de la cámara en la BD</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5"></a>
+<a id="__codelineno-11-6" name="__codelineno-11-6"></a>    <span class="c1"># --- Claves o Keys</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7"></a>    <span class="n">__K01</span> <span class="o">=</span> <span class="s2">"A_nombre"</span>      <span class="c1"># --- Nombre de la cámara</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8"></a>    <span class="n">__K02</span> <span class="o">=</span> <span class="s2">"B_num"</span>         <span class="c1"># --- Número de serie de la cámara</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9"></a>
+<a id="__codelineno-11-10" name="__codelineno-11-10"></a>    <span class="c1"># --- Datos</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11"></a>    <span class="n">__D01</span> <span class="o">=</span> <span class="s2">"A_pausa"</span>       <span class="c1"># --- La cámara entra en pausa</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12"></a>    <span class="n">__D02</span> <span class="o">=</span> <span class="s2">"B_descrip"</span>     <span class="c1"># --- Descripción de la cámara</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13"></a>    <span class="n">__D03</span> <span class="o">=</span> <span class="s2">"C_shutterlag"</span>  <span class="c1"># --- Milisegundos de shutterlag</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>Este patrón define un conjunto de literales mágicos controlados: cada campo real de la base de datos se representa mediante un alias interno (<code>__K01</code>, <code>__D01</code>, etc.).</p>
+<p>Gracias a esta capa de indirección, si el nombre del campo cambia en la base de datos, solo es necesario modificar la constante correspondiente, sin alterar el resto de la clase.</p>
+<p>Las claves y datos se declaran como propiedades de clase privadas, utilizando el enmarañado de nombres descrito en <a href="https://peps.python.org/pep-0008/">PEP8</a> (double underscore). Dentro de los métodos, su acceso siempre requiere el prefijo <code>self</code>.</p>
+<h3 id="evolucion-el-patron-_d-con-entedatos">Evolución: el patrón <code>_d*</code> con <code>EnteDatos</code><a class="headerlink" href="#evolucion-el-patron-_d-con-entedatos" title="Permanent link">¶</a></h3>
+<p>La convención de los 80 evoluciona con <code>EnteDatos</code> y el generador <code>dclgen</code>. En vez de constantes separadas por naturaleza (<code>__K</code>, <code>__D</code>), cada campo se declara como un <strong>diccionario</strong> <code>_d*</code> que concentra toda la información del campo en un solo lugar:</p>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-12-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-12-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-12-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-12-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-12-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-12-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-12-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-12-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-12-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-12-10">10</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1"></a><span class="c1"># --- _d = {0: rname,     1: fieldname,  2: label, 3: type, 4: default,</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2"></a><span class="c1">#           5: length,    6: validators, 7: combo, 8: virtual,</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3"></a><span class="c1">#           9: writable, 10: alias      70: botonera}</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4"></a><span class="c1"># --- [1]: Obligatorio / Clave ausente: no genera / "~": genera dinamico</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6"></a><span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7"></a>    <span class="n">_d101</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"nombre"</span><span class="p">,</span>   <span class="mi">2</span><span class="p">:</span> <span class="s2">"Nombre o identificador"</span><span class="p">}</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8"></a>    <span class="n">_d102</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"tipo"</span><span class="p">,</span>     <span class="mi">2</span><span class="p">:</span> <span class="s2">"Tipo de camara"</span><span class="p">,</span>    <span class="mi">3</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>   <span class="mi">4</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9"></a>    <span class="n">_d110</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"sensor_h"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"Tamano horizontal"</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mf">22.3</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10"></a>    <span class="n">_d131</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"tvMin"</span><span class="p">,</span>    <span class="mi">2</span><span class="p">:</span> <span class="s2">"Tv minimo"</span><span class="p">,</span>         <span class="mi">3</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>   <span class="mi">4</span><span class="p">:</span> <span class="s2">"~"</span><span class="p">,</span>  <span class="mi">6</span><span class="p">:</span> <span class="s2">"~"</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span> <span class="s2">"~"</span><span class="p">}</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>Cada clave del diccionario tiene un significado fijo. Los marcadores especiales son:</p>
+<ul>
+<li>Clave ausente — no genera ese argumento en el <code>Field</code>.</li>
+<li><code>"~"</code> — genera una propiedad o método dinámico (<code>fieldname_rol</code>) que el programador implementa.</li>
+<li>Cualquier otro valor — se linkea con su clave en el diccionario.</li>
+</ul>
+<p>El generador <code>dclgen</code> lee el bloque <code>_d*</code> y produce automáticamente:</p>
+<ol>
+<li>El bloque de <strong>atributos</strong> (<code>if True:</code>): getter/setter por campo, con sus propiedades dinámicas y método <code>fieldname_validators</code> pegados al campo.</li>
+<li>El bloque <strong>REG</strong>: reproducción del bloque <code>_d*</code> de referencia.</li>
+<li>El <code>__init__</code> con <code>MontarPROTO</code> completo, protegido con <code>if not (self.PROTO):</code>, y el <code>Field</code> de <code>KEY</code> siempre como primer campo.</li>
+</ol>
+<p>Las funciones de tipo <strong>combo</strong> devuelven siempre <code>tuple</code>, no <code>list</code>, porque sus opciones son datos fijos que no deben modificarse en tiempo de ejecución.</p>
+<p>El validador de cada campo (<code>fieldname_validators</code>) acepta un parámetro <code>tipo</code> que determina qué devuelve:</p>
+<div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-13-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-13-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-13-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-13-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-13-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-13-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-13-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-13-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-13-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-13-10">10</a></span>
+<span class="normal"><a href="#__codelineno-13-11">11</a></span>
+<span class="normal"><a href="#__codelineno-13-12">12</a></span>
+<span class="normal"><a href="#__codelineno-13-13">13</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">tvMin_validators</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2"></a>                     <span class="n">tipo</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3"></a>                     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4"></a><span class="w">    </span><span class="sd">""" Validación del campo tvMin """</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5"></a>    <span class="c1"># if tipo is list:</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6"></a>    <span class="c1">#     return self.InstFORM[self._d131[1]].errors</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7"></a>
+<a id="__codelineno-13-8" name="__codelineno-13-8"></a>    <span class="c1"># elif tipo is bool:</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9"></a>    <span class="c1">#     return not self.InstFORM[self._d131[1]].errors</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10"></a>
+<a id="__codelineno-13-11" name="__codelineno-13-11"></a>    <span class="c1"># else:</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12"></a>    <span class="c1">#     return []</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13"></a>    <span class="k">return</span> <span class="p">[]</span>
+</code></pre></div></td></tr></tbody></table></div>
+<ul>
+<li><code>None</code> → devuelve la lista de validators para el <code>Field</code>.</li>
+<li><code>list</code> → devuelve los errores tras la validación.</li>
+<li><code>bool</code> → devuelve si el campo es válido.</li>
+</ul>
+<p>El cuerpo se genera comentado con la indentación correcta — basta quitar <code>#</code> de cada línea para activarlo.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden="">
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Volver al principio
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Pie">
+        
+          
+          <a href="Todo_slp.html" class="md-footer__link md-footer__link--prev" aria-label="Anterior: TODO">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Anterior
+              </span>
+              <div class="md-ellipsis">
+                TODO
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../Z%29-C%C3%B3digo/1-src.html" class="md-footer__link md-footer__link--next" aria-label="Siguiente: main — Arranque de la aplicación">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Siguiente
+              </span>
+              <div class="md-ellipsis">
+                main — Arranque de la aplicación
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"></path></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tracking", "navigation.top", "navigation.footer", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado al portapapeles", "clipboard.copy": "Copiar al portapapeles", "search.result.more.one": "1 m\u00e1s en esta p\u00e1gina", "search.result.more.other": "# m\u00e1s en esta p\u00e1gina", "search.result.none": "No se encontraron documentos", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Teclee para comenzar b\u00fasqueda", "search.result.term.missing": "Falta", "select.version": "Seleccionar versi\u00f3n"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  
+<script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(()=>{ lightbox.reload(); });
+</script></body></html>
