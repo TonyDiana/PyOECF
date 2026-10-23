@@ -17,6 +17,7 @@ from typing import NamedTuple
 from bib import std
 from .constantes import COM as KCOM
 from .kernel import OECF
+from .revelado import KRV, bits_tiff
 from .secuencia import KS
 from .teselas import KTE, Select
 from .zonas import KP
@@ -120,12 +121,18 @@ class KI(std.EnumMutable):
     COM.TOLERANCIA_LINEAL: la luz cambió; no entran en la media de las
     Z-V."""
 
+    # --- Exportaciones del revelador (OECF.exportaciones)
+    TIFF_8_BITS = "TIFF_8_BITS"
+    """Exportaciones del revelador con menos de KRV.BITS_DEFINITIVOS bits
+    por canal (sus posiciones, en tercioEVs): valen para probar el flujo,
+    no para el análisis definitivo. Solo se avisa (Tony, 2026-10-21)."""
+
 
 #
 # --- Una incidencia: su código y, según el código, sus datos
 class Incidencia(NamedTuple):
     """ Incidencia de la serie: código (KI) y datos, sin frases. """
-    code: str
+    codigo: str
 
     # --- True si impide analizar
     detiene: bool = False
@@ -140,6 +147,9 @@ class Incidencia(NamedTuple):
 
     # --- Posición a la que se refiere (tercioEV). En SALTO, la real
     tercioEV: int | None = None
+
+    # --- Posiciones a las que se refiere, si son varias (TIFF_8_BITS)
+    tercioEVs: tuple[int, ...] = ()
 
     # --- Un porcentaje, si lo lleva (RECHAZADAS)
     porcentaje: float = 0.0
@@ -164,19 +174,19 @@ def avisos_rechazadas(select: Select) -> list[Incidencia]:
     sucia = max(select.part(KTE.RECHAZO_DISP),
                 select.part(KTE.RECHAZO_ASIM))
     if sucia > KTE.AVISO_SUCIA:
-        avisos.append(Incidencia(code=KI.TARJETA_SUCIA,
+        avisos.append(Incidencia(codigo=KI.TARJETA_SUCIA,
                                  porcentaje=KCOM.CIEN * sucia))
     nivel = select.part(KTE.RECHAZO_NIVEL)
     if nivel > KTE.AVISO_NIVEL:
-        avisos.append(Incidencia(code=KI.LUZ_DESIGUAL,
+        avisos.append(Incidencia(codigo=KI.LUZ_DESIGUAL,
                                  porcentaje=KCOM.CIEN * nivel,
                                  lados=select.ladosNivel))
     total = select.porcentaje / KCOM.CIEN
     if total > KTE.AVISO_REPETIR:
-        avisos.append(Incidencia(code=KI.REPETIR_SERIE,
+        avisos.append(Incidencia(codigo=KI.REPETIR_SERIE,
                                  porcentaje=select.porcentaje))
     elif total > KTE.AVISO_REVISAR:
-        avisos.append(Incidencia(code=KI.REVISAR_SERIE,
+        avisos.append(Incidencia(codigo=KI.REVISAR_SERIE,
                                  porcentaje=select.porcentaje))
     return avisos
 
@@ -191,75 +201,76 @@ def incidencias(oecf: OECF) -> list[Incidencia]:
 
     # --- ISO distinto en la serie: lo primero, porque impide analizar
     if oecf.isoDistintos and (oecf.isoSerie is not None):
-        lista.append(Incidencia(code=KI.ISO_DISTINTO, detiene=True,
+        lista.append(Incidencia(codigo=KI.ISO_DISTINTO, detiene=True,
                                 tomas=tuple(oecf.isoDistintos)))
 
     # --- Sin balance personalizado: si las dos primeras son Z-V, es que
     #     tienen el mismo balance; si no, la 2.ª ya es de un lado
     if oecf.balancePersonalizado is False:
         mismo = (len(sec.iniciales) >= KS.INICIALES)
-        lista.append(Incidencia(code=KI.MISMO_BALANCE if mismo
+        lista.append(Incidencia(codigo=KI.MISMO_BALANCE if mismo
                                 else KI.SIN_BALANCE))
 
     # --- Secuencia. Por medios pasos, jamás; por pasos enteros, sí (Tony,
     #     2026-10-19)
     if oecf.medioPaso:
-        lista.append(Incidencia(code=KI.MEDIO_PASO, detiene=True))
+        lista.append(Incidencia(codigo=KI.MEDIO_PASO, detiene=True))
     elif sec.paso == KP.TERCIOS:
-        lista.append(Incidencia(code=KI.PASO_ENTERO))
+        lista.append(Incidencia(codigo=KI.PASO_ENTERO))
     sobran = len(sec.iniciales) - KS.INICIALES
     if sobran > 0:
-        lista.append(Incidencia(code=KI.INICIALES_SOBRAN, n=sobran))
+        lista.append(Incidencia(codigo=KI.INICIALES_SOBRAN, n=sobran))
     if len(sec.lados) < KS.LADOS:
-        lista.append(Incidencia(code=KI.LADOS, n=len(sec.lados),
+        lista.append(Incidencia(codigo=KI.LADOS, n=len(sec.lados),
                                 esperado=KS.LADOS))
     elif not sec.cambios:
-        lista.append(Incidencia(code=KI.SIN_CAMBIO))
+        lista.append(Incidencia(codigo=KI.SIN_CAMBIO))
     sobran = len(sec.cambios) - KS.CAMBIOS
     if sobran > 0:
-        lista.append(Incidencia(code=KI.CAMBIOS_SOBRAN, n=sobran))
+        lista.append(Incidencia(codigo=KI.CAMBIOS_SOBRAN, n=sobran))
     if (len(sec.lados) == KS.LADOS) and (not sec.finales):
-        lista.append(Incidencia(code=KI.SIN_FINAL))
-    lista += [Incidencia(code=KI.SALTO, tomas=(i,), esperado=esperado,
+        lista.append(Incidencia(codigo=KI.SIN_FINAL))
+    lista += [Incidencia(codigo=KI.SALTO, tomas=(i,), esperado=esperado,
                          tercioEV=tercioEV)
               for i, esperado, tercioEV in sec.saltos]
     if sec.sobrantes:
-        lista.append(Incidencia(code=KI.SOBRANTES, tomas=tuple(sec.sobrantes)))
+        lista.append(Incidencia(codigo=KI.SOBRANTES,
+                                tomas=tuple(sec.sobrantes)))
 
     # --- Tapadas y balances de cámara
     tapadas = len(oecf.tapadas)
     if tapadas != KS.TAPADAS:
-        lista.append(Incidencia(code=KI.TAPADAS_MAL, n=tapadas,
+        lista.append(Incidencia(codigo=KI.TAPADAS_MAL, n=tapadas,
                                 esperado=KS.TAPADAS))
     if oecf.tapadasConLuz:
-        lista.append(Incidencia(code=KI.TAPADAS_CON_LUZ,
+        lista.append(Incidencia(codigo=KI.TAPADAS_CON_LUZ,
                                 tomas=tuple(oecf.tapadasConLuz)))
     if oecf.tapadasOtroISO and (oecf.isoSerie is not None):
-        lista.append(Incidencia(code=KI.ISO_TAPADAS,
+        lista.append(Incidencia(codigo=KI.ISO_TAPADAS,
                                 tomas=tuple(oecf.tapadasOtroISO)))
     if not sec.balances:
-        lista.append(Incidencia(code=KI.SIN_BALANCES))
+        lista.append(Incidencia(codigo=KI.SIN_BALANCES))
 
     # --- Posiciones vacías y repetidas (fuera de ZV), tomas que no caben
     #     y tomas desviadas. Por pasos enteros, los tercios no son huecos
-    lista += [Incidencia(code=KI.SIN_TOMA, detiene=oecf.EsNecesaria(t),
+    lista += [Incidencia(codigo=KI.SIN_TOMA, detiene=oecf.EsNecesaria(t),
                          tercioEV=t)
               for t in oecf.huecos if (t % sec.paso) == 0]
-    lista += [Incidencia(code=KI.REPETIDA, n=len(idxs), tercioEV=t)
+    lista += [Incidencia(codigo=KI.REPETIDA, n=len(idxs), tercioEV=t)
               for t, idxs in oecf.repetidas.items()]
     if oecf.fuera:
-        lista.append(Incidencia(code=KI.FUERA, tomas=tuple(oecf.fuera)))
+        lista.append(Incidencia(codigo=KI.FUERA, tomas=tuple(oecf.fuera)))
     if oecf.desviadas:
         lista.append(Incidencia(
-            code=KI.DESVIADAS,
+            codigo=KI.DESVIADAS,
             tomas=tuple(oecf.desviadas)))
 
     # --- Teselas de la Z-V, si ya se midieron
     select = oecf.select
     if (select is not None) and (not select.hayTarjeta):
-        lista.append(Incidencia(code=KI.SIN_TARJETA, detiene=True))
+        lista.append(Incidencia(codigo=KI.SIN_TARJETA, detiene=True))
     elif (select is not None) and select.rechazadas:
-        lista.append(Incidencia(code=KI.RECHAZADAS, n=select.rechazadas,
+        lista.append(Incidencia(codigo=KI.RECHAZADAS, n=select.rechazadas,
                                 esperado=select.tarjeta,
                                 porcentaje=select.porcentaje))
         lista += avisos_rechazadas(select)
@@ -270,7 +281,17 @@ def incidencias(oecf: OECF) -> list[Incidencia]:
         nombres = [raw.name for raw in oecf.raws]
         desviados = review.controlesDesviados
         lista.append(Incidencia(
-            code=KI.LUZ_CAMBIO, tomas=tuple(nombres.index(z.archivo)
-                                            for z in desviados),
+            codigo=KI.LUZ_CAMBIO, tomas=tuple(nombres.index(z.archivo)
+                                              for z in desviados),
             valores=tuple(review.dev(z) for z in desviados)))
+
+    # --- Exportaciones del revelador con menos bits que las definitivas
+    pocos = []
+    for tercio_ev, ruta in sorted(oecf.exportaciones.items()):
+        bits = bits_tiff(ruta)
+        if (bits is not None) and (bits < KRV.BITS_DEFINITIVOS):
+            pocos.append(tercio_ev)
+    if pocos:
+        lista.append(Incidencia(codigo=KI.TIFF_8_BITS, n=len(pocos),
+                                tercioEVs=tuple(pocos)))
     return lista

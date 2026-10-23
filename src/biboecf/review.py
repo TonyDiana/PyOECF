@@ -32,11 +32,6 @@ from .transferencia import Transferencia
 class KAN(std.EnumMutable):
     """ Constantes del análisis y de sus claves en el JSON. """
 
-    # --- Versión del formato: cambia si cambian las claves. La 2 añade
-    #     la curva de transferencia y el ruido aleatorio de la Z-V (en
-    #     las de la 1, sin ellos)
-    VERSION = 2
-
     # --- Canales del RAW (los de Teselas.canales) que hacen el rojo, el
     #     verde (la media de los que haya) y el azul del libro
     ROJO = "R0"
@@ -49,53 +44,49 @@ class KAN(std.EnumMutable):
                   KTE.RECHAZO_NIVEL: "N", KTE.RECHAZO_DISP: "D",
                   KTE.RECHAZO_ASIM: "A"}
 
-    # --- Claves del JSON
-    J_VERSION = "version"
-    J_LADO = "lado_tesela"
-    J_ALTO = "alto_sensor"
-    J_ANCHO = "ancho_sensor"
-    J_MAPA = "mapa_teselas"
+    # --- Claves del JSON (el bloque «medida» de estudio.json), en
+    #     camelCase. Lo que es de la serie (cámara, fecha, exposición y
+    #     bits de la ZV, la copia de cada toma, el nombre, los Kelvin y los
+    #     multiplicadores de la cámara en cada balance) y el L* del
+    #     revelador no se guardan aquí: cada dato, en un solo sitio (Tony,
+    #     2026-10-21). Los repone quien lee (ver estudio.leer_review). La
+    #     tela es siempre {x, y, ancho, alto} o null, y si es null,
+    #     telaMotivo dice por qué (KTE): un tipo por clave
+    J_LADO = "ladoTesela"
+    J_ALTO = "altoSensor"
+    J_ANCHO = "anchoSensor"
+    J_MAPA = "mapaTeselas"
     J_TELA = "tela"
+    J_TELA_MOTIVO = "telaMotivo"
     J_X = "x"
     J_Y = "y"
     J_ANCHO_VENTANA = "ancho"
     J_ALTO_VENTANA = "alto"
     J_NEGRO = "negro"
-    J_ORIGEN_NEGRO = "origen_negro"
+    J_ORIGEN_NEGRO = "origenNegro"
     J_RUIDO = "ruido"
-    J_ORIGEN_RUIDO = "origen_ruido"
-    J_RUIDO_BORDE = "ruido_borde"
-    J_RUIDO_TAPADAS = "ruido_tapadas"
-    J_DIFIEREN = "ruidos_difieren"
-    J_MATRIZ = "matriz_cam_xyz"
+    J_ORIGEN_RUIDO = "origenRuido"
+    J_RUIDO_BORDE = "ruidoBorde"
+    J_RUIDO_TAPADAS = "ruidoTapadas"
+    J_DIFIEREN = "ruidosDifieren"
+    J_MATRIZ = "matrizCamXYZ"
     J_ZONAS = "zonas"
     J_CONTROL = "control"
     J_TERCIO_EV = "tercioEV"
     J_ARCHIVO = "archivo"
-    J_COPIA = "copia"
     J_NIVEL = "nivel"
     J_DISPERSION = "dispersion"
-    J_TELA_NIVEL = "tela_nivel"
-    J_TELA_DISP = "tela_disp"
-    J_TELA_RECORTADO = "tela_recortado"
-    J_DEV = "dev_rechazadas"
+    J_TELA_NIVEL = "telaNivel"
+    J_TELA_DISP = "telaDisp"
+    J_TELA_RECORTADO = "telaRecortado"
+    J_DEV = "devRechazadas"
     J_BALANCES = "balances"
-    J_NOMBRE = "nombre"
-    J_KELVIN_CAM = "kelvin_cam"
     J_KELVIN = "kelvin"
-    J_MULTIPLICADORES = "multiplicadores"
-    J_REVELADOR = "revelador"
-    J_CAM = "cam"
-    J_FECHA = "fecha_zv"
-    J_F = "f"
-    J_TV = "tv"
-    J_ISO = "iso"
-    J_BITS = "bits_raw"
     J_TRANSFERENCIA = "transferencia"
     J_LECTURA = "lectura"
     J_GANANCIA = "ganancia"
     J_PROPORCIONAL = "proporcional"
-    J_ALEATORIO = "ruido_aleatorio_zv"
+    J_ALEATORIO = "ruidoAleatorioZV"
 
 
 #
@@ -313,18 +304,22 @@ class Review:
 
 #
 def review_a_dict(review: Review) -> dict:
-    """ Análisis como datos de JSON (solo tipos básicos). """
+    """
+    Análisis como datos de JSON (solo tipos básicos), sin lo que es de la
+    serie ni el revelador (ver KAN, claves del JSON)
+    """
     a = review
     caracteres = KAN.CARACTERES
-    tela = a.tela if isinstance(a.tela, str) else {
-        KAN.J_X: a.tela.x, KAN.J_Y: a.tela.y,
-        KAN.J_ANCHO_VENTANA: a.tela.ancho, KAN.J_ALTO_VENTANA: a.tela.alto}
+    tela, motivo = ((None, a.tela) if isinstance(a.tela, str) else (
+        {KAN.J_X: a.tela.x, KAN.J_Y: a.tela.y,
+         KAN.J_ANCHO_VENTANA: a.tela.ancho, KAN.J_ALTO_VENTANA: a.tela.alto},
+        None))
     return {
-        KAN.J_VERSION: KAN.VERSION,
         KAN.J_LADO: a.lado, KAN.J_ALTO: a.alto, KAN.J_ANCHO: a.ancho,
         KAN.J_MAPA: ["".join(caracteres[int(m)] for m in fila)
                      for fila in a.motivos],
         KAN.J_TELA: tela,
+        KAN.J_TELA_MOTIVO: motivo,
         KAN.J_NEGRO: _lista(a.negro), KAN.J_ORIGEN_NEGRO: a.origen_negro,
         KAN.J_RUIDO: _lista(a.ruido), KAN.J_ORIGEN_RUIDO: a.origen_ruido,
         KAN.J_RUIDO_BORDE: _lista(a.ruido_borde),
@@ -333,15 +328,8 @@ def review_a_dict(review: Review) -> dict:
         KAN.J_MATRIZ: [list(fila) for fila in a.matriz],
         KAN.J_ZONAS: [_zona_a_dict(z) if z else None for z in a.zonas],
         KAN.J_CONTROL: [_zona_a_dict(z) for z in a.control],
-        KAN.J_CAM: a.cam, KAN.J_FECHA: a.fecha, KAN.J_F: a.f,
-        KAN.J_TV: a.tv, KAN.J_ISO: a.iso,
-        KAN.J_BALANCES: [{KAN.J_ARCHIVO: b.archivo, KAN.J_NOMBRE: b.nombre,
-                          KAN.J_KELVIN_CAM: b.kelvin_cam,
-                          KAN.J_KELVIN: b.kelvin,
-                          KAN.J_MULTIPLICADORES: _lista(b.multiplicadores)}
+        KAN.J_BALANCES: [{KAN.J_ARCHIVO: b.archivo, KAN.J_KELVIN: b.kelvin}
                          for b in a.balances],
-        KAN.J_REVELADOR: _lista(a.revelador) if a.revelador else [],
-        KAN.J_BITS: a.bits,
         KAN.J_TRANSFERENCIA: None if (a.transferencia is None) else {
             canal: {KAN.J_LECTURA: _numero(c.lectura),
                     KAN.J_GANANCIA: c.ganancia,
@@ -352,7 +340,13 @@ def review_a_dict(review: Review) -> dict:
 
 #
 def review_de_dict(datos: dict) -> Review:
-    """ Análisis desde los datos de un JSON (ver review_a_dict). """
+    """
+    Análisis desde los datos de un JSON (ver review_a_dict). Lo que es de
+    la serie y el revelador quedan vacíos (cam "", fecha, f, tv, iso y
+    bits None, revelador (), copia de cada toma None y, en los balances,
+    nombre, kelvin_cam y multiplicadores None): los repone quien lee (ver
+    estudio.leer_review)
+    """
     motivo = {c: m for m, c in KAN.CARACTERES.items()}
     tela = datos[KAN.J_TELA]
     return Review(
@@ -361,7 +355,7 @@ def review_de_dict(datos: dict) -> Review:
         ancho=datos[KAN.J_ANCHO],
         motivos=np.array([[motivo[c] for c in fila]
                           for fila in datos[KAN.J_MAPA]], dtype=np.int8),
-        tela=tela if isinstance(tela, str) else Ventana(
+        tela=datos[KAN.J_TELA_MOTIVO] if (tela is None) else Ventana(
             x=tela[KAN.J_X], y=tela[KAN.J_Y], ancho=tela[KAN.J_ANCHO_VENTANA],
             alto=tela[KAN.J_ALTO_VENTANA]),
         negro=_tupla_num(datos[KAN.J_NEGRO]),
@@ -375,21 +369,11 @@ def review_de_dict(datos: dict) -> Review:
         zonas=tuple(_zona_de_dict(z) if z else None
                     for z in datos[KAN.J_ZONAS]),
         control=tuple(_zona_de_dict(z) for z in datos[KAN.J_CONTROL]),
-        cam=datos[KAN.J_CAM],
-        fecha=datos[KAN.J_FECHA],
-        f=datos[KAN.J_F],
-        tv=datos[KAN.J_TV],
-        iso=datos[KAN.J_ISO],
         balances=tuple(
-            BalanceMedido(
-                archivo=b[KAN.J_ARCHIVO],
-                nombre=b[KAN.J_NOMBRE],
-                kelvin_cam=b[KAN.J_KELVIN_CAM],
-                kelvin=b[KAN.J_KELVIN],
-                multiplicadores=_tupla(b[KAN.J_MULTIPLICADORES]))
+            BalanceMedido(archivo=b[KAN.J_ARCHIVO], nombre=None,
+                          kelvin_cam=None, kelvin=b[KAN.J_KELVIN],
+                          multiplicadores=None)
             for b in datos[KAN.J_BALANCES]),
-        revelador=_tupla(datos.get(KAN.J_REVELADOR)) or (),
-        bits=datos.get(KAN.J_BITS),
         transferencia=None if (datos.get(KAN.J_TRANSFERENCIA) is None) else {
             canal: Transferencia(
                 lectura=(np.nan if (c[KAN.J_LECTURA] is None)
@@ -455,8 +439,7 @@ def _tupla_num(valores: list) -> tuple[float, ...]:
 # --- Una toma medida, a datos de JSON y de vuelta
 def _zona_a_dict(z: ZonaMedida) -> dict:
     return {KAN.J_TERCIO_EV: z.tercio_ev, KAN.J_ARCHIVO: z.archivo,
-            KAN.J_COPIA: z.copia, KAN.J_NIVEL: z.nivel,
-            KAN.J_DISPERSION: z.disp,
+            KAN.J_NIVEL: z.nivel, KAN.J_DISPERSION: z.disp,
             KAN.J_TELA_NIVEL: z.tela_nivel,
             KAN.J_TELA_DISP: z.tela_disp,
             KAN.J_TELA_RECORTADO: z.tela_recortado,
@@ -466,7 +449,7 @@ def _zona_a_dict(z: ZonaMedida) -> dict:
 def _zona_de_dict(d: dict) -> ZonaMedida:
     return ZonaMedida(tercio_ev=d[KAN.J_TERCIO_EV],
                       archivo=d[KAN.J_ARCHIVO],
-                      copia=d[KAN.J_COPIA],
+                      copia=None,
                       nivel=d[KAN.J_NIVEL],
                       disp=d[KAN.J_DISPERSION],
                       tela_nivel=d[KAN.J_TELA_NIVEL],

@@ -11,12 +11,14 @@
 # cSpell:ignore interp, kcom, Lightroom, lstar, mluc, prophoto, recolocadas
 # cSpell:ignore srgb, Therapee, tifffile
 
-__all__ = ["KRV", "espacio_icc", "espacio_tiff", "perfil_tiff",
-           "lstar_tiff"]
+__all__ = ["KRV", "MedidaTiff", "espacio_icc", "espacio_tiff", "perfil_tiff",
+           "bits_tiff", "lstar_tiff", "medir_tiff"]
 
 # --- Bibliotecas estándar Python
-import struct
+from functools import lru_cache
 from pathlib import Path
+import struct
+from typing import NamedTuple
 
 # --- Bibliotecas externas
 import numpy as np
@@ -99,6 +101,26 @@ class KRV(std.EnumMutable):
     MEDIDA_DISTINTA = "MEDIDA_DISTINTA"
     SIN_TESELAS = "SIN_TESELAS"
     COMPRIMIDA = "COMPRIMIDA"
+
+    # --- Bits de las exportaciones definitivas: con menos (las de 8 bits
+    #     de XnView, p. ej.), solo valen para probar el flujo y se avisa
+    #     (Tony, 2026-10-19 y 2026-10-21)
+    BITS_DEFINITIVOS = 16
+
+
+#
+# --- Lo medido en una exportación del revelador: su L* (None si no se
+#     pudo medir) o por qué no (KRV; None si se midió), sus bits por
+#     canal (None si no se pudo leer) y su espacio de color (una clave de
+#     KRV.ESPACIOS; None si no se reconoce). Un tipo por campo: el JSON lo
+#     lee un programa
+class MedidaTiff(NamedTuple):
+    """ Medida de una exportación del revelador: L* o motivo, bits y
+    espacio. """
+    lstar: float | None
+    motivo: str | None
+    bits: int | None
+    espacio: str | None
 
 
 #
@@ -276,3 +298,41 @@ def lstar_tiff(review: Review, ruta: Path) -> float | str:
     if y > KCOM.LAB_UMBRAL:
         return (KCOM.LAB_ESCALA * (y ** (1 / 3))) - KCOM.LAB_DESPLAZA
     return KCOM.LAB_PENDIENTE * y
+
+
+#
+def bits_tiff(ruta: Path) -> int | None:
+    """
+    Bits por canal de una TIFF (8, 16…), o None si no se puede leer. Se
+    recuerdan mientras el archivo no cambie: la ventana lo pregunta cada
+    vez que rehace las incidencias.
+    """
+    try:
+        return _bits_tiff(ruta, ruta.stat().st_mtime_ns)
+    except (OSError, ValueError):
+        return None
+
+
+#
+def medir_tiff(review: Review, ruta: Path) -> MedidaTiff:
+    """
+    Todo lo que se guarda de una exportación del revelador: su L* o por
+    qué no se pudo medir (ver lstar_tiff), sus bits y su espacio de color.
+    """
+    lstar = lstar_tiff(review, ruta)
+    try:
+        espacio = espacio_tiff(ruta)
+    except (OSError, ValueError):
+        espacio = None
+    medido = isinstance(lstar, float)
+    return MedidaTiff(lstar=lstar if medido else None,
+                      motivo=None if medido else str(lstar),
+                      bits=bits_tiff(ruta), espacio=espacio)
+
+
+#
+# --- Bits por canal de una TIFF, recordados por ruta y fecha de cambio
+@lru_cache
+def _bits_tiff(ruta: Path, _cambio: int) -> int:
+    with tifffile.TiffFile(ruta) as tif:
+        return int(tif.pages.first.bitspersample)

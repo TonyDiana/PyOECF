@@ -59,9 +59,6 @@ import screeninfo
 import biboecf
 from bib import std
 from .constantes import K
-from .json_estudio import (es_preparada, grabar_json, grabar_resultados,
-                           grabar_review, hay_review, leer_resultados,
-                           leer_review, restaurar_serie)
 from .rejilla import Rejilla
 from .textos_excel import textos_excel
 from .update import KA, es_mas_nueva, version_publicada
@@ -224,6 +221,35 @@ class Ventana(ctk.CTk):
                   "could not be saved or rebuilt (is it open?): {archivo}",
             K.CA: "Revelat analitzat ({n} de {total}), però no s'ha pogut "
                   "guardar o refer el llibre (està obert?): {archivo}"}
+        TXT_SIN_CONTROL = {
+            K.ES: "Faltan las tomas de control de la serie (los balances "
+                  "de blancos, las tomas tapadas y las repeticiones de la "
+                  "toma de referencia que comprueban que la luz no "
+                  "cambió): no se puede volver a medir. Se toman como "
+                  "buenos los datos del análisis anterior.",
+            K.EN: "The control shots of the series are missing (the white "
+                  "balance shots, the covered shots and the repetitions of "
+                  "the reference shot that check that the light did not "
+                  "change): the series cannot be measured again. The data "
+                  "from the previous analysis are taken as valid.",
+            K.CA: "Falten les preses de control de la sèrie (els balanços "
+                  "de blancs, les preses tapades i les repeticions de la "
+                  "presa de referència que comproven que la llum no va "
+                  "canviar): no es pot tornar a mesurar. Es prenen com a "
+                  "bones les dades de l'anàlisi anterior."}
+        TXT_SIN_ZONAS = {
+            K.ES: "Esta carpeta no tiene las imágenes de las zonas: no se "
+                  "puede analizar nada más con ella. Los resultados ya "
+                  "hechos siguen disponibles.",
+            K.EN: "This folder does not have the zone images: nothing else "
+                  "can be analyzed with it. The results already produced "
+                  "are still available.",
+            K.CA: "Esta carpeta no té les imatges de les zones: no es pot "
+                  "analitzar res més amb ella. Els resultats ja fets "
+                  "continuen disponibles."}
+        # --- Error técnico (sin traducir, como los de Tk que enseña
+        #     MostrarError): el JSON dice tener análisis y no se lee
+        ERROR_ANALISIS_ILEGIBLE = "No se puede leer el análisis guardado"
 
         TXT_ABRIR_RESULTADOS = {K.ES: "Abrir resultados",
                                 K.EN: "Open results",
@@ -278,7 +304,7 @@ class Ventana(ctk.CTk):
                                K.CA: "Sense incidències"}
 
         # --- Las incidencias, una por línea, también en un archivo de
-        #     texto en la carpeta OECF, en el idioma de la ventana
+        #     texto en la carpeta ANALISIS, en el idioma de la ventana
         SEP_INCIDENCIAS = "\n"
         ARCHIVO_INCIDENCIAS = "incidencias.txt"
         # --- Analizar: botón bajo la ZX, activo solo si la serie sirve
@@ -466,14 +492,21 @@ class Ventana(ctk.CTk):
             K.CA: "Sense permís per a escriure en la carpeta"}
 
         # --- Carpeta OECF de una serie preparada cuyo JSON no sirve para
-        #     restaurarla (de una versión anterior o dañado)
-        TXT_ESTUDIO_ANTIGUO = {
-            K.ES: "No se puede abrir esta preparación: vuelve a preparar la "
-                  "serie desde su carpeta",
-            K.EN: "This preparation cannot be opened: prepare the series "
-                  "again from its folder",
-            K.CA: "No es pot obrir aquesta preparació: torna a preparar la "
-                  "sèrie des de la seva carpeta"}
+        #     restaurarla: de una versión del formato más nueva o dañado
+        TXT_ESTUDIO_NUEVO = {
+            K.ES: "Esta preparación es de una versión más nueva de PyOECF: "
+                  "actualiza la aplicación para abrirla",
+            K.EN: "This preparation is from a newer version of PyOECF: "
+                  "update the application to open it",
+            K.CA: "Esta preparació és d'una versió més nova de PyOECF: "
+                  "actualitza l'aplicació per a obrir-la"}
+        TXT_ESTUDIO_DANADO = {
+            K.ES: "El archivo de estudio de esta carpeta está dañado y no "
+                  "se puede leer",
+            K.EN: "The study file in this folder is damaged and cannot be "
+                  "read",
+            K.CA: "El fitxer d'estudi d'esta carpeta està danyat i no es "
+                  "pot llegir"}
 
         # --- Texto de cada problema de la carpeta (biboecf.KCA)
         TXT_PROBLEMA_CARPETA = {
@@ -997,18 +1030,33 @@ class Ventana(ctk.CTk):
         #     de ella, sin Preparar: se va directo a Analizar (Tony,
         #     2026-10-19)
         carpeta = self.carpetaVista = self.carpetaEscrita
-        self.preparada = es_preparada(carpeta)
+        self.preparada = biboecf.es_preparada(carpeta)
         if self.preparada:
-            restaurada = restaurar_serie(carpeta)
+            restaurada = biboecf.restaurar_serie(carpeta)
             if restaurada is None:
                 self.OECF = biboecf.OECF(carpeta, buscar=False)
                 self.Poner(self.val_archivo,                    # type: ignore
-                           kv.TXT_ESTUDIO_ANTIGUO)
+                           kv.TXT_ESTUDIO_NUEVO
+                           if biboecf.es_mas_nuevo(carpeta)
+                           else kv.TXT_ESTUDIO_DANADO)
                 self.ActivarCarpeta()
                 return
             OECF = self.OECF = restaurada
             self.propias_serie = len(self.cajas)
             self.incidencias = partial(Rejilla.incidencias, OECF)
+
+            # --- Sin la copia de la ZV no hay Analizar ni nada que
+            #     analizar de nuevo: se dice, en una caja Serie con una
+            #     sola línea
+            if not self._hay_zv(OECF):
+                interior = self.CrearCaja(kv.TXT_FASE_SERIE,
+                                          self.ReiniciarSerie)
+                self.propias_serie = len(self.cajas)
+                etiqueta = ctk.CTkLabel(interior, text="",
+                                        wraplength=kv.ANCHO_REVELADO)
+                etiqueta.pack()
+                self.Poner(etiqueta, kv.TXT_SIN_ZONAS)
+                self.Ajustar()
         else:
             OECF = self.OECF = biboecf.OECF(carpeta)
 
@@ -1269,7 +1317,7 @@ class Ventana(ctk.CTk):
                        error=serie.errorCopia or "")
         else:
             val_copia.pack_forget()
-            grabar_json(serie)
+            biboecf.grabar_json(serie, K.NOMBRE, K.version)
             self.GrabarIncidencias()
         btn_analizar.configure(
             state="normal" if (serie.esAnalizable and serie.copias)
@@ -1398,7 +1446,7 @@ class Ventana(ctk.CTk):
         #     avisos, uno por causa (los mismos textos que en las
         #     incidencias)
         for inc in biboecf.incidencias(OECF):
-            if inc.code in kv.INCIDENCIAS_TESELAS:
+            if inc.codigo in kv.INCIDENCIAS_TESELAS:
                 self.Mensaje(partial(Rejilla.texto_incidencia, inc, OECF))
 
         # --- Abajo, Generar y, a su izquierda, Abrir resultados: se trae
@@ -1435,7 +1483,9 @@ class Ventana(ctk.CTk):
     #
     # --- Generar: mide la serie (una toma cada vez, con el progreso en
     #     la ventanita) y, al terminar, el JSON, el libro y, con paño,
-    #     la lámina. Mientras, Generar y Preparar inactivos
+    #     la lámina. Sin todas las copias no se puede medir: se rehace el
+    #     informe con el análisis guardado (ver _rehacer_informe).
+    #     Mientras, Generar y Preparar inactivos
     def _generar(self) -> None:
         oecf: biboecf.OECF = self.OECF                          # type: ignore
         btn_generar: ctk.CTkButton = self.btn_generar       # type: ignore
@@ -1443,9 +1493,28 @@ class Ventana(ctk.CTk):
         self.escritos = []
         self.leyendo = True
         self.ActivarCarpeta()
+        if not oecf.copiasEnSitio:
+            self._rehacer_informe()
+            return
         self.medida = oecf.Medir()
         self.Mensaje(lambda: "")
         self._medir_toma()
+
+    #
+    # --- Generar sin todas las copias (Tony, 2026-10-22): no se puede
+    #     volver a medir, así que se avisa y se escribe el informe con el
+    #     análisis guardado en el JSON. El JSON no se vuelve a grabar:
+    #     pondría el revelado a null. La línea vacía es la que sustituye
+    #     el libro, para que no pise el aviso
+    def _rehacer_informe(self) -> None:
+        kv = self.KV
+        oecf: biboecf.OECF = self.OECF                          # type: ignore
+        review = biboecf.leer_review(oecf)
+        if review is None:
+            raise ValueError(kv.ERROR_ANALISIS_ILEGIBLE)
+        self.Mensaje(partial(self._componer, kv.TXT_SIN_CONTROL))
+        self.Mensaje(lambda: "")
+        self._escribir_informe(review)
 
     #
     # --- Mide la siguiente toma y se vuelve a programar (con after:
@@ -1475,12 +1544,19 @@ class Ventana(ctk.CTk):
         return oecf.carpetaAnalisis
 
     #
-    # --- Con la serie medida: el JSON (ya con el análisis) y el libro
+    # --- Con la serie medida: el JSON (ya con el análisis) y el informe
     def _fin_medida(self) -> None:
-        kv = self.KV
         oecf: biboecf.OECF = self.OECF                          # type: ignore
         self.medida = None
-        grabar_json(oecf)
+        biboecf.grabar_json(oecf, K.NOMBRE, K.version)
+        self._escribir_informe(oecf.review)                     # type: ignore
+
+    #
+    # --- El informe desde un análisis (el recién medido): el libro, los
+    #     resultados en el JSON, la ficha y, con paño, la lámina
+    def _escribir_informe(self, review: biboecf.Review) -> None:
+        kv = self.KV
+        oecf: biboecf.OECF = self.OECF                          # type: ignore
         ruta = (self._carpeta_analisis(oecf)
                 / f"{K.NOMBRE}{kv.EXTENSION_EXCEL}")
         # --- Cualquier otro fallo del libro (un dato que no se puede
@@ -1488,8 +1564,7 @@ class Ventana(ctk.CTk):
         error = ""
         excel = None
         try:
-            excel = biboecf.Excel(ruta, textos_excel(),
-                                  oecf.review)                  # type: ignore
+            excel = biboecf.Excel(ruta, textos_excel(), review)
             excel.escribir()
             self.escritos.append(ruta.name)
             texto = kv.TXT_EXCEL
@@ -1504,7 +1579,7 @@ class Ventana(ctk.CTk):
         # --- Y, con lo que calculó el libro, los resultados en el JSON
         #     (para FotoEstación) y la ficha PDF
         if excel is not None:
-            grabar_resultados(oecf.carpeta, excel.resultados())
+            biboecf.grabar_resultados(oecf.carpeta, excel.resultados())
             ficha, archivo, fallo = self.EscribirFicha(
                 excel, oecf.carpetaAnalisis)
             self.Mensaje(partial(self._componer, ficha, archivo=archivo,
@@ -1514,7 +1589,7 @@ class Ventana(ctk.CTk):
         #     cambió): al botón y, esa, también a la ventanita
         self.ContarIncidencias()
         luz = next((inc for inc in biboecf.incidencias(oecf)
-                    if inc.code == biboecf.KI.LUZ_CAMBIO), None)
+                    if inc.codigo == biboecf.KI.LUZ_CAMBIO), None)
         if luz is not None:
             self.Mensaje(partial(Rejilla.texto_incidencia, luz, oecf))
 
@@ -1527,7 +1602,6 @@ class Ventana(ctk.CTk):
                                  self.factor.get()}))           # type: ignore
         zonas = {oecf.NombreZona(t): copia for t, copia
                  in oecf.RellenarTercios(oecf.zonasCopia).items()}
-        review: biboecf.Review = oecf.review                    # type: ignore
         self.psd = biboecf.Psd(
             biboecf.RUTA_PLANTILLA, zonas, self.ventana_tela, factores,
             (review.alto, review.ancho),
@@ -1584,11 +1658,15 @@ class Ventana(ctk.CTk):
         self.leyendo = False
         self.ActivarCarpeta()
 
-        # --- Con exportaciones del revelador ya en la carpeta, se
-        #     pregunta si medirlas ahora (si no, siguen ahí para
-        #     Analizar revelado)
+        # --- Con exportaciones del revelador ya en la carpeta y aún sin
+        #     medir (el JSON no tiene su revelado: queda a null al medir
+        #     la serie y se conserva al rehacerla con el análisis
+        #     guardado), se pregunta si medirlas ahora (si no, siguen ahí
+        #     para Analizar revelado)
         n = len(oecf.exportaciones)
-        if n and self.Confirmar(
+        guardado = biboecf.leer_review(oecf) if n else None
+        sin_medir = (guardado is None) or (not guardado.revelador)
+        if n and sin_medir and self.Confirmar(
                 kv.TXT_TITULO_TIFF_YA,
                 [K.tr_n(kv.TXT_PREGUNTA_TIFF_YA, n).format(n=n)],
                 kv.TXT_MEDIR):
@@ -1685,7 +1763,7 @@ class Ventana(ctk.CTk):
                       for nombre, valor, _ in biboecf.KXL.CONSTANTES}
         zona_zv = constantes[biboecf.KXL.C_ZONA_ZV]
         por_zona = constantes[biboecf.KXL.C_TERCIO_POR_ZONA]
-        resultados = leer_resultados(carpeta) or {}
+        resultados = biboecf.leer_resultados(carpeta) or {}
         texturas = resultados.get(biboecf.KXL.J_TEXTURAS) or {}
         recomendada = texturas.get(biboecf.KXL.T_RECOMENDADA) or {}
         sombras, luces, zonas = (recomendada.get(clave)
@@ -1748,8 +1826,9 @@ class Ventana(ctk.CTk):
     def GrabarIncidencias(self) -> None:
         """
         Graba las incidencias, como en su ventana (o que no hay), en
-        incidencias.txt de la carpeta CTRL, en el idioma de la ventana. Se
-        rehace cada vez que cambian (Analizar y Generar añaden). Sin copias (la
+        incidencias.txt de la carpeta ANALISIS, en el idioma de la ventana:
+        es para el usuario, que solo busca ahí (CTRL es interna). Se rehace
+        cada vez que cambian (Analizar y Generar añaden). Sin copias (la
         carpeta OECF no está lista), nada.
         """
         kv = self.KV
@@ -1758,8 +1837,8 @@ class Ventana(ctk.CTk):
             return
         incidencias = self.incidencias() or [K.tr(kv.TXT_SIN_INCIDENCIAS)]
         try:
-            oecf.carpetaCtrl.mkdir(exist_ok=True)
-            (oecf.carpetaCtrl / kv.ARCHIVO_INCIDENCIAS).write_text(
+            oecf.carpetaAnalisis.mkdir(exist_ok=True)
+            (oecf.carpetaAnalisis / kv.ARCHIVO_INCIDENCIAS).write_text(
                 kv.SEP_INCIDENCIAS.join(incidencias) + kv.SEP_INCIDENCIAS,
                 encoding="utf-8")
         except OSError:
@@ -1934,7 +2013,7 @@ class Ventana(ctk.CTk):
         self.val_psd_tiff: ctk.CTkLabel | None
         self.review_revelado: biboecf.Review | None
         self.tiff_pendientes: list[tuple[int, Path]]
-        self.tiff_medidos: dict[int, float | str]
+        self.tiff_medidos: dict[int, biboecf.MedidaTiff]
         self.psd_tiff: biboecf.Psd | None
         self.revelado_tiff: Iterator[tuple[int, int]] | None
 
@@ -2085,9 +2164,14 @@ class Ventana(ctk.CTk):
         """
         Abrir resultados de la caja Serie, en el pie de la rejilla (poner) o
         fuera de él, oculto (lo trae la caja Lámina junto a Generar). Al
-        ponerlo, vuelve a ser el que se ve. Sin caja Serie, nada.
+        ponerlo, vuelve a ser el que se ve. Sin caja Serie (serie
+        restaurada), no hay ninguno: queda en None, que es lo que espera
+        ActivarCarpeta (si no, seguiría apuntando al de la Lámina, ya
+        destruido).
         """
         rejilla, btn = self.rejilla, self.btn_resultados_serie
+        if poner:
+            self.btn_resultados = btn
         if ((rejilla is None) or (btn is None) or (rejilla.pie is None)
                 or (not rejilla.winfo_exists())):
             return
@@ -2097,7 +2181,6 @@ class Ventana(ctk.CTk):
             rejilla.poner_pie(izquierdo, resumen, (analizar,), sep)
             return
         rejilla.poner_pie(izquierdo, resumen, (btn, analizar), sep)
-        self.btn_resultados = btn
         self.ActivarCarpeta()
 
     #
@@ -2395,7 +2478,7 @@ class Ventana(ctk.CTk):
         """
         kv = self.KV
         oecf: biboecf.OECF = self.OECF                          # type: ignore
-        if not hay_review(oecf.carpeta):
+        if not biboecf.hay_review(oecf.carpeta):
             return True
         lineas = [K.tr(kv.TXT_YA_REVIEW), K.tr(kv.TXT_SE_BORRARA)]
         n = len(oecf.exportaciones)
@@ -2514,17 +2597,20 @@ class Ventana(ctk.CTk):
         #     si no, Abrir resultados, salvo que ya se vea otro (los tres
         #     a la vez ensanchan demasiado la ventana); y Preparar o, en
         #     una carpeta OECF ya preparada (restaurada), Analizar, si
-        #     están sus copias RAW (sin ellas, solo el revelado: Tony,
-        #     2026-10-19). Activos si además está libre. Al cambiar,
+        #     están sus copias RAW o, sin ellas, si tiene el análisis
+        #     guardado y la copia de la ZV (Tony, 2026-10-19 y
+        #     2026-10-22: Generar lo rehace sin medir; sin la ZV no hay
+        #     caja Lámina). Activos si además está libre. Al cambiar,
         #     la caja Carpeta cambia de ancho: la ventana se ajusta ya (si
         #     no, esperaba al siguiente Ajustar, p. ej. al cambiar de
         #     idioma)
         oecf = self.OECF
-        analisis = (oecf is not None) and hay_review(oecf.carpeta)
+        analisis = (oecf is not None) and biboecf.hay_review(oecf.carpeta)
         tiff = analisis and bool(oecf.exportaciones)            # type: ignore
         abrir = analisis and (not tiff) and (self.btn_resultados is None)
         restaurada = (self.preparada and (oecf is not None)
-                      and oecf.copiasEnSitio)
+                      and (oecf.copiasEnSitio
+                           or (analisis and self._hay_zv(oecf))))
         vistos = [btn for btn, ver in (
             (self.btn_revelado, tiff),
             (self.btn_abrir_carpeta, abrir),
@@ -2544,7 +2630,6 @@ class Ventana(ctk.CTk):
             self.btn_resultados.configure(
                 state="normal" if resultados else "disabled")
 
-
     #
     def AnalizarRevelado(self) -> None:
         """
@@ -2555,7 +2640,7 @@ class Ventana(ctk.CTk):
         """
         kv = self.KV
         oecf: biboecf.OECF = self.OECF                          # type: ignore
-        review = leer_review(oecf.carpeta)
+        review = biboecf.leer_review(oecf)
         if review is None:
             return
         self.QuitarCajas(self.propias_cam)
@@ -2573,6 +2658,25 @@ class Ventana(ctk.CTk):
         self.Traducir()
         self.Ajustar()
         self.MedirTiff()
+
+    #
+    # --- Aviso de que faltan las copias de control: sin ellas no se puede
+    #     volver a medir y se toman como buenos los datos del análisis
+    #     guardado (con todas las copias, lista vacía)
+    def _aviso_sin_control(self) -> list[str]:
+        kv = self.KV
+        oecf: biboecf.OECF = self.OECF                          # type: ignore
+        if oecf.copiasEnSitio:
+            return []
+        return [K.tr(kv.TXT_SIN_CONTROL)]
+
+    #
+    # --- Saber si está la copia de la ZV (en ZONAS): sin ella no hay caja
+    #     Lámina ni nada que analizar de nuevo
+    @staticmethod
+    def _hay_zv(oecf: biboecf.OECF | None) -> bool:
+        zv = None if (oecf is None) else oecf.zonasCopia.get(0)
+        return (zv is not None) and zv.is_file()
 
     #
     def MedirTiff(self) -> None:
@@ -2593,21 +2697,22 @@ class Ventana(ctk.CTk):
                                n=n, total=total))
             self.update_idletasks()
             tercio_ev, ruta = self.tiff_pendientes.pop(0)
-            self.tiff_medidos[tercio_ev] = biboecf.lstar_tiff(review, ruta)
+            self.tiff_medidos[tercio_ev] = biboecf.medir_tiff(review, ruta)
             self.tarea = self.after(kv.PAUSA_LECTURA, self.MedirTiff)
             return
 
         # --- Las 31 zonas, en orden: el L* medido o NaN (sin TIFF, o si no
-        #     se pudo medir)
+        #     se pudo medir). En el JSON, cada exportación con lo medido
+        #     (bloque revelado)
         medidos = self.tiff_medidos
-        revelador = tuple(
-            float(medidos[t]) if isinstance(medidos.get(t), float)
-            else math.nan
-            for t in range(-biboecf.KS.TERCIOS_LADO,
-                           biboecf.KS.TERCIOS_LADO + 1))
+        lstars = {t: m.lstar for t, m in medidos.items()
+                  if m.lstar is not None}
+        revelador = tuple(lstars.get(t, math.nan)
+                          for t in range(-biboecf.KS.TERCIOS_LADO,
+                                         biboecf.KS.TERCIOS_LADO + 1))
         usables = sum(not math.isnan(v) for v in revelador)
         review = dataclasses.replace(review, revelador=revelador)
-        guardado = grabar_review(oecf.carpeta, review)
+        guardado = biboecf.grabar_revelado(oecf, medidos)
         ruta = (self._carpeta_analisis(oecf)
                 / f"{K.NOMBRE}{kv.EXTENSION_EXCEL}")
         # --- Cualquier fallo del libro se dice, con su error, y se sigue
@@ -2628,23 +2733,32 @@ class Ventana(ctk.CTk):
                  else kv.TXT_REVELADO_FALLO)
         # --- Y, si alguna no se pudo medir, cuáles y por qué
         rutas = dict(self.OECF.exportaciones)                   # type: ignore
+        motivos = {m.motivo for m in medidos.values()}
         problemas = [K.tr(kv.TXT_PROBLEMAS_TIFF[code]).format(
             archivos=kv.SEP_ARCHIVOS.join(
-                rutas[t].name for t, v in sorted(medidos.items())
-                if v == code))
+                rutas[t].name for t, m in sorted(medidos.items())
+                if m.motivo == code))
             for code in kv.TXT_PROBLEMAS_TIFF
-            if code in medidos.values()]
+            if code in motivos]
         lineas = [K.tr(texto).format(n=usables, total=len(medidos),
                                      archivo=ruta.name)]
+        lineas += self._aviso_sin_control()
         if error:
             lineas.append(K.tr(kv.TXT_ERROR_EXCEL).format(archivo=ruta.name,
                                                           error=error))
         if excel is not None:
-            grabar_resultados(oecf.carpeta, excel.resultados())
+            biboecf.grabar_resultados(oecf.carpeta, excel.resultados())
             ficha, archivo, fallo = self.EscribirFicha(
                 excel, oecf.carpetaAnalisis)
             lineas.append(K.tr(ficha).format(archivo=archivo, error=fallo))
         lineas += problemas
+
+        # --- Exportaciones de menos bits que las definitivas: se avisa
+        #     aquí y en las incidencias (botón, ventana e incidencias.txt)
+        lineas += [Rejilla.texto_incidencia(inc, oecf)
+                   for inc in biboecf.incidencias(oecf)
+                   if inc.codigo == biboecf.KI.TIFF_8_BITS]
+        self.ContarIncidencias()
         self.Poner(self.val_revelado,                           # type: ignore
                    kv.SEP_LINEAS.join(lineas))
 
@@ -2679,7 +2793,8 @@ class Ventana(ctk.CTk):
         oecf: biboecf.OECF = self.OECF                          # type: ignore
         tela: biboecf.Ventana = review.tela                     # type: ignore
         medidas = {t: ruta for t, ruta in oecf.exportaciones.items()
-                   if isinstance(self.tiff_medidos.get(t), float)}
+                   if (t in self.tiff_medidos)
+                   and (self.tiff_medidos[t].lstar is not None)}
         zonas = {oecf.NombreZona(t): ruta for t, ruta
                  in oecf.RellenarTercios(medidas).items()}
         prueba = biboecf.Psd(biboecf.RUTA_PLANTILLA, {}, tela,

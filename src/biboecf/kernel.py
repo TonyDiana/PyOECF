@@ -953,7 +953,10 @@ class OECF(object):
         tomas, los de cada toma en orden de disparo (los nombres de los
         originales y sus datos, como los dejó Leer); copias, {archivo:
         copia}, la copia relativa a la carpeta de la serie (la que
-        contiene a carpeta). Se reparte como al leerla, así que zonas,
+        contiene a carpeta). El primer componente de esa ruta es el nombre
+        que tenía la carpeta al grabar el JSON y no se usa: el resto se
+        cuelga de carpeta, se llame como se llame (Tony, 2026-10-22). Se
+        reparte como al leerla, así que zonas,
         zvs, tapadas… salen igual. La cámara, de la primera copia que
         esté o, si no hay ninguna, cam. Puede faltar alguna copia (ver
         copiasEnSitio).
@@ -963,7 +966,8 @@ class OECF(object):
         oecf.__carpeta = carpeta
         oecf.__raws = [path / archivo for archivo in archivos]
         oecf.__tomas = list(tomas)
-        oecf.__copias = {path / archivo: path / copia
+        oecf.__copias = {path / archivo: carpeta.joinpath(
+                             *Path(copia).parts[1:])
                          for archivo, copia in copias.items()}
         primera = next((copia for copia in oecf.__copias.values()
                         if copia.is_file()), None)

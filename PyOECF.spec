@@ -42,6 +42,8 @@ ES_MAC = sys.platform == "darwin"
 #       biboecf la busca junto a su código, también en el ejecutable
 #     - las instrucciones de la hoja IA del libro (biboecf.RUTA_PROMPT_IA),
 #       igual que la plantilla
+#     - la versión del formato del JSON del estudio
+#       (biboecf.RUTA_VERSION_JSON), igual que la plantilla
 #     - temas de customtkinter: sin ellos la ventana falla al abrir
 DATOS = [(str(RAIZ / K.ARCHIVO_VERSION), ".")]
 REC = RAIZ / K.CARPETA_RECURSOS
@@ -49,7 +51,8 @@ DATOS += [(str(REC / icono), K.CARPETA_RECURSOS)
           for icono in (*K.ICONOS, K.ICONO_ICO, K.ICONO_PNG)]
 PLANTILLA = biboecf.RUTA_PLANTILLA
 DATOS += [(str(ruta), str(ruta.parent.relative_to(SRC)))
-          for ruta in (PLANTILLA, biboecf.RUTA_PROMPT_IA)]
+          for ruta in (PLANTILLA, biboecf.RUTA_PROMPT_IA,
+                       biboecf.RUTA_VERSION_JSON)]
 DATOS += collect_data_files("customtkinter")
 
 a = Analysis([str(PUNTO_ENTRADA)], datas=DATOS)

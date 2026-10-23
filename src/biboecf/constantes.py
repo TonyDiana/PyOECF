@@ -42,6 +42,14 @@ class COM(std.EnumMutable):
     RUTA_PROMPT_IA = Path(__file__).parent / CARPETA_RECURSOS / PROMPT_IA
     """Ruta de las instrucciones de la hoja IA."""
 
+    VERSION_JSON = "VERSION_JSON"
+    """Versión del formato del JSON del estudio (ver estudio.KES): una
+    sola línea, MAYOR.MENOR. En la raíz del repo hay un enlace
+    simbólico a él, solo para tenerlo a la vista."""
+
+    RUTA_VERSION_JSON = Path(__file__).parent / CARPETA_RECURSOS / VERSION_JSON
+    """Ruta de la versión del formato del JSON del estudio."""
+
     # --- Archivos
     EXTENSIONES = (".arw", ".cr2", ".cr3", ".nef", ".raf")
     """Extensiones RAW (en minúsculas). Comprobadas con archivos reales:

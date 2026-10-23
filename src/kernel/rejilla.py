@@ -20,6 +20,8 @@
 # cSpell:ignore primeres, principi, reviseu, Seqüència, seqüència, Sèrie, sèrie
 # cSpell:ignore Sobren, sobretot, soroll, tapades, targeta, tenen, teòriques
 # cSpell:ignore terç, terços, tessel, tindre, trencada, trobat
+# cSpell:ignore anàlisi, definitives, Estes, exportació, exportacions, menys
+# cSpell:ignore provar, té
 
 __all__ = ["Rejilla"]
 
@@ -360,6 +362,28 @@ class Rejilla(tk.Canvas):
                    "s'aparten de la ZV i no entren en la mitjana: "
                    "{idents}.")}
 
+        # --- Exportaciones del revelador de menos bits que las
+        #     definitivas (con sus zonas): solo valen para probar
+        TXT_TIFF_8_BITS = {
+            K.ES: ("Esta exportación del revelador tiene menos de "
+                   "{definitivos} bits: vale para probar, no para el "
+                   "análisis definitivo: {zonas}.",
+                   "Estas exportaciones del revelador tienen menos de "
+                   "{definitivos} bits: valen para probar, no para el "
+                   "análisis definitivo: {zonas}."),
+            K.EN: ("This export from the raw developer has fewer than "
+                   "{definitivos} bits: it is fine for testing, not for "
+                   "the final analysis: {zonas}.",
+                   "These exports from the raw developer have fewer than "
+                   "{definitivos} bits: they are fine for testing, not for "
+                   "the final analysis: {zonas}."),
+            K.CA: ("Esta exportació del revelador té menys de "
+                   "{definitivos} bits: val per a provar, no per a "
+                   "l'anàlisi definitiva: {zonas}.",
+                   "Estes exportacions del revelador tenen menys de "
+                   "{definitivos} bits: valen per a provar, no per a "
+                   "l'anàlisi definitiva: {zonas}.")}
+
         # --- Desvío de una toma: identificador y desvío con signo, en
         #     tercios; el punto decimal se cambia por el del idioma
         FORMATO_DEV = "{ident} ({dev:+.2f})"
@@ -410,7 +434,8 @@ class Rejilla(tk.Canvas):
             _KI.LUZ_DESIGUAL: TXT_LUZ_DESIGUAL,
             _KI.REVISAR_SERIE: TXT_REVISAR_SERIE,
             _KI.REPETIR_SERIE: TXT_REPETIR_SERIE,
-            _KI.LUZ_CAMBIO: TXT_LUZ_CAMBIO}
+            _KI.LUZ_CAMBIO: TXT_LUZ_CAMBIO,
+            _KI.TIFF_8_BITS: TXT_TIFF_8_BITS}
 
         # --- Identificador corto: número final del nombre del archivo
         PATRON_IDENT = r"(\d+)$"
@@ -513,12 +538,12 @@ class Rejilla(tk.Canvas):
         """
         kr = cls.KR
         raws = OECF.raws
-        texto = kr.TEXTOS_INCIDENCIA[inc.code]
+        texto = kr.TEXTOS_INCIDENCIA[inc.codigo]
         n = len(inc.tomas) if inc.tomas else inc.n
 
         # --- Tomas: su identificador y, en las desviadas y en las de la
         #     luz que cambió, cuánto se apartan
-        if inc.code == biboecf.KI.DESVIADAS:
+        if inc.codigo == biboecf.KI.DESVIADAS:
             idents = [cls.decimal(kr.FORMATO_DEV.format(
                 ident=cls.ident(raws[i], raws), dev=OECF.devs[i]))
                 for i in inc.tomas]
@@ -539,6 +564,9 @@ class Rejilla(tk.Canvas):
                  if (OECF.isoSerie is not None) else ""),
             zona=(biboecf.texto_zona(inc.tercioEV)
                   if (inc.tercioEV is not None) else ""),
+            zonas=kr.SEP_IDENTS.join(biboecf.texto_zona(t)
+                                     for t in inc.tercioEVs),
+            definitivos=biboecf.KRV.BITS_DEFINITIVOS,
             esperada=biboecf.texto_zona(inc.esperado),
             real=(biboecf.texto_zona(inc.tercioEV)
                   if (inc.tercioEV is not None) else ""),

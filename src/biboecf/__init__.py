@@ -13,15 +13,20 @@
 
 # cSpell:ignore biboecf, kpsd
 
-__all__ = ["ajustar_transferencia", "BalanceMedido", "buscar_tela", "Cam",
-           "escala_mpx", "espacio_icc", "espacio_tiff", "Excel", "Exp",
-           "factores", "Ficha", "Incidencia", "incidencias", "KAN", "KC",
-           "KCA", "KCOM", "KFI", "KI", "KM", "KP", "KPSD", "KRV", "KS", "KTE",
+__all__ = ["ajustar_transferencia", "BalanceMedido", "bits_tiff",
+           "buscar_tela", "Cam", "es_mas_nuevo", "es_preparada", "escala_mpx",
+           "espacio_icc",
+           "espacio_tiff", "Excel", "Exp", "factores", "Ficha", "grabar_json",
+           "grabar_resultados", "grabar_revelado",
+           "hay_review", "Incidencia", "incidencias", "KAN", "KC", "KCA",
+           "KCOM", "KES", "KFI", "KI", "KM", "KP", "KPSD", "KRV", "KS", "KTE",
            "KTR", "KXL", "leer_balance", "leer_cam", "leer_kelvin",
-           "lstar_tiff", "medir_teselas", "OECF", "perfil_tiff", "porcentaje",
-           "problema_carpeta", "Psd", "PuntoCurva", "recorte", "revelar",
-           "Review", "review_a_dict", "review_de_dict", "RUTA_PLANTILLA",
-           "RUTA_PROMPT_IA", "Secuencia", "Select", "signal_para_snr",
+           "leer_resultados", "leer_review", "lstar_tiff", "MedidaTiff",
+           "medir_teselas", "medir_tiff", "OECF", "perfil_tiff", "porcentaje",
+           "problema_carpeta", "Psd", "PuntoCurva", "recorte",
+           "restaurar_serie", "revelar", "Review", "review_a_dict",
+           "review_de_dict", "RUTA_PLANTILLA", "RUTA_PROMPT_IA",
+           "RUTA_VERSION_JSON", "Secuencia", "Select", "signal_para_snr",
            "snr_modelo", "Teselas", "texto_zona", "Toma", "Transferencia",
            "Ventana", "zona_tercio", "ZonaMedida"]
 
@@ -65,8 +70,8 @@ from .transferencia import (KTR, Transferencia, ajustar_transferencia,
 #
 # --- Segunda parte: el L* de las exportaciones del revelador
 #
-from .revelado import (KRV, espacio_icc, espacio_tiff, lstar_tiff,
-                       perfil_tiff)
+from .revelado import (KRV, MedidaTiff, bits_tiff, espacio_icc,
+                       espacio_tiff, lstar_tiff, medir_tiff, perfil_tiff)
 
 #
 # --- Láminas PSD
@@ -78,6 +83,13 @@ from .psd import KPSD, Psd
 #
 from .review import (KAN, BalanceMedido, Review, ZonaMedida, review_a_dict,
                      review_de_dict)
+
+#
+# --- Datos del estudio en JSON: grabarlos y restaurar la serie de ellos
+#
+from .estudio import (KES, es_mas_nuevo, es_preparada, grabar_json,
+                      grabar_resultados, grabar_revelado, hay_review,
+                      leer_resultados, leer_review, restaurar_serie)
 
 #
 # --- Libro Excel de resultados
@@ -97,3 +109,4 @@ from .ficha import KFI, Ficha
 from .constantes import COM as KCOM
 RUTA_PLANTILLA = KCOM.RUTA_PLANTILLA
 RUTA_PROMPT_IA = KCOM.RUTA_PROMPT_IA
+RUTA_VERSION_JSON = KCOM.RUTA_VERSION_JSON
