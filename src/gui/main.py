@@ -11,7 +11,7 @@
 # cSpell:ignore KRES, lstar, lstars, mclocale, mcset, meipass, msgcat, oecf
 # cSpell:ignore padx, pady, redibuja, redibujar, relx, ROTULOS, screeninfo
 # cSpell:ignore scrollregion, splitlist, startfile, textvariable, tobytes
-# cSpell:ignore Ventanita, ventanita, winfo, wraplength, yscrollcommand, zenity
+# cSpell:ignore winfo, wraplength, yscrollcommand, zenity
 
 # --- Valenciano
 # cSpell:ignore acadèmica, accedir, acord, actualitza, Ajuda, Analitzant
@@ -110,23 +110,6 @@ class Ventana(ctk.CTk):
                                   K.EN: "Continue analysis",
                                   K.CA: "Continuar l'anàlisi"}
 
-        # --- Confirmación de Preparar si la carpeta OECF ya tiene el
-        #     análisis: se borraría (las exportaciones del revelador, no:
-        #     se conservan, y se dice)
-        TXT_TITULO_CONFIRMAR = {K.ES: "Analizar RAW de nuevo",
-                                K.EN: "Analyze RAW again",
-                                K.CA: "Analitzar RAW de nou"}
-        TXT_YA_REVIEW = {K.ES: "La carpeta OECF ya tiene el análisis.",
-                         K.EN: "The OECF folder already has the analysis.",
-                         K.CA: "La carpeta OECF ja té l'anàlisi."}
-        TXT_TIFF_SE_CONSERVAN = {
-            K.ES: ("Su exportación del revelador se conserva.",
-                   "Sus {n} exportaciones del revelador se conservan."),
-            K.EN: ("Its developer export is kept.",
-                   "Its {n} developer exports are kept."),
-            K.CA: ("La seua exportació del revelador es conserva.",
-                   "Les seues {n} exportacions del revelador es "
-                   "conserven.")}
         SEP_LINEAS = "\n"
         ANCHO_CONFIRMAR = 380
         TXT_CANCELAR = {K.ES: "Cancelar", K.EN: "Cancel", K.CA: "Cancel·lar"}
@@ -140,31 +123,6 @@ class Ventana(ctk.CTk):
         TCL_AFTER = "after"
         TCL_INFO = "info"
         TCL_CANCEL = "cancel"
-        TXT_SE_BORRARA = {
-            K.ES: "Si vuelve a analizar los RAW, el análisis se borrará. "
-                  "¿Seguir?",
-            K.EN: "If you analyze the RAW files again, the analysis will be "
-                  "deleted. Continue?",
-            K.CA: "Si torneu a analitzar els RAW, l'anàlisi s'esborrarà. "
-                  "Voleu continuar?"}
-
-        # --- Lo mismo si la carpeta OECF ya está preparada pero sin
-        #     análisis: se borrarían sus copias (Tony, 2026-11-12)
-        TXT_YA_PREPARADA = {
-            K.ES: "La carpeta OECF ya tiene las copias de un análisis "
-                  "anterior.",
-            K.EN: "The OECF folder already has the copies from a previous "
-                  "analysis.",
-            K.CA: "La carpeta OECF ja té les còpies d'una anàlisi "
-                  "anterior."}
-        TXT_SE_BORRARAN_COPIAS = {
-            K.ES: "Si vuelve a analizar los RAW, esas copias se borrarán y "
-                  "se volverán a hacer. ¿Seguir?",
-            K.EN: "If you analyze the RAW files again, those copies will be "
-                  "deleted and made again. Continue?",
-            K.CA: "Si torneu a analitzar els RAW, eixes còpies "
-                  "s'esborraran i es tornaran a fer. Voleu continuar?"}
-
         # --- Segunda parte del análisis (las exportaciones del revelador):
         #     se ve si ya hay análisis en el JSON; activo si hay TIFF
         TXT_ANALIZAR_REVELADO = {K.ES: "Analizar revelado",
@@ -184,39 +142,6 @@ class Ventana(ctk.CTk):
         TXT_FASE_REVELADO = {K.ES: "Revelado", K.EN: "Development",
                              K.CA: "Revelat"}
         ANCHO_REVELADO = 600
-        # --- Al terminar Generar, si la carpeta OECF ya tiene
-        #     exportaciones del revelador (Preparar las conserva): se
-        #     pregunta si medirlas ya con el análisis nuevo (Tony,
-        #     2026-10-16: sí, con aviso)
-        TXT_TITULO_TIFF_YA = {K.ES: "Exportaciones del revelador",
-                              K.EN: "Developer exports",
-                              K.CA: "Exportacions del revelador"}
-        TXT_PREGUNTA_TIFF_YA = {
-            K.ES: ("La carpeta OECF tiene {n} exportación del revelador. "
-                   "¿Medirla ya con el análisis nuevo?",
-                   "La carpeta OECF tiene {n} exportaciones del revelador. "
-                   "¿Medirlas ya con el análisis nuevo?"),
-            K.EN: ("The OECF folder has {n} developer export. Measure it "
-                   "now with the new analysis?",
-                   "The OECF folder has {n} developer exports. Measure "
-                   "them now with the new analysis?"),
-            K.CA: ("La carpeta OECF té {n} exportació del revelador. "
-                   "Voleu mesurar-la ja amb l'anàlisi nova?",
-                   "La carpeta OECF té {n} exportacions del revelador. "
-                   "Voleu mesurar-les ja amb l'anàlisi nova?")}
-        TXT_MEDIR = {K.ES: "Medir", K.EN: "Measure", K.CA: "Mesurar"}
-
-        TXT_TITULO_PSD = {K.ES: "Rehacer las láminas",
-                          K.EN: "Rebuild the print sheets",
-                          K.CA: "Refer les làmines"}
-        TXT_PREGUNTA_PSD = {
-            K.ES: "¿Rehacer las láminas con las exportaciones del revelador? "
-                  "Se sustituirán las que hay.",
-            K.EN: "Rebuild the print sheets with the developer exports? The "
-                  "existing ones will be replaced.",
-            K.CA: "Voleu refer les làmines amb les exportacions del "
-                  "revelador? Se substituiran les que hi ha."}
-        TXT_REHACER = {K.ES: "Rehacer", K.EN: "Rebuild", K.CA: "Refer"}
 
         # --- Generar ya no hace la lámina desde el RAW (sale oscura): la
         #     hace Analizar revelado, con las exportaciones (Tony,
@@ -267,6 +192,13 @@ class Ventana(ctk.CTk):
                 K.CA: "No s'han mesurat, per la seua compressió "
                       "(exporteu-les sense comprimir o en ZIP; LZW no es pot "
                       "llegir): {archivos}"},
+            oecfCalc.KRV.POCOS_BITS: {
+                K.ES: "No se midieron, por tener menos de 16 bits "
+                      "(expórtelas a 16 bits por canal): {archivos}",
+                K.EN: "Not measured, because they have fewer than 16 bits "
+                      "(export them at 16 bits per channel): {archivos}",
+                K.CA: "No s'han mesurat, per tindre menys de 16 bits "
+                      "(exporteu-les a 16 bits per canal): {archivos}"},
             oecfCalc.KRV.SIN_TESELAS: {
                 K.ES: "No se midieron, sin teselas de tarjeta dentro: "
                       "{archivos}",
@@ -297,15 +229,18 @@ class Ventana(ctk.CTk):
                   "canviar): no es pot tornar a mesurar. Es prenen com a "
                   "bones les dades de l'anàlisi anterior."}
         TXT_SIN_ZONAS = {
-            K.ES: "Esta carpeta no tiene las imágenes de las zonas: no se "
-                  "puede analizar nada más con ella. Los resultados ya "
-                  "hechos siguen disponibles.",
-            K.EN: "This folder does not have the zone images: nothing else "
-                  "can be analyzed with it. The results already produced "
-                  "are still available.",
-            K.CA: "Esta carpeta no té les imatges de les zones: no es pot "
-                  "analitzar res més amb ella. Els resultats ja fets "
-                  "continuen disponibles."}
+            K.ES: "Esta carpeta no tiene las copias de las zonas: no se "
+                  "pueden volver a analizar los RAW. Lo ya analizado sigue "
+                  "disponible, y si el análisis está hecho se puede "
+                  "analizar el revelado.",
+            K.EN: "This folder does not have the zone copies: the RAW "
+                  "files cannot be analyzed again. What has already been "
+                  "analyzed is still available, and if the analysis is "
+                  "done the development can be analyzed.",
+            K.CA: "Esta carpeta no té les còpies de les zones: no es poden "
+                  "tornar a analitzar els RAW. El que ja s'ha analitzat "
+                  "continua disponible, i si l'anàlisi està feta es pot "
+                  "analitzar el revelat."}
 
         # --- Con el análisis de los RAW hecho y sin exportaciones del
         #     revelador: lo que falta (Tony, 2026-11-13). EN y CA, de
@@ -440,11 +375,6 @@ class Ventana(ctk.CTk):
         #     texto en la carpeta ANALISIS, en el idioma de la ventana
         SEP_INCIDENCIAS = "\n"
         ARCHIVO_INCIDENCIAS = "incidencias.txt"
-        # --- Analizar RAW: botón bajo la ZX, activo solo si la serie sirve;
-        #     y el de la caja Carpeta. Hace pareja con Analizar revelado
-        #     (Tony, 2026-11-13)
-        TXT_ANALIZAR = {K.ES: "Analizar RAW", K.EN: "Analyze RAW",
-                        K.CA: "Analitzar RAW"}
         TXT_TITULO_INCIDENCIAS = {K.ES: "Incidencias de la serie",
                                   K.EN: "Series issues",
                                   K.CA: "Incidències de la sèrie"}
@@ -455,8 +385,8 @@ class Ventana(ctk.CTk):
         # --- Título de la caja de la fase 1 (la medida de los RAW): ya no
         #     lleva lámina (Tony, 2026-11-13). EN y CA, de Claude a
         #     petición de Tony
-        TXT_FASE_PSD = {K.ES: "Análisis RAW", K.EN: "RAW analysis",
-                        K.CA: "Anàlisi RAW"}
+        TXT_FASE_ANALISIS_RAW = {K.ES: "Análisis RAW", K.EN: "RAW analysis",
+                                 K.CA: "Anàlisi RAW"}
         TXT_BUSCANDO_TELA = {K.ES: "Buscando el paño…",
                              K.EN: "Looking for the fabric…",
                              K.CA: "Buscant el drap…"}
@@ -475,8 +405,8 @@ class Ventana(ctk.CTk):
                       "generarà l'Excel."}}
         TXT_MEDIDA = {K.ES: "Tamaño", K.EN: "Size", K.CA: "Grandària"}
 
-        # --- Ventanita de mensajes: ancho inicial de sus líneas (píxeles;
-        #     luego sigue al de la ventanita, ver _ajustar_mensajes) y
+        # --- Ventana de estado: ancho inicial de sus líneas (píxeles;
+        #     luego sigue al de la ventana de estado, ver _ajustar_mensajes) y
         #     separación entre mensajes (una línea en blanco)
         ANCHO_MENSAJES = 260
         SEP_MENSAJES = "\n\n"
@@ -489,7 +419,7 @@ class Ventana(ctk.CTk):
 
         # --- Ancho de los botones de tamaño: 0 en customtkinter es «el de
         #     su contenido» (por defecto reservan 100 px, y sobraba hueco
-        #     entre los porcentajes y la ventanita)
+        #     entre los porcentajes y la ventana de estado)
         ANCHO_CONTENIDO = 0
 
         # --- Generar: progreso de la medida, el libro (en la carpeta OECF,
@@ -532,12 +462,6 @@ class Ventana(ctk.CTk):
         #     abajo: la cámara, la latitud de texturas recomendada (de los
         #     resultados del JSON), la fecha de las tomas (la de la ZV, no
         #     la de generar) y el soporte, para escribirlo a mano
-        # --- Primera línea de la cartela: necesita una quinta capa de
-        #     texto, arriba, en la plantilla (Tony, 2026-11-13). EN y CA,
-        #     de Claude a petición de Tony
-        TXT_CARTELA_ESTUDIANTE = {K.ES: "Estudiante: {nombre}",
-                                  K.EN: "Student: {nombre}",
-                                  K.CA: "Estudiant: {nombre}"}
         TXT_CARTELA_CAM = {K.ES: "Cámara: {cam}",
                            K.EN: "Camera: {cam}",
                            K.CA: "Càmera: {cam}"}
@@ -565,9 +489,6 @@ class Ventana(ctk.CTk):
 
         # --- Generar, la lámina: progreso del revelado, las escritas y si
         #     no se pudo
-        TXT_REVELANDO = {K.ES: "Lámina: revelando {n} de {total}…",
-                         K.EN: "Print sheet: developing {n} of {total}…",
-                         K.CA: "Làmina: revelant {n} de {total}…"}
         TXT_ESCRIBIENDO = {K.ES: "Lámina: escribiendo {archivo}…",
                            K.EN: "Print sheet: writing {archivo}…",
                            K.CA: "Làmina: escrivint {archivo}…"}
@@ -582,8 +503,8 @@ class Ventana(ctk.CTk):
             K.CA: "No s'ha pogut escriure la làmina (està oberta?): "
                   "{archivo}"}
         SEP_ARCHIVOS = ", "
-        # --- Incidencias de las teselas que dice la ventanita de la caja
-        #     Lámina al analizar: las rechazadas y sus avisos
+        # --- Incidencias de las teselas que dice la ventana de estado de la
+        #     caja Lámina al analizar: las rechazadas y sus avisos
         INCIDENCIAS_TESELAS = (oecfMediadores.KI.RECHAZADAS,
                                oecfMediadores.KI.TARJETA_SUCIA,
                                oecfMediadores.KI.LUZ_DESIGUAL,
@@ -615,7 +536,6 @@ class Ventana(ctk.CTk):
                                    K.EN: "Finished: {archivos}.",
                                    K.CA: "Finalitzat: {archivos}."}
         TXT_PORCENTAJE = {K.ES: "{p} %", K.EN: "{p}%", K.CA: "{p} %"}
-        TXT_GENERAR = {K.ES: "Generar", K.EN: "Generate", K.CA: "Generar"}
 
         # --- Imagen del recorte para Tk, sin Pillow: PPM (RGB de 8 bits)
         CABECERA_PPM = "P6 {ancho} {alto} 255\n"
@@ -760,7 +680,7 @@ class Ventana(ctk.CTk):
         TK_REDIBUJAR = "<Expose>"
 
         # --- Evento de Tk: un elemento cambió de tamaño (el lienzo, para
-        #     estirar el cuerpo; la ventanita de mensajes, para cortar sus
+        #     estirar el cuerpo; la ventana de estado, para cortar sus
         #     líneas a su ancho)
         TK_CAMBIO_MEDIDA = "<Configure>"
 
@@ -946,8 +866,7 @@ class Ventana(ctk.CTk):
         #     en este orden: Analizar revelado (con análisis y
         #     exportaciones del revelador) o Abrir resultados (sin ellas) y
         #     Preparar o, en una carpeta OECF ya preparada, Analizar (Tony,
-        #     2026-10-19); en la de los originales de una serie ya
-        #     preparada, Continuar análisis antes de Preparar (2026-11-13)
+        #     2026-10-19)
         botones = self.botones_carpeta = ctk.CTkFrame(
             fila, fg_color="transparent")
         botones.pack(side="right")
@@ -961,9 +880,6 @@ class Ventana(ctk.CTk):
                                                   command=self.Analizar)
         self.ApuntarTexto(self.btn_analizar_carpeta,
                           kv.TXT_CONTINUAR_ANALISIS)
-        self.btn_continuar = ctk.CTkButton(
-            botones, command=self.ContinuarAnalisis)
-        self.ApuntarTexto(self.btn_continuar, kv.TXT_CONTINUAR_ANALISIS)
         self.btn_liberar = ctk.CTkButton(botones,
                                          command=self.LiberarEspacio)
         self.ApuntarTexto(self.btn_liberar, kv.TXT_LIBERAR)
@@ -1228,6 +1144,7 @@ class Ventana(ctk.CTk):
                                         wraplength=kv.ANCHO_REVELADO)
                 etiqueta.pack()
                 self.Poner(etiqueta, aviso)
+                self.Traducir()
                 self.Ajustar()
         else:
             OECF = self.OECF = oecfCalc.OECF(carpeta)
@@ -1371,22 +1288,16 @@ class Ventana(ctk.CTk):
         barra = self.barra_serie = ctk.CTkProgressBar(interior)
         rejilla = self.rejilla = Rejilla(interior)
         self.val_copia = ctk.CTkLabel(interior, text="")
-        # --- Pie de la rejilla: Incidencias bajo la Z0, el resumen, y
-        #     Abrir resultados (la carpeta OECF, inactivo hasta copiar) y
-        #     Analizar bajo la ZX (crea la caja Lámina). Son hijos de la
-        #     rejilla, que los coloca
+        # --- Pie de la rejilla: Incidencias bajo la Z0, el resumen y Abrir
+        #     resultados (la carpeta OECF, inactivo hasta copiar). Son
+        #     hijos de la rejilla, que los coloca. Al acabar de copiar, la
+        #     medida empieza sola (Tony, 2026-11-13; ver _fin_copia)
         self.val_rejilla = ctk.CTkLabel(rejilla, text="")
         self.btn_incidencias = ctk.CTkButton(
             rejilla, command=self._ver_incidencias)
         self.btn_resultados = self.btn_resultados_serie = ctk.CTkButton(
             rejilla, command=self.AbrirResultados, state="disabled")
         self.ApuntarTexto(self.btn_resultados, kv.TXT_ABRIR_RESULTADOS)
-        btn_analizar = self.btn_analizar = ctk.CTkButton(
-            rejilla, command=self.Analizar, state="disabled")
-        self.ApuntarTexto(btn_analizar, kv.TXT_CONTINUAR_ANALISIS)
-        # --- Continuar análisis existe, pero no se enseña: al acabar de
-        #     copiar, la medida empieza sola (Tony, 2026-11-13; ver
-        #     _fin_copia)
         rejilla.poner_pie(self.btn_incidencias, self.val_rejilla,
                           (self.btn_resultados,), kv.MARGEN)
         self.Traducir()
@@ -1532,7 +1443,6 @@ class Ventana(ctk.CTk):
         serie: oecfCalc.OECF = self.OECF                         # type: ignore
         barra: ctk.CTkProgressBar = self.barra_serie            # type: ignore
         val_copia: ctk.CTkLabel = self.val_copia                # type: ignore
-        btn_analizar: ctk.CTkButton = self.btn_analizar     # type: ignore
         barra.pack_forget()
 
         # --- Con las copias hechas, el JSON y las incidencias. Si la
@@ -1545,8 +1455,6 @@ class Ventana(ctk.CTk):
             grabar_json(serie, K.NOMBRE, K.version)
             self.GrabarIncidencias()
         analizable = serie.esAnalizable and bool(serie.copias)
-        btn_analizar.configure(
-            state="normal" if analizable else "disabled")
         self.leyendo = False
         self.ActivarCarpeta()
         self.Ajustar()
@@ -1586,8 +1494,8 @@ class Ventana(ctk.CTk):
             Rejilla.linea_tapadas(len(serie.tapadas))))
 
     #
-    def caja_psd(self, OECF: oecfCalc.OECF,
-                 motivo: dict | None = None) -> None:
+    def caja_analisis_raw(self, OECF: oecfCalc.OECF,
+                          motivo: dict | None = None) -> None:
         """
         Caja Lámina: la crea Analizar. Mide las teselas de la Z-V
         (OECF.Seleccionar): sin tarjeta gris, lo dice y no hay más. Con
@@ -1600,7 +1508,8 @@ class Ventana(ctk.CTk):
 
         # --- La caja, con el aviso mientras se mide: la medida bloquea la
         #     ventana un momento
-        interior = self.CrearCaja(kv.TXT_FASE_PSD, self.ReiniciarPsd)
+        interior = self.CrearCaja(kv.TXT_FASE_ANALISIS_RAW,
+                                  self.ReiniciarAnalisisRaw)
         aviso = ctk.CTkLabel(interior, text="")
         aviso.pack()
         self.Poner(aviso, kv.TXT_BUSCANDO_TELA)
@@ -1652,12 +1561,10 @@ class Ventana(ctk.CTk):
             self.Mensaje(partial(self._componer, motivo))
 
         # --- Abajo, Abrir resultados: se trae aquí (el de la Serie queda
-        #     oculto mientras esté esta caja). Generar existe, pero no se
-        #     enseña: la medida empieza sola (Tony, 2026-11-13)
+        #     oculto mientras esté esta caja). La medida empieza sola
+        #     (Tony, 2026-11-13)
         botones = ctk.CTkFrame(interior, fg_color="transparent")
         botones.pack(side="bottom", anchor="e", pady=(kv.MARGEN, 0))
-        self.btn_generar = ctk.CTkButton(botones, command=self._generar)
-        self.ApuntarTexto(self.btn_generar, kv.TXT_GENERAR)
         self.ResultadosEnSerie(False)
         self.btn_resultados = ctk.CTkButton(
             botones, command=self.AbrirResultados, state="disabled")
@@ -1672,29 +1579,13 @@ class Ventana(ctk.CTk):
         self._generar()
 
     #
-    # --- Rehace el recorte con el tamaño elegido
-    def _mostrar_recorte(self) -> None:
-        kv = self.KV
-        trozo = oecfCalc.recorte(self.imagen_zv,                 # type: ignore
-                                 self.ventana_tela,             # type: ignore
-                                 self.factor.get())             # type: ignore
-        alto, ancho = trozo.shape[:2]
-        self.foto_recorte = tk.PhotoImage(
-            data=(kv.CABECERA_PPM.format(ancho=ancho, alto=alto).encode()
-                  + trozo.tobytes()), format=kv.FORMATO_PPM)
-        self.val_recorte.configure(                             # type: ignore
-            image=self.foto_recorte)
-
-    #
     # --- Generar: mide la serie (una toma cada vez, con el progreso en
-    #     la ventanita) y, al terminar, el JSON, el libro y, con paño,
+    #     la ventana de estado) y, al terminar, el JSON, el libro y, con paño,
     #     la lámina. Sin todas las copias no se puede medir: se rehace el
     #     informe con el análisis guardado (ver _rehacer_informe).
-    #     Mientras, Generar y Preparar inactivos
+    #     Mientras, Preparar inactivo
     def _generar(self) -> None:
         oecf: oecfCalc.OECF = self.OECF                          # type: ignore
-        btn_generar: ctk.CTkButton = self.btn_generar       # type: ignore
-        btn_generar.configure(state="disabled")
         self.escritos = []
         self.QuitarFinalizado()
         self.leyendo = True
@@ -1762,11 +1653,14 @@ class Ventana(ctk.CTk):
     #     (con su frase en el idioma de la ventana), si se puede analizar,
     #     si hay balance personalizado y cuántas tomas tiene
     def _datos_serie(self, oecf: oecfCalc.OECF) -> DatosSerie:
+        bloques = oecf.secuencia.bloques if oecf.secuencia else {}
         return DatosSerie(
             avisos=tuple(Rejilla.incidencias(oecf)),
             esAnalizable=oecf.esAnalizable,
             esBalancePersonalizado=bool(oecf.balancePersonalizado),
-            tomas=len(oecf.tomas))
+            tomas=len(oecf.tomas),
+            expISO=tuple(oecf.tomas[b.zv].exp for b in bloques.values()
+                         if b.zv is not None))
 
     #
     # --- Escribe el libro de un análisis. Devuelve el Excel (None si ni se
@@ -1816,7 +1710,7 @@ class Ventana(ctk.CTk):
                                  error=fallo))
 
         # --- Tras medir puede haber incidencias nuevas (la luz que
-        #     cambió): al botón y, esa, también a la ventanita
+        #     cambió): al botón y, esa, también a la ventana de estado
         self.ContarIncidencias()
         luz = next((inc for inc in oecfCalc.calcular_incidencias(oecf)
                     if inc.codigo == oecfMediadores.KI.LUZ_CAMBIO), None)
@@ -1831,51 +1725,13 @@ class Ventana(ctk.CTk):
         self._terminar_generar()
 
     #
-    # --- Revela la siguiente zona de la lámina y se vuelve a programar
-    #     (con after, como la medida); al terminar, las escribe
-    def _revelar_zona(self) -> None:
-        kv = self.KV
-        oecf: oecfCalc.OECF = self.OECF                          # type: ignore
-        self.tarea = None
-        hechas, total = next(self.revelado)                     # type: ignore
-        if hechas < total:
-            self.Mensaje(partial(self._componer, kv.TXT_REVELANDO,
-                                 n=hechas + 1, total=total), sustituir=True)
-            self.update_idletasks()
-            self.tarea = self.after(kv.PAUSA_LECTURA, self._revelar_zona)
-            return
-        self.revelado = None
-        psd: Psd = self.psd                             # type: ignore
-        escritas = []
-        for factor in psd.factores:
-            nombre = psd.nombre(factor)
-            self.Mensaje(partial(self._componer, kv.TXT_ESCRIBIENDO,
-                                 archivo=nombre), sustituir=True)
-            self.update_idletasks()
-            try:
-                psd.Escribir(factor, oecf.carpetaReview / nombre)
-                escritas.append(nombre)
-                self.escritos.append(nombre)
-            except OSError:
-                self.Mensaje(partial(self._componer, kv.TXT_SIN_PSD,
-                                     archivo=nombre))
-        if escritas:
-            self.Mensaje(partial(self._componer, kv.TXT_PSD,
-                                 archivos=kv.SEP_ARCHIVOS.join(escritas)),
-                         sustituir=True)
-        self._terminar_generar()
-
-    #
-    # --- Fin de Generar (con láminas o sin ellas): lo dice en la
-    #     ventanita y Generar y Preparar, otra vez activos
+    # --- Fin de Generar: lo dice en la ventana de estado y Preparar, otra vez
+    #     activo
     def _terminar_generar(self) -> None:
         kv = self.KV
         oecf: oecfCalc.OECF = self.OECF                          # type: ignore
-        btn_generar: ctk.CTkButton = self.btn_generar       # type: ignore
-        self.psd = None
         self.PonerFinalizado(self.val_mensajes.master,          # type: ignore
                              kv.ANCHO_MENSAJES)
-        btn_generar.configure(state="normal")
         self.leyendo = False
         self.ActivarCarpeta()
 
@@ -1894,27 +1750,34 @@ class Ventana(ctk.CTk):
     def Mensaje(self, linea: Callable[[], str],
                 sustituir: bool = False) -> None:
         """
-        Añade una línea a la ventanita de mensajes de la caja Lámina, o
+        Añade una línea a la ventana de estado de la caja Lámina, o
         sustituye la última (el progreso). linea: cómo se compone (para
         rehacerla al cambiar de idioma)
         """
-        if sustituir and self.lineas:
-            self.lineas[-1] = linea
-        else:
+        nueva = not (sustituir and self.lineas)
+        if nueva:
             self.lineas.append(linea)
+        else:
+            self.lineas[-1] = linea
         self.Poner(self.val_mensajes,                           # type: ignore
                    self._texto_mensajes)
 
+        # --- Una línea nueva hace crecer la caja: la ventana, con ella
+        #     (si no, el pie con Salir queda fuera). Sustituir no la hace
+        #     crecer
+        if nueva:
+            self.Ajustar()
+
     #
-    # --- La ventanita cambió de ancho: sus líneas se cortan a ese ancho
-    #     (solo si cambia: así no se vuelve a llamar sin fin)
+    # --- La ventana de estado cambió de ancho: sus líneas se cortan a ese
+    #     ancho (solo si cambia: así no se vuelve a llamar sin fin)
     def _ajustar_mensajes(self, evento: tk.Event) -> None:
         mensajes: ctk.CTkLabel = self.val_mensajes              # type: ignore
         if mensajes.cget("wraplength") != evento.width:
             mensajes.configure(wraplength=evento.width)
 
     #
-    # --- Lo mismo para la ventanita de la caja Revelado: sus líneas
+    # --- Lo mismo para la ventana de estado de la caja Revelado: sus líneas
     #     ocupan el ancho del marco, menos sus márgenes
     def _ajustar_revelado(self, evento: tk.Event) -> None:
         ancho = evento.width - (2 * self.KV.MARGEN)
@@ -1924,7 +1787,7 @@ class Ventana(ctk.CTk):
                 etiqueta.configure(wraplength=ancho)
 
     #
-    # --- Las líneas de la ventanita, cada una en el idioma activo
+    # --- Las líneas de la ventana de estado, cada una en el idioma activo
     def _texto_mensajes(self) -> str:
         return self.KV.SEP_MENSAJES.join(
             componer() for componer in self.lineas)
@@ -2026,9 +1889,7 @@ class Ventana(ctk.CTk):
             fecha = kv.FORMATO_FECHA_CARTELA.format(
                 dia=dia.day, mes=K.tr(kv.TXT_MESES)[dia.month - 1],
                 year=dia.year)
-        return (K.tr(kv.TXT_CARTELA_ESTUDIANTE).format(
-                    nombre=self.Estudiante()),
-                K.tr(kv.TXT_CARTELA_CAM).format(cam=review.cam),
+        return (K.tr(kv.TXT_CARTELA_CAM).format(cam=review.cam),
                 latitud, K.tr(kv.TXT_CARTELA_FECHA).format(fecha=fecha),
                 K.tr(kv.TXT_CARTELA_SOPORTE))
 
@@ -2057,6 +1918,7 @@ class Ventana(ctk.CTk):
         self.val_finalizado.pack(anchor="w", padx=kv.MARGEN,
                                  pady=(0, kv.MARGEN))
         self.Poner(self.val_finalizado, self.TextoFinalizado)
+        self.Ajustar()
 
     #
     def QuitarFinalizado(self) -> None:
@@ -2175,13 +2037,11 @@ class Ventana(ctk.CTk):
         self._textos: dict[ctk.CTkBaseClass, Callable[[], str]] = {}
 
         # --- Caja Carpeta (caja_carpeta): los botones Preparar, Analizar,
-        #     Continuar análisis, Analizar revelado y Abrir resultados (los
-        #     enseña, activa y desactiva ActivarCarpeta) y la variable de la
-        #     casilla
+        #     Analizar revelado y Abrir resultados (los enseña, activa y
+        #     desactiva ActivarCarpeta) y la variable de la casilla
         self.botones_carpeta: ctk.CTkFrame
         self.btn_preparar: ctk.CTkButton
         self.btn_analizar_carpeta: ctk.CTkButton
-        self.btn_continuar: ctk.CTkButton
         self.btn_liberar: ctk.CTkButton
         self.btn_revelado: ctk.CTkButton
         self.btn_abrir_carpeta: ctk.CTkButton
@@ -2191,7 +2051,7 @@ class Ventana(ctk.CTk):
         #     solo uno a la vez; None si no hay ninguno
         self.explorador: subprocess.Popen | None = None
 
-        # --- Respuesta de la confirmación de Preparar (ConfirmarPreparar)
+        # --- Respuesta de la confirmación (Confirmar)
         self.confirmado: bool = False
         self.dialogo_confirmar: ctk.CTkToplevel | None = None
 
@@ -2260,22 +2120,14 @@ class Ventana(ctk.CTk):
         # --- Lo demás de la caja Serie que usan sus pasos (_leer_toma,
         #     _fin_serie, _copiar_toma, _fin_copia, _mostrar_rejilla): el
         #     resumen, la barra de progreso, la línea de la copia, el
-        #     resumen bajo la rejilla y el botón Analizar
+        #     resumen bajo la rejilla
         self.val_serie: ctk.CTkLabel | None
         self.barra_serie: ctk.CTkProgressBar | None
         self.val_copia: ctk.CTkLabel | None
         self.val_rejilla: ctk.CTkLabel | None
-        self.btn_analizar: ctk.CTkButton | None
 
-        # --- Caja Lámina (ReiniciarPsd): la Z-V revelada (para el
-        #     recorte), la ventana del paño, el tamaño elegido (divisor),
-        #     la etiqueta del recorte y su imagen (se guarda: si no, Python
-        #     la borra)
-        self.imagen_zv: np.ndarray | None
+        # --- Caja Lámina (ReiniciarAnalisisRaw): la ventana del paño
         self.ventana_tela: oecfCalc.Ventana | None
-        self.factor: ctk.IntVar | None
-        self.val_recorte: tk.Label | None
-        self.foto_recorte: tk.PhotoImage | None
 
         # --- Caja Revelado (ReiniciarRevelado; la crea Analizar revelado):
         #     su interior y sus dos líneas (la medida y la lámina), el
@@ -2309,23 +2161,16 @@ class Ventana(ctk.CTk):
         self.foto_recorte_tiff: tk.PhotoImage | None
         self.controles_tiff: list[ctk.CTkBaseClass]
 
-        # --- La ventanita de mensajes de la caja Lámina y cómo se compone
-        #     cada línea (para rehacerla al cambiar de idioma)
+        # --- La ventana de estado de la caja Lámina y cómo se compone cada
+        #     línea (para rehacerla al cambiar de idioma)
         self.val_mensajes: ctk.CTkLabel | None
         self.lineas: list[Callable[[], str]]
 
         # --- El «Finalizado» de la última tanda (caja Lámina o Revelado)
         self.val_finalizado: ctk.CTkLabel | None = None
 
-        # --- La medida en marcha (OECF.Medir), al pulsar Generar, y la
-        #     lámina con su revelado en marcha (Psd.Revelar)
+        # --- La medida en marcha (OECF.Medir), al pulsar Generar
         self.medida: Iterator[tuple[int, int]] | None
-        self.psd: Psd | None
-        self.revelado: Iterator[tuple[int, int]] | None
-
-        # --- El botón Generar de la caja Lámina (lo desactivan y activan
-        #     _generar y _terminar_generar)
-        self.btn_generar: ctk.CTkButton | None
 
         # --- Archivos escritos en la tanda en marcha (Generar o Analizar
         #     revelado: libro, PDF y láminas), para el resumen final
@@ -2341,7 +2186,7 @@ class Ventana(ctk.CTk):
         # --- Valores iniciales de las cajas Cámara, Serie y Lámina
         self.ReiniciarCam()
         self.ReiniciarSerie()
-        self.ReiniciarPsd()
+        self.ReiniciarAnalisisRaw()
         self.ReiniciarRevelado()
 
         # --- Cuerpo, dentro del lienzo desplazable (ver Ajustar). El
@@ -2424,7 +2269,6 @@ class Ventana(ctk.CTk):
         self.barra_serie = None
         self.val_copia = None
         self.val_rejilla = None
-        self.btn_analizar = None
 
     #
     def ReiniciarRevelado(self) -> None:
@@ -2455,23 +2299,16 @@ class Ventana(ctk.CTk):
         self.controles_tiff = []
 
     #
-    def ReiniciarPsd(self) -> None:
+    def ReiniciarAnalisisRaw(self) -> None:
         """
         Valores iniciales de las variables de la caja Lámina (se declaran en el
         __init__): al arrancar y al quitar la caja.
         """
         self.ResultadosEnSerie(True)
-        self.imagen_zv = None
         self.ventana_tela = None
-        self.factor = None
-        self.val_recorte = None
-        self.foto_recorte = None
         self.val_mensajes = None
         self.lineas = []
         self.medida = None
-        self.psd = None
-        self.revelado = None
-        self.btn_generar = None
 
     #
     def ResultadosEnSerie(self, poner: bool) -> None:
@@ -2489,12 +2326,11 @@ class Ventana(ctk.CTk):
         if ((rejilla is None) or (btn is None) or (rejilla.pie is None)
                 or (not rejilla.winfo_exists())):
             return
-        izquierdo, resumen, derechos, sep = rejilla.pie
-        analizar = derechos[-1]
+        izquierdo, resumen, _, sep = rejilla.pie
         if not poner:
-            rejilla.poner_pie(izquierdo, resumen, (analizar,), sep)
+            rejilla.poner_pie(izquierdo, resumen, (), sep)
             return
-        rejilla.poner_pie(izquierdo, resumen, (btn, analizar), sep)
+        rejilla.poner_pie(izquierdo, resumen, (btn,), sep)
         self.ActivarCarpeta()
 
     #
@@ -2789,8 +2625,6 @@ class Ventana(ctk.CTk):
         pueden haber cambiado sus archivos desde que se eligió (borrados a
         mano…) y la serie se copia de los que hay.
         """
-        if not self.ConfirmarPreparar():
-            return
         self.QuitarCajas(self.__propias_carpeta)
         self.caja_cam()
         if oecfCalc.problema_carpeta(self.OECF) is not None:     # type: ignore
@@ -2798,34 +2632,11 @@ class Ventana(ctk.CTk):
         self.caja_serie(self.OECF)                              # type: ignore
 
     #
-    def ConfirmarPreparar(self) -> bool:
-        """
-        Preparar vacía la carpeta OECF (salvo las exportaciones del revelador y
-        las subcarpetas): si ya tiene el análisis, o las copias de una
-        preparación anterior, se pide confirmación, con Cancelar por defecto,
-        y se dice que las exportaciones se conservan. Si no hay nada que
-        perder, sí sin preguntar.
-        """
-        kv = self.KV
-        oecf: oecfCalc.OECF = self.OECF                          # type: ignore
-        if hay_review(oecf.carpeta):
-            lineas = [K.tr(kv.TXT_YA_REVIEW), K.tr(kv.TXT_SE_BORRARA)]
-        elif oecf.esPreparada:
-            lineas = [K.tr(kv.TXT_YA_PREPARADA),
-                      K.tr(kv.TXT_SE_BORRARAN_COPIAS)]
-        else:
-            return True
-        n = len(oecf.exportaciones)
-        if n:
-            lineas.insert(1, K.tr_n(kv.TXT_TIFF_SE_CONSERVAN, n).format(n=n))
-        return self.Confirmar(kv.TXT_TITULO_CONFIRMAR, lineas,
-                              kv.TXT_PREPARAR)
-
-    #
     def Confirmar(self, titulo: dict, lineas: list[str],
                   texto_si: dict) -> bool:
         """
-        Pregunta con una ventanita modal de CTk, centrada sobre la principal:
+        Pregunta con una ventana modal pequeña de CTk, centrada sobre la
+        principal:
         el mensaje (sus líneas) y, a la derecha, Cancelar y el botón que acepta
         (texto_si). Intro, Escape y cerrar la ventana cancelan. La respuesta,
         también en self.confirmado.
@@ -2881,7 +2692,7 @@ class Ventana(ctk.CTk):
         medir
         """
         self.QuitarCajas(self.propias_serie)
-        self.caja_psd(self.OECF, motivo)                        # type: ignore
+        self.caja_analisis_raw(self.OECF, motivo)               # type: ignore
 
     #
     def ComprobarVersion(self) -> None:
@@ -2987,8 +2798,7 @@ class Ventana(ctk.CTk):
                 btn.pack(side="left", padx=(self.KV.MARGEN, 0))
             self.Ajustar()
         for btn in (self.btn_revelado, self.btn_abrir_carpeta,
-                    self.btn_analizar_carpeta, self.btn_continuar,
-                    self.btn_liberar):
+                    self.btn_analizar_carpeta, self.btn_liberar):
             btn.configure(state="normal" if libre else "disabled")
         if self.btn_resultados is not None:
             self.btn_resultados.configure(
@@ -3058,18 +2868,7 @@ class Ventana(ctk.CTk):
         oecf: oecfCalc.OECF = self.OECF                          # type: ignore
         review = leer_review(oecf)
 
-        # --- Elegida la carpeta de los originales, la serie aún no está
-        #     leída y el análisis no casa con ella: se toma la serie
-        #     preparada de su carpeta OECF, como si se hubiera elegido esa
-        #     (Preparar la vuelve a leer de la elegida). Tony, 2026-11-12
-        if (review is None) and (not self.preparada):
-            restaurada = restaurar_serie(oecf.carpeta)
-            if restaurada is not None:
-                review = leer_review(restaurada)
-                if review is not None:
-                    self.OECF = oecf = restaurada
-
-        # --- Si aun así no se puede leer, se dice (antes no hacía nada)
+        # --- Si no se puede leer, se dice (antes no hacía nada)
         if review is None:
             messagebox.showerror(
                 K.tr(kv.TXT_TITULO_ERROR),
@@ -3082,8 +2881,8 @@ class Ventana(ctk.CTk):
         # --- Como la caja Lámina (Tony, 2026-11-13: uniforme): a la
         #     izquierda, el recorte del paño y una raya (los pone
         #     ElegirLamina al acabar la medida); a la derecha, arriba, los
-        #     tamaños (también de ElegirLamina) y la ventanita con marco
-        #     (la medida, el libro, el PDF, los avisos, los PSD y el
+        #     tamaños (también de ElegirLamina) y la ventana de estado, con
+        #     marco (la medida, el libro, el PDF, los avisos, los PSD y el
         #     «Finalizado»); abajo, Abrir resultados y Construir PSD
         grupo = ctk.CTkFrame(self.caja_revelado, fg_color="transparent")
         grupo.pack(fill="x")
@@ -3202,12 +3001,6 @@ class Ventana(ctk.CTk):
                 excel, oecf.carpetaReview)
             lineas.append(K.tr(pdf).format(archivo=archivo, error=fallo))
         lineas += problemas
-
-        # --- Exportaciones de menos bits que las definitivas: se avisa
-        #     aquí y en las incidencias (botón, ventana e incidencias.txt)
-        lineas += [Rejilla.texto_incidencia(inc, oecf)
-                   for inc in oecfCalc.calcular_incidencias(oecf)
-                   if inc.codigo == oecfMediadores.KI.TIFF_8_BITS]
         self.ContarIncidencias()
         self.Poner(self.val_revelado,                           # type: ignore
                    kv.SEP_LINEAS.join(lineas))
@@ -3274,8 +3067,8 @@ class Ventana(ctk.CTk):
                          ["border_color"]).pack(side="left", fill="y",
                                                 padx=kv.MARGEN)
 
-        # --- A la derecha, delante de la ventanita, los tamaños (los que
-        #     no caben, inactivos); y abajo, Construir PSD a la derecha de
+        # --- A la derecha, delante de la ventana de estado, los tamaños (los
+        #     que no caben, inactivos); y abajo, Construir PSD a la derecha de
         #     Abrir resultados
         lado.pack(side="left", fill="y", padx=(0, kv.MARGEN),
                   before=self.marco_revelado)

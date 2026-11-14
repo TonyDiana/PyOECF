@@ -45,13 +45,16 @@ class KRV(std.EnumMutable):
     RECORTE_MAX = 0.02
 
     # --- Por qué no se pudo medir una exportación. Compresión: una que
-    #     tifffile no abre sin otra biblioteca (LZW…: imagecodecs)
+    #     tifffile no abre sin otra biblioteca (LZW…: imagecodecs). Pocos
+    #     bits: menos de BITS_DEFINITIVOS por canal (las de 8 bits se
+    #     rechazan: Tony, 2026-11-13)
     ESPACIO_DESCONOCIDO = "ESPACIO_DESCONOCIDO"
     MEDIDA_DISTINTA = "MEDIDA_DISTINTA"
     SIN_TESELAS = "SIN_TESELAS"
     COMPRIMIDA = "COMPRIMIDA"
+    POCOS_BITS = "POCOS_BITS"
 
-    # --- Bits de las exportaciones definitivas (en
+    # --- Bits mínimos de las exportaciones (en
     #     bib/oecfMediadores/common.py: los usa también FE)
     BITS_DEFINITIVOS = KFR.BITS_DEFINITIVOS
 
@@ -99,6 +102,9 @@ def _leer_tiff(review: Review, ruta: Path) -> tuple[np.ndarray, tuple] | str:
     espacio = KICC.ESPACIOS.get(espacio_tiff(ruta) or "")
     if espacio is None:
         return KRV.ESPACIO_DESCONOCIDO
+    bits = bits_tiff(ruta)
+    if (bits is not None) and (bits < KRV.BITS_DEFINITIVOS):
+        return KRV.POCOS_BITS
     try:
         imagen = tifffile.imread(ruta)
     except ValueError:

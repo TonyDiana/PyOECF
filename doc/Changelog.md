@@ -2,20 +2,25 @@
 
 
 ## Deploy
+### 26.11  --- <small>(<ins>*Nov/26*</ins>)</small>
+- Primera versión desplegable.
 
 
 ## Betatester
 
-### 1.5  --- <small>(<ins>*30/Oct/23*</ins>)</small>
+### 2.x  --- <small>(<ins>*Nov/26*</ins>)</small>
+- Acercamiento al tipo de informes y análisis definitivos.
+
+### 1.5  --- <small>(<ins>*30/Oct/26*</ins>)</small>
 - Solucionar los falsos positivos del antivirus de Windows 11 pro.
 
-### 1.4 --- <small>(<ins>*27/Oct/23*</ins>)</small>
+### 1.4 --- <small>(<ins>*27/Oct/26*</ins>)</small>
 - Chagelog sustituye a versiones.
 - Reordenación interna de módulos y paquetes.
 - Limpieza de código.
 - Preparación para recibir tomas tapadas.
 
-### 1.3f --- <small>(<ins>*25/Oct/23*</ins>)</small>
+### 1.3f --- <small>(<ins>*25/Oct/26*</ins>)</small>
 - Unificación con FotoEstacion. 
 - Mejora del aspecto de la hoja de cálculo.
 - Aumento del nivel de análisis.

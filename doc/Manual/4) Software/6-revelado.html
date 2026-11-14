@@ -763,14 +763,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/13-previo.html" class="md-nav__link">
+      <a href="../3%29%20Captura/10-previo.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Checklist previos a la captura
+    Lista de verificación previa a la captura
   
 
     
@@ -791,14 +791,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/x-captura.html" class="md-nav__link">
+      <a href="../3%29%20Captura/11-captura.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Checklist de la sesión de captura
+    Lista de verificación de la sesión de captura
   
 
     
@@ -819,14 +819,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/y-posterior.html" class="md-nav__link">
+      <a href="../3%29%20Captura/12-posterior.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Finalización
+    Lista de verificación posterior a la captura
   
 
     
@@ -847,7 +847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/z-final.html" class="md-nav__link">
+      <a href="../3%29%20Captura/21-final.html" class="md-nav__link">
         
   
   
@@ -1443,7 +1443,7 @@
 <h2 id="requisitos-tecnicos-de-exportacion">Requisitos técnicos de exportación<a class="headerlink" href="#requisitos-tecnicos-de-exportacion" title="Permanent link">¶</a></h2>
 <p>Para que PyOECF pueda leer y medir las imágenes correctamente, la exportación debe cumplir las siguientes condiciones:</p>
 <ul>
-<li><strong>Profundidad de color</strong>: TIFF a <strong>16 bits</strong> por canal. Las exportaciones a 8 bits no contienen precisión tonal suficiente para el análisis.</li>
+<li><strong>Profundidad de color</strong>: TIFF a <strong>16 bits</strong> por canal. Las exportaciones a 8 bits no contienen precisión tonal suficiente para el análisis: el programa no las mide y pide exportarlas de nuevo a 16 bits.</li>
 <li><strong>Compresión</strong>: <strong>Sin compresión</strong> (recomendado) o con compresión <strong>ZIP</strong>. No utilice compresión LZW, ya que no es compatible.</li>
 <li><strong>Perfil de color incrustado</strong>: Debe incluir el perfil de color (<strong>sRGB</strong>, <strong>Adobe RGB</strong> o <strong>ProPhoto RGB</strong>). Si la imagen no lleva el perfil incrustado, el programa no podrá determinar el espacio de color y no la medirá.</li>
 <li><strong>Tamaño completo y sin recortes</strong>: La imagen debe exportarse al 100 % de su resolución original. Verifique en el módulo de revelado que no se haya aplicado ningún recorte automático (algunos programas aplican recortes según la relación de aspecto configurada en la cámara, como 16:9, alterando la proporción del sensor).</li>

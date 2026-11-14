@@ -36,8 +36,9 @@ from xlsxwriter.worksheet import Worksheet
 from bib import std
 from bib.oecfMediadores import KP, KRES, texto_iso, zona_tercio
 from kernel import COM as KCOM, K
-from oecfCalc import (escala_mpx, FilaISO, KS, KTE, KTR, OECF, Review,
-                      signal_para_snr, snr_modelo, ZonaMedida)
+from oecfCalc import (escala_mpx, Exp, FilaISO, KS, KTE, KTR, OECF, Review,
+                      signal_para_snr, snr_modelo, tercios_sombra,
+                      textura as calcular_textura, ZonaMedida)
 
 
 # --- Un tramo de la latitud de texturas: sombra, luz y ancho, en zonas (o
@@ -130,8 +131,8 @@ class KXL(std.EnumMutable):
     # --- Tabla del paño en Datos: tras la dispersión y el recortado por
     #     canal, las dispersiones del verde con las que se mide la textura
     #     (por píxel; ver Excel.disp_textura): paño y tarjeta
-    COL_TELA_PANTALLA = COL_VALORES + (2 * CANALES)
-    COL_TARJETA_PANTALLA = COL_TELA_PANTALLA + 1
+    COL_TELA_PIXEL = COL_VALORES + (2 * CANALES)
+    COL_TARJETA_PIXEL = COL_TELA_PIXEL + 1
 
     # --- Columna del L* del revelador en su tabla de Datos, tras zona y
     #     tercios, y la del contraste de la trama del paño (Tony,
@@ -179,9 +180,6 @@ class KXL(std.EnumMutable):
     C_MPX_REFERENCIA = "MpxReferencia"
     C_TOLERANCIA_LINEAL = "ToleranciaLineal"
     C_UMBRAL_RECORTE = "UmbralRecorte"
-    C_PANO_MINIMO = "PanoMinimo"
-    """Nombre definido de la textura/ruido mínima del paño en la ZV (por
-    debajo, aviso de paño con poca textura)."""
     C_ROSE_TEXTURA = "RoseTextura"
     """Nombre definido de la textura/ruido, por píxel, desde la que se
     aprecia la textura en las sombras (criterio de Rose)."""
@@ -257,9 +255,8 @@ class KXL(std.EnumMutable):
         (C_MPX_REFERENCIA, 8, U_MPX),
         (C_TOLERANCIA_LINEAL, KCOM.TOLERANCIA_LINEAL, U_ZONAS),
         (C_UMBRAL_RECORTE, KCOM.UMBRAL_RECORTE, U_PART),
-        (C_PANO_MINIMO, 6, U_VECES),
-        (C_ROSE_TEXTURA, 5, U_VECES),
-        (C_TEXTURA_JUSTA, 0.8, U_PART),
+        (C_ROSE_TEXTURA, 1.3, U_VECES),
+        (C_TEXTURA_JUSTA, 0.75, U_PART),
         (C_TEXTURA_CONSERVADA, 0.5, U_PART),
         (C_TELA_RECORTADO_APRECIABLE, 0.1, U_PART),
         (C_TELA_RECORTADO_MAX, 0.01, U_PART),
@@ -356,8 +353,8 @@ class KXL(std.EnumMutable):
     T_CAB_TELA_REC_ROJO = "cab_tela_rec_rojo"
     T_CAB_TELA_REC_VERDE = "cab_tela_rec_verde"
     T_CAB_TELA_REC_AZUL = "cab_tela_rec_azul"
-    T_CAB_TELA_PANTALLA = "cab_tela_pantalla"
-    T_CAB_TARJETA_PANTALLA = "cab_tarjeta_pantalla"
+    T_CAB_TELA_PIXEL = "cab_tela_pixel"
+    T_CAB_TARJETA_PIXEL = "cab_tarjeta_pixel"
     T_NOTA_REVELADOR = "nota_revelador"
     T_CAB_REVELADOR = "cab_revelador"
     T_CAB_CONTRASTE = "cab_contraste"
@@ -384,6 +381,13 @@ class KXL(std.EnumMutable):
     T_RUIDO_COLOR_TODO = "ruido_color_todo"
     T_RUIDO_COLOR_DESDE = "ruido_color_desde"
     T_RUIDO_COLOR_NUNCA = "ruido_color_nunca"
+    T_RUIDO_COLOR_NINGUNA = "ruido_color_ninguna"
+
+    # --- Estado del ruido de un canal (Excel.zona_ruido): aceptable en
+    #     todo el rango, desde una zona o en ninguna
+    RUIDO_TODO = 0
+    RUIDO_DESDE = 1
+    RUIDO_NINGUNO = 2
 
     # --- Píxeles defectuosos (Datos, Análisis y PDF): título, calientes y
     #     muertos (cuántos y por megapíxel) y el aviso de que sin tapadas no
@@ -395,7 +399,19 @@ class KXL(std.EnumMutable):
     T_PIXELES_SIN_CALIENTES = "pixeles_sin_calientes"
     T_PIXELES_SIN_MUERTOS = "pixeles_sin_muertos"
     T_PIXELES_NINGUNO = "pixeles_ninguno"
+    T_PIXELES_TIPO_CALIENTES = "pixeles_tipo_calientes"
+    T_PIXELES_TIPO_MUERTOS = "pixeles_tipo_muertos"
     DECIMALES_MPX = 1
+    ZONA_SOMBRA_TEXTO = "Z2"
+    """Cómo dicen «la Z2» los textos de la secuencia de ISO: se cambia por
+    la zona de la toma de sombras (ver Excel.rotulo_sombra)."""
+    SEPARADOR_ZONAS = "/"
+    """Une las zonas de la toma de sombras de la secuencia de ISO, si es
+    la Z2 en unos ISO y la Z3 en otros."""
+    SENAL_RUIDO_DECIMAL = 10
+    """Por debajo de este señal/ruido, el PDF lo escribe con un decimal."""
+    SIN_NUMERO = "—"
+    """Lo que se escribe en una celda de la que no hay número."""
     """Decimales de los píxeles por megapíxel."""
     MARGEN_TERCIO = 1e-9
     """Margen al llevar un suelo a su tercio (evita que un suelo que cae
@@ -734,7 +750,6 @@ class KXL(std.EnumMutable):
     T_SIN_REVELADOR = "sin_revelador"
     T_NOTA_TEXTURAS_RESUMEN = "nota_texturas_resumen"
     T_SIN_TELA = "sin_tela"
-    T_POCA_TEXTURA = "poca_textura"
     T_SEPARADOR_DECIMAL = "separador_decimal"
 
     # --- Zonas de la latitud de texturas en Análisis: en tercios (8 1/3)
@@ -906,9 +921,6 @@ class KXL(std.EnumMutable):
     T_CAB_SOMBRAS_ISO = "cab_sombras_iso"
     T_SOMBRAS_ISO = "sombras_iso"
     T_SOMBRAS_NINGUNA = "sombras_ninguna"
-    T_ISO_HASTA = "iso_hasta"
-    T_ISO_TODOS = "iso_todos"
-    T_ISO_NINGUNO = "iso_ninguno"
 
     # --- Leyenda de los colores del texto
     T_LEYENDA = "leyenda"
@@ -944,13 +956,15 @@ class DatosSerie(NamedTuple):
     """
     Lo de la serie que el libro enseña en Análisis y que no sale de lo
     medido: los avisos (las incidencias, ya con su frase en el idioma del
-    libro), si se puede analizar, si hay balance personalizado y cuántas
-    tomas tiene.
+    libro), si se puede analizar, si hay balance personalizado, cuántas
+    tomas tiene y, de la secuencia de ISO, la exposición de la ZV de cada
+    ISO (la del PDF; vacía sin secuencia).
     """
     avisos: tuple[str, ...]
     esAnalizable: bool
     esBalancePersonalizado: bool
     tomas: int
+    expISO: tuple[Exp, ...] = ()
 
 
 #
@@ -1279,7 +1293,7 @@ class Excel(object):
             t[KXL.T_CAB_DISP_ROJO], t[KXL.T_CAB_DISP_VERDE],
             t[KXL.T_CAB_DISP_AZUL], t[KXL.T_CAB_TELA_REC_ROJO],
             t[KXL.T_CAB_TELA_REC_VERDE], t[KXL.T_CAB_TELA_REC_AZUL],
-            t[KXL.T_CAB_TELA_PANTALLA], t[KXL.T_CAB_TARJETA_PANTALLA]))
+            t[KXL.T_CAB_TELA_PIXEL], t[KXL.T_CAB_TARJETA_PIXEL]))
         hoja.set_row(fila, KXL.ALTO_CABECERA)
         self.__filas[KXL.F_TELA] = fila + 1
         for i, toma in enumerate(d.zonas):
@@ -1301,8 +1315,8 @@ class Excel(object):
                                   numero)
             formato = self.celda(KXL.COLOR_DATO, banda, "center",
                                  KXL.NUM_TRES)
-            for c, valor in zip((KXL.COL_TELA_PANTALLA,
-                                 KXL.COL_TARJETA_PANTALLA),
+            for c, valor in zip((KXL.COL_TELA_PIXEL,
+                                 KXL.COL_TARJETA_PIXEL),
                                 self.disp_textura(toma)):
                 if (valor is None) or (not math.isfinite(valor)):
                     hoja.write_blank(fila, col + c, None, formato)
@@ -1849,9 +1863,9 @@ class Excel(object):
             # --- La textura, con las dispersiones del verde por píxel
             #     (tabla del paño de Datos; ver disp_textura)
             tela = self.ref(KXL.T_HOJA_DATOS, pz,
-                            KXL.COLUMNA_INICIO + KXL.COL_TELA_PANTALLA)
+                            KXL.COLUMNA_INICIO + KXL.COL_TELA_PIXEL)
             tarjeta = self.ref(KXL.T_HOJA_DATOS, pz,
-                               KXL.COLUMNA_INICIO + KXL.COL_TARJETA_PANTALLA)
+                               KXL.COLUMNA_INICIO + KXL.COL_TARJETA_PIXEL)
             recorte = self.ref(KXL.T_HOJA_DATOS, pz, verde + KXL.CANALES)
             # --- El contraste de la trama del paño (tabla del revelador de
             #     Datos) y su fracción del de la ZV (Tony, 2026-11-13)
@@ -2208,13 +2222,6 @@ class Excel(object):
                 margen=k[KXL.C_MARGEN_SOMBRAS])
         fila = self.nota_tarjeta(hoja, fila + 1, col, ultima, nota_texturas,
                                  KXL.ANCHOS_RESUMEN, nota)
-
-        # --- Si el paño tiene poca textura, por qué las sombras no salen
-        poca = self.aviso_poca_textura(k)
-        if poca:
-            fila = self.nota_tarjeta(hoja, fila + 1, col, ultima, poca,
-                                     KXL.ANCHOS_RESUMEN,
-                                     self.nota_resumen(KXL.COLOR_NEGATIVO))
 
         # --- Latitud por canal (de Cálculo, bloque 1)
         fila = self.resumen_latitud(hoja, fila + 2)
@@ -3119,13 +3126,15 @@ class Excel(object):
         k = self.valores_constantes()
         umbral = self.umbral_iso(k)
         self.titulo(hoja, fila, col, t[KXL.T_TITULO_ISO],
-                    Excel.con_nombre(t[KXL.T_NOTA_ISO]).format(
+                    Excel.con_nombre(
+                        self.rotulo_sombra(t[KXL.T_NOTA_ISO])).format(
                         umbral=(KXL.SIN_DATO if umbral is None
                                 else self.numero_texto(umbral, 1)),
                         justa=round(k[KXL.C_TEXTURA_JUSTA] * KXL.CIEN)),
                     KXL.ANCHOS_ISO)
         fila += 3
-        self.cabecera(hoja, fila, col, tuple(t[c] for c in (
+        self.cabecera(hoja, fila, col, tuple(
+            self.rotulo_sombra(t[c]) for c in (
             KXL.T_CAB_ISO, KXL.T_CAB_Z2, KXL.T_CAB_DESVIACION_ISO,
             KXL.T_CAB_LECTURA_ISO, KXL.T_CAB_RUIDO_ZV, KXL.T_CAB_RUIDO_Z2,
             KXL.T_CAB_TEXTURA_Z2, KXL.T_CAB_TEXTURA_RUIDO_Z2,
@@ -3163,6 +3172,28 @@ class Excel(object):
         return "" if (f.tercio_z2 is None) else self.nombre_zona(f.tercio_z2)
 
     #
+    def zona_sombra_iso(self) -> str:
+        """
+        Nombre de la zona de la toma de sombras de la secuencia de ISO: Z2,
+        Z3 o Z2/Z3 si hay ISO de las dos (la Z2 si no hay ninguno
+        medible).
+        """
+        sitios = sorted({tercios_sombra(f.tercio_z2)
+                         for f in self.__datos.filasISO if f.medible}
+                        - {None})
+        return KXL.SEPARADOR_ZONAS.join(
+            self.nombre_zona(sitio) for sitio in (sitios or [KS.TERCIOS_Z2]))
+
+    #
+    def rotulo_sombra(self, texto: str) -> str:
+        """
+        Un texto de la secuencia de ISO (antes de rellenarlo) con la «Z2»
+        cambiada por la zona de la toma de sombras, si es la Z3 o hay de
+        las dos (Z2/Z3).
+        """
+        return texto.replace(KXL.ZONA_SOMBRA_TEXTO, self.zona_sombra_iso())
+
+    #
     def nota_iso(self, f: FilaISO) -> str:
         """
         Nota de un ISO de la secuencia de ISO: que no se puede medir, que
@@ -3172,7 +3203,8 @@ class Excel(object):
         if not f.medible:
             return t[KXL.T_ISO_SIN_MEDIR]
         if f.estimada:
-            return t[KXL.T_ISO_ESTIMADO].format(zona=self.zona_z2(f))
+            return self.rotulo_sombra(t[KXL.T_ISO_ESTIMADO]).format(
+                zona=self.zona_z2(f))
         return ""
 
     #
@@ -3311,27 +3343,55 @@ class Excel(object):
         return self.__textos[clave].format(cuanto=cuanto)
 
     #
-    def conclusion_iso(self, k: dict, umbral: float | None) -> str:
+    def tv_iso(self, f: FilaISO) -> str:
         """
-        Frase final de la secuencia de ISO para el estudiante: hasta qué
-        ISO las sombras de la Z2 conservan la textura (justa o se ve) y
-        desde cuál hay que subirlas ("" sin ningún ISO con dato)
+        Tiempo de exposición de la ZV de un ISO de la secuencia, como lo
+        marca la cámara (1/20 s); "" sin dato.
         """
-        t = self.__textos
-        medidos = [(f.iso, self.nivel_textura_iso(f, k, umbral))
-                   for f in self.__datos.filasISO]
-        medidos = [(iso, nivel) for iso, nivel in medidos
-                   if nivel is not None]
-        if not medidos:
+        exp = next((e for e in self.__serie.expISO
+                    if (e.iso is not None) and (round(e.iso) == f.iso)), None)
+        if (exp is None) or (exp.tv is None):
             return ""
-        pierde = next((i for i, (_, nivel) in enumerate(medidos)
-                       if nivel == 0), None)
-        if pierde is None:
-            return t[KXL.T_ISO_TODOS]
-        if pierde == 0:
-            return t[KXL.T_ISO_NINGUNO].format(iso=medidos[0][0])
-        return t[KXL.T_ISO_HASTA].format(hasta=medidos[pierde - 1][0],
-                                         desde=medidos[pierde][0])
+        return OECF.TextoTV(exp.tv)
+
+    #
+    def diafragma_iso(self) -> str:
+        """
+        Diafragma de la secuencia de ISO, si es el mismo en todas sus tomas
+        (22); "" si cambia o no hay dato.
+        """
+        diafragmas = {e.f for e in self.__serie.expISO if e.f is not None}
+        return OECF.TextoF(diafragmas.pop()) if (len(diafragmas) == 1) else ""
+
+    #
+    def senal_ruido_iso(self, ruido: float | None) -> str:
+        """
+        Señal/ruido de la tarjeta en una toma de la secuencia de ISO, desde
+        su ruido (dispersión relativa), en número entero, o con un decimal
+        si es menor de KXL.SENAL_RUIDO_DECIMAL (para que un 9,9 no salga
+        como un 10 en rojo); "" sin dato.
+        """
+        if (ruido is None) or (ruido <= 0):
+            return ""
+        senal = 1 / ruido
+        return self.numero_texto(
+            senal, 1 if (senal < KXL.SENAL_RUIDO_DECIMAL) else 0)
+
+    #
+    @staticmethod
+    def nivel_ruido_iso(ruido: float | None, k: dict) -> int | None:
+        """
+        Cómo es el ruido de una toma de la secuencia de ISO, con el orden
+        de los colores del PDF (KPDF.SEMAFORO_ISO): 0 mal (señal/ruido por
+        debajo de C_SNR_MINIMA), 1 justo (hasta C_SNR_EXCELENTE), 2 bien;
+        None sin dato.
+        """
+        if (ruido is None) or (ruido <= 0):
+            return None
+        senal = 1 / ruido
+        if senal < k[KXL.C_SNR_MINIMA]:
+            return 0
+        return 1 if (senal < k[KXL.C_SNR_EXCELENTE]) else 2
 
     #
     def zonas_canal(self, k: dict) -> dict[str, list]:
@@ -3627,7 +3687,7 @@ class Excel(object):
                 textura.append(None)
                 ruido.append(None)
             else:
-                tx = math.sqrt(max(0.0, (tela ** 2) - (tarjeta ** 2)))
+                tx = calcular_textura(tela, tarjeta)
                 textura.append(tx)
                 ruido.append((tx / tarjeta) if (tarjeta > 0) else None)
             recorte = z.telaRecortadoRGB if z else None
@@ -3807,21 +3867,6 @@ class Excel(object):
             ".", self.__textos[KXL.T_SEPARADOR_DECIMAL])
 
     #
-    def aviso_poca_textura(self, k: dict) -> str:
-        """
-        Aviso de que el paño tiene poca textura: su textura/ruido en la
-        Z-V no llega a C_PANO_MINIMO, y las sombras de la latitud de
-        texturas pueden salir cortas o no medirse ("" si llega o no hay
-        dato)
-        """
-        ruido = self.texturas(k)[KXL.T_CAB_TEXTURA_RUIDO][KS.TERCIOS_LADO]
-        if (ruido is None) or (ruido >= k[KXL.C_PANO_MINIMO]):
-            return ""
-        return self.__textos[KXL.T_POCA_TEXTURA].format(
-            textura=self.numero_texto(ruido, 1),
-            minimo=k[KXL.C_PANO_MINIMO])
-
-    #
     def lineas_pixeles(self) -> list[str]:
         """
         Las líneas de los píxeles defectuosos, para Datos, Análisis y el
@@ -3854,6 +3899,30 @@ class Excel(object):
         return lineas
 
     #
+    def filas_pixeles(self) -> list[tuple[str, str, str, bool | None]]:
+        """
+        Las filas de la tabla de píxeles defectuosos del PDF, calientes y
+        muertos: su rótulo, cuántos, cuántos por megapíxel y si no hay
+        ninguno (True), hay (False) o no se pudieron contar (None, con
+        «—» en lugar de los números). Vacía si no se contaron píxeles.
+        """
+        t, pixeles = self.__textos, self.__datos.pixeles
+        if pixeles is None:
+            return []
+        filas = []
+        for rotulo, n, mpx in (
+                (t[KXL.T_PIXELES_TIPO_CALIENTES], pixeles.calientes,
+                 pixeles.calientesMpx),
+                (t[KXL.T_PIXELES_TIPO_MUERTOS], pixeles.muertos,
+                 pixeles.muertosMpx)):
+            if (n is None) or (mpx is None):
+                filas.append((rotulo, KXL.SIN_NUMERO, KXL.SIN_NUMERO, None))
+            else:
+                filas.append((rotulo, str(n), self.numero_texto(
+                    mpx, KXL.DECIMALES_MPX), n == 0))
+        return filas
+
+    #
     def suelos_ruido(self, k: dict) -> list[float | str]:
         """
         Por canal (rojo, verde y azul), la zona desde la que el ruido es
@@ -3864,19 +3933,16 @@ class Excel(object):
         return [canal[KRES.R_SUELO_SUGERIDO] for canal in self.canales(k)]
 
     #
-    def ruido_por_tercio(self, suelo: float | str) -> tuple[bool | None, ...]:
+    @staticmethod
+    def __tercio_ruido(suelo: float) -> int:
         """
-        Para cada tercio de Z0 a ZX, si su ruido es aceptable con este suelo
-        (un tercio lo es desde el suelo hacia las luces): None en todos si
-        no hay dato.
+        Primer tercio (tercioEV) con ruido aceptable para este suelo, en
+        zonas: a partir de él, todos hacia las luces. Por debajo de
+        -KS.TERCIOS_LADO es todo el rango; por encima de KS.TERCIOS_LADO,
+        ninguno.
         """
-        tercios = 2 * KS.TERCIOS_LADO + 1
-        if isinstance(suelo, float):
-            return tuple(((i / KP.TERCIOS) + KXL.MARGEN_TERCIO) >= suelo
-                         for i in range(tercios))
-        if suelo == self.__textos[KXL.V_NO_ALCANZADO]:
-            return (False,) * tercios
-        return (None,) * tercios
+        return (math.ceil((suelo * KP.TERCIOS) - KXL.MARGEN_TERCIO)
+                - KS.TERCIOS_LADO)
 
     #
     def frase_ruido(self, canal: str, suelo: float | str) -> str:
@@ -3888,14 +3954,32 @@ class Excel(object):
         if isinstance(suelo, float):
             if suelo <= 0:
                 return t[KXL.T_RUIDO_COLOR_TODO].format(canal=canal)
-            tercio_ev = (math.ceil((suelo * KP.TERCIOS) - KXL.MARGEN_TERCIO)
-                         - KS.TERCIOS_LADO)
+            tercio_ev = self.__tercio_ruido(suelo)
             if tercio_ev <= KS.TERCIOS_LADO:
                 return t[KXL.T_RUIDO_COLOR_DESDE].format(
                     canal=canal, zona=self.nombre_zona(tercio_ev))
         if suelo:
             return t[KXL.T_RUIDO_COLOR_NUNCA].format(canal=canal)
         return ""
+
+    #
+    def zona_ruido(self, suelo: float | str) -> tuple[str, int | None]:
+        """
+        Zona desde la que el ruido de un canal es aceptable, con su suelo,
+        para la tabla del PDF, y su estado (KXL.RUIDO_*): la primera del
+        rango si lo es en todo él, una zona o «ninguna zona». ("", None)
+        sin dato.
+        """
+        if isinstance(suelo, float):
+            tercio_ev = self.__tercio_ruido(suelo)
+            if tercio_ev <= -KS.TERCIOS_LADO:
+                return self.nombre_zona(-KS.TERCIOS_LADO), KXL.RUIDO_TODO
+            if tercio_ev <= KS.TERCIOS_LADO:
+                return self.nombre_zona(tercio_ev), KXL.RUIDO_DESDE
+        if suelo:
+            return (self.__textos[KXL.T_RUIDO_COLOR_NINGUNA],
+                    KXL.RUIDO_NINGUNO)
+        return "", None
 
     #
     def frases_ruido(self, k: dict) -> list[str]:

@@ -372,12 +372,6 @@ class KI(std.EnumMutable):
     de exposición, más que COM.TOLERANCIA_LINEAL (antiparpadeo, obturador
     o luz que parpadea): en cuánto, como porcentaje."""
 
-    # --- Exportaciones del revelador (OECF.exportaciones)
-    TIFF_8_BITS = "TIFF_8_BITS"
-    """Exportaciones del revelador con menos de KRV.BITS_DEFINITIVOS bits
-    por canal (sus posiciones, en tercioEVs): valen para probar el flujo,
-    no para el análisis definitivo. Solo se avisa (Tony, 2026-10-21)."""
-
 
 #
 # --- Marcadores que lleva la frase de cada incidencia, y de dónde sale cada
@@ -385,7 +379,7 @@ class KI(std.EnumMutable):
 #     escribe la frase rellena los marcadores con ``str.format``:
 #     - n: número de tomas (``len(tomas)``) si las hay; si no, ``n``. Si la
 #       frase es una tupla (singular, plural), n elige la forma, aunque la
-#       frase no lo escriba (LUZ_CAMBIO, TIFF_8_BITS)
+#       frase no lo escriba (LUZ_CAMBIO)
 #     - esperadas, esperados: ``esperado``
 #     - esperada: ``esperado``, como zona (SALTO: el tercioEV esperado)
 #     - real, zona: ``tercioEV``, como zona (SALTO: el tercioEV real)
@@ -398,13 +392,11 @@ class KI(std.EnumMutable):
 #     - porcentaje: ``porcentaje``, ya como texto con el decimal del idioma
 #     - lados: texto compuesto desde ``lados`` (LUZ_DESIGUAL), con
 #       el inicio «, sobre todo» y la unión «y»
-#     - definitivos: ``KRV.BITS_DEFINITIVOS``, de PyOECF
 #     Los textos de formato (ident, zonas, porcentaje, lados…) los pone cada
 #     proyecto: aquí solo se dice qué marcadores lleva cada frase
 class KMA(std.EnumMutable):
     """ Nombres de los marcadores de las frases de las incidencias. """
 
-    DEFINITIVOS = "definitivos"
     ESPERADA = "esperada"
     ESPERADAS = "esperadas"
     ESPERADOS = "esperados"
@@ -452,8 +444,7 @@ MARCADORES_INCIDENCIA: dict[str, tuple[str, ...]] = {
     KI.REVISAR_SERIE: (KMA.PORCENTAJE,),
     KI.REPETIR_SERIE: (KMA.PORCENTAJE,),
     KI.LUZ_CAMBIO: (KMA.N, KMA.IDENTS),
-    KI.SOMBRAS_ALZADAS: (KMA.PORCENTAJE,),
-    KI.TIFF_8_BITS: (KMA.N, KMA.DEFINITIVOS, KMA.ZONAS)}
+    KI.SOMBRAS_ALZADAS: (KMA.PORCENTAJE,)}
 
 
 #
@@ -517,15 +508,19 @@ TEXTOS_INCIDENCIA_ES: dict[str, str | tuple[str, str]] = {
         "Falta el marcador final de la secuencia de ISO: se toman como "
         "suyas todas las tomas que siguen al marcador inicial."),
     KI.ISO_ESTIMADO: (
-        _("En {n} ISO, la Z2 no llegó a su sitio por el tiempo más corto "
-          "de la cámara: su textura es una estimación: {idents}."),
-        _("En {n} ISO, la Z2 no llegó a su sitio por el tiempo más corto "
-          "de la cámara: su textura es una estimación: {idents}.")),
+        _("En {n} ISO, la toma de sombras (Z2 o Z3) no llegó a su sitio por "
+          "el tiempo más corto de la cámara: su textura es una estimación: "
+          "{idents}."),
+        _("En {n} ISO, la toma de sombras (Z2 o Z3) no llegó a su sitio por "
+          "el tiempo más corto de la cámara: su textura es una estimación: "
+          "{idents}.")),
     KI.ISO_SIN_MEDIR: (
         _("No se puede medir {n} ISO de la secuencia: le falta la ZV o la "
-          "Z2, o su Z2 se aparta demasiado: {idents}."),
+          "toma de sombras (Z2 o Z3), o esta se aparta demasiado: "
+          "{idents}."),
         _("No se pueden medir {n} ISO de la secuencia: les falta la ZV o "
-          "la Z2, o su Z2 se aparta demasiado: {idents}.")),
+          "la toma de sombras (Z2 o Z3), o esta se aparta demasiado: "
+          "{idents}.")),
     KI.SIN_TOMA: _("No hay toma en {zona}."),
     KI.REPETIDA: _("Hay {n} tomas en {zona}."),
     KI.FUERA: (
@@ -571,14 +566,7 @@ TEXTOS_INCIDENCIA_ES: dict[str, str | tuple[str, str]] = {
         "Las tomas de sombra salen hasta un {porcentaje} % más claras "
         "de lo que dice su tiempo de exposición. Puede deberse al "
         "antiparpadeo de la cámara, al obturador o a una luz que "
-        "parpadea: desactive el antiparpadeo y repita la serie."),
-    KI.TIFF_8_BITS: (
-        _("Esta exportación del revelador tiene menos de {definitivos} "
-          "bits: vale para probar, no para el análisis definitivo: "
-          "{zonas}."),
-        _("Estas exportaciones del revelador tienen menos de "
-          "{definitivos} bits: valen para probar, no para el análisis "
-          "definitivo: {zonas}."))}
+        "parpadea: desactive el antiparpadeo y repita la serie.")}
 
 
 #
@@ -632,9 +620,8 @@ class KP(std.EnumMutable):
 class KFR(std.EnumMutable):
     """ Constantes de las frases de las incidencias. """
 
-    # --- Bits de las exportaciones definitivas: con menos (las de 8 bits
-    #     de XnView, p. ej.), solo valen para probar el flujo y se avisa
-    #     (Tony, 2026-10-19 y 2026-10-21)
+    # --- Bits mínimos de las exportaciones del revelador: con menos (las de
+    #     8 bits de XnView, p. ej.) no se miden (Tony, 2026-11-13)
     BITS_DEFINITIVOS = 16
 
     LADO_IZQUIERDA = "IZQUIERDA"
@@ -837,6 +824,4 @@ def marcadores_incidencia(incidencia: Mapping, archivos: Sequence[str],
         lados = incidencia.get(KFR.J_LADOS) or ()
         datos[KMA.LADOS] = (txt_donde.format(donde=txt_y.join(
             textos_lado[lado] for lado in lados)) if lados else "")
-    if KMA.DEFINITIVOS in marcadores:
-        datos[KMA.DEFINITIVOS] = str(KFR.BITS_DEFINITIVOS)
     return datos

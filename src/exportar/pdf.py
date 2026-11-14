@@ -1,10 +1,12 @@
 # -*- coding: utf-8 *-*
 """
     :Propósito: PDF de la cámara para el estudiante (dos páginas A4,
-                con matplotlib; tres con secuencia de ISO): latitud de
-                texturas, curva tonal y diferencia en L*, recomendaciones
-                para la curva del revelador, ruido aceptable por color,
-                balances de blancos y la secuencia de ISO.
+                con matplotlib; una tercera solo si la secuencia de ISO
+                no cabe en la segunda): latitud de texturas, curva tonal
+                y diferencia en L*, recomendaciones para la curva del
+                revelador, balances de blancos con los Kelvin que poner
+                en la cámara, ruido aceptable por color, píxeles
+                defectuosos y la secuencia de ISO.
                 Lo calcula el libro (Excel): el PDF solo lo dibuja. Sin
                 los datos del estudiante (ni sus decisiones ni el L* que
                 escribe a mano). Sin textos propios: los recibe ya
@@ -42,7 +44,7 @@ from matplotlib.transforms import Bbox
 # --- Bibliotecas internas
 from bib import std
 from bib.oecfMediadores import KP
-from oecfCalc import OECF, Ventana
+from oecfCalc import BalanceMedido, OECF, Ventana
 from .excel import KXL, Excel, PuntoCurva
 
 
@@ -98,29 +100,33 @@ class KPDF(std.EnumMutable):
     SUBTITULO_Y = 0.931
     PIE_Y = 0.025
 
-    # --- Página 1: latitud (sección, nota, escala de zonas y cifras) y
-    #     las dos gráficas: (izquierda, abajo, ancho, alto). La escala va
-    #     de margen a margen, como la raya de las secciones; las
-    #     gráficas dejan sitio a la izquierda para el nombre del eje
-    APARTADO_LATITUD = 0.875
+    # --- Página 1: latitud (sección, nota, escala de zonas y cifras), las
+    #     dos gráficas una al lado de otra con su título cada una
+    #     (izquierda, abajo, ancho, alto; los títulos, de dónde a dónde
+    #     van con su raya) y, debajo, las recomendaciones. La escala va de
+    #     margen a margen, como la raya de las secciones; las gráficas
+    #     dejan sitio a la izquierda para el nombre del eje (Tony,
+    #     2026-11-13: todo más compacto, para que el PDF salga en dos
+    #     páginas)
+    APARTADO_LATITUD = 0.88
     SUBRAYA = 0.008
-    ESCALA = (IZQUIERDA, 0.725, DERECHA - IZQUIERDA, 0.1)
-    CIFRAS_Y = 0.62
-    CIFRAS_ALTO = 0.085
+    ESCALA = (IZQUIERDA, 0.745, DERECHA - IZQUIERDA, 0.095)
+    CIFRAS_Y = 0.672
+    CIFRAS_ALTO = 0.065
     CIFRAS_ANCHO = 0.43
     CIFRAS_PASO = 0.45
-    APARTADO_CURVA = 0.585
-    GRAF_IZQUIERDA = 0.1
-    GRAF_CURVA = (GRAF_IZQUIERDA, 0.33, DERECHA - GRAF_IZQUIERDA, 0.225)
-    APARTADO_DIFERENCIA = 0.275
-    GRAF_DIFERENCIA = (GRAF_IZQUIERDA, 0.06, DERECHA - GRAF_IZQUIERDA,
-                       0.185)
+    APARTADO_CURVA = 0.64
+    TITULO_CURVA = (IZQUIERDA, 0.48)
+    GRAF_CURVA = (0.1, 0.385, 0.38, 0.23)
+    TITULO_DIFERENCIA = (0.535, DERECHA)
+    GRAF_DIFERENCIA = (0.585, 0.385, DERECHA - 0.585, 0.23)
+    APARTADO_RECOMENDACIONES = 0.335
 
     # --- Recuadros de las cifras: margen interior, altura de la cifra
     #     grande y de «de Zx a Zy» sobre su base, y radio de las esquinas
     CIFRAS_MARGEN = 0.02
-    CIFRAS_NUMERO_Y = 0.025
-    CIFRAS_DESDE_Y = 0.028
+    CIFRAS_NUMERO_Y = 0.013
+    CIFRAS_DESDE_Y = 0.016
     CIFRAS_REDONDEO = 0.008
 
     # --- Escala de zonas (en peine): tira de grises, un paso por tercio,
@@ -132,8 +138,8 @@ class KPDF(std.EnumMutable):
     #     grosor
     ALTO_ZONA = 1
     ALTO_TERCIO = 2 / 3
-    TRAMO_APRECIABLE = (1.45, 2.5)
-    TRAMO_RECOMENDADO = (1.2, 4)
+    TRAMO_APRECIABLE = (1.85, 2.5)
+    TRAMO_RECOMENDADO = (1.4, 4)
     PATA_TRAMO = 0.1
     DIENTE_ZONA = 0.3
     DIENTE_TERCIO = 0.15
@@ -141,13 +147,16 @@ class KPDF(std.EnumMutable):
     LINEA_TIRA = 0.5
     NOMBRES_Y = -0.62
     MARCO_ZV = "round,pad=0.25"
-    ESCALA_Y = (-0.95, 1.65)
+    ESCALA_Y = (-0.95, 2.0)
 
-    # --- Página 2: secciones y tablas (alto de fila; separación entre
-    #     secciones; de la sección a lo alto de su nota y a su tabla (con
-    #     nota o sin ella); hueco mínimo de la nota a la tabla, si la nota
-    #     es tan larga que la empuja, y de una tabla a la nota de debajo)
-    APARTADO_RECOMENDACIONES = 0.875
+    # --- Página 2 (y la 3, si la secuencia de ISO no cabe en la 2):
+    #     secciones y tablas (dónde empieza la primera; alto de fila;
+    #     separación entre secciones; de la sección a lo alto de su nota
+    #     y a su tabla (con nota o sin ella); hueco mínimo de la nota a la
+    #     tabla, si la nota es tan larga que la empuja, y de una tabla a
+    #     la nota de debajo). Nada se pinta por debajo de LIMITE_ABAJO
+    APARTADO_PAGINA = 0.875
+    LIMITE_ABAJO = 0.05
     ALTO_FILA = 0.019
     ENTRE_APARTADOS = 0.032
     A_LA_NOTA = 0.014
@@ -161,8 +170,11 @@ class KPDF(std.EnumMutable):
     # --- Balances de blancos: columnas (nombre; Kelvin anotado y su color;
     #     color del Kelvin medido y su número: los dos colores quedan juntos
     #     en el centro, para compararlos), cuáles son las de color y las
-    #     cabeceras unidas sobre dos columnas (primera columna, cuántas)
-    ANCHOS_BALANCES = (1.6, 0.7, 0.3, 0.3, 0.7)
+    #     cabeceras unidas sobre dos columnas (primera columna, cuántas).
+    #     La tabla ocupa la mitad izquierda: hasta BALANCES_ANCHO del
+    #     ancho entre márgenes (Tony, 2026-11-13)
+    BALANCES_ANCHO = 0.5
+    ANCHOS_BALANCES = (1.2, 0.8, 0.4, 0.4, 0.8)
     COL_COLOR_ANOTADO = 2
     COL_COLOR_MEDIDO = 3
     UNIONES_BALANCES = ((1, 2), (3, 2))
@@ -177,23 +189,32 @@ class KPDF(std.EnumMutable):
                      (7500, "#BCD3FF"), (10000, "#9DBFFF"))
     COLOR_SIN_KELVIN = "#BFBFBF"
 
-    # --- Ruido aceptable por color: una franja por canal (un paso por
-    #     tercio, de Z0 a ZX), con una marca de su color a la izquierda; el
-    #     nombre de las zonas enteras debajo y la frase de cada canal bajo
-    #     ellas (alto de las franjas, hueco entre ellas, ancho de la marca,
-    #     de la marca a la franja, y de unas líneas a otras)
-    ALTO_FRANJA = 0.014
-    HUECO_FRANJA = 0.005
-    MARCA_FRANJA = 0.006
-    SEPARA_FRANJA = 0.006
-    ALTO_ZONAS_FRANJA = 0.014
-    ALTO_FRASE = 0.016
+    # --- Ruido aceptable por color: una tabla de tres filas (canal y zona
+    #     desde la que su ruido es aceptable) a la izquierda, hasta esta
+    #     fracción del ancho entre márgenes y con estos anchos de columna
+    #     (Tony, 2026-11-13: sustituye a las franjas por tercio). Los dos
+    #     colores fuertes son también los del semáforo de la secuencia de
+    #     ISO; los tenues, los de las celdas de las tablas (bien, aviso,
+    #     mal). El canal, el color suyo aclarado esta fracción hacia el
+    #     blanco
+    RUIDO_TABLA_ANCHO = 0.5
+    ANCHOS_RUIDO = (0.8, 1.2)
     RUIDO_BIEN = "#5FA777"
     RUIDO_MAL = "#D9534F"
-    RUIDO_SIN_DATO = COLOR_SIN_KELVIN
+    TINTE_BIEN = "#CDE7D3"
+    TINTE_AVISO = "#FBE3B0"
+    TINTE_MAL = "#F3C6C2"
+    TINTES_RUIDO = {KXL.RUIDO_TODO: TINTE_BIEN, KXL.RUIDO_DESDE: TINTE_AVISO,
+                    KXL.RUIDO_NINGUNO: TINTE_MAL}
+    CANAL_ACLARADO = 0.7
 
-    # --- Píxeles defectuosos: los calientes y los muertos, en una línea
-    SEPARADOR_LINEAS = "   ·   "
+    # --- Tablas de la derecha, junto a las de la izquierda (píxeles
+    #     defectuosos junto al ruido, Kelvin neutros junto a los
+    #     balances): desde esta fracción del ancho entre márgenes, con
+    #     estos anchos de columna (Tony, 2026-11-13)
+    TABLAS_DERECHA_DESDE = 0.54
+    ANCHOS_PIXELES = (1.5, 0.9, 0.9)
+    ANCHOS_NEUTRAS = (1.0, 0.7, 1.25, 1.25)
 
     # --- Gráficas: grosor de las líneas, tamaño de los puntos y ancho de
     #     las barras (en zonas). El esperado, una banda gris ancha y casi
@@ -220,6 +241,14 @@ class KPDF(std.EnumMutable):
     FORMATO_PORCENTAJE = "{} %"
     FORMATO_NOTA_ISO = "{rotulo} {iso}: {nota}"
 
+    # --- Las filas de la tabla que llevan semáforo (de arriba abajo: el
+    #     tiempo, el señal/ruido en la ZV y en la Z2, la textura en la Z2 y
+    #     desde qué zona hay textura, contadas sin la cabecera; Tony,
+    #     2026-11-13)
+    FILA_SR_ZV = 1
+    FILA_SR_Z2 = 2
+    FILA_TEXTURA_ISO = 3
+
     # --- Textos (claves; los traduce la aplicación)
     T_TITULO_PDF = "titulo_pdf"
     T_SUBTITULO_PDF = "subtitulo_pdf"
@@ -232,6 +261,43 @@ class KPDF(std.EnumMutable):
     T_SIN_FASE_2 = "sin_fase_2"
     T_PIE_PDF = "pie_pdf"
     T_PAGINA = "pagina"
+    T_AVISO_EXPOSICION_ISO = "aviso_exposicion_iso"
+    T_CAB_CANTIDAD = "cab_cantidad_pixeles"
+    T_CAB_EN_CAMARA = "cab_en_camara"
+    T_CAB_KELVIN_LUZ = "cab_kelvin_luz"
+    T_CAB_LUZ = "cab_luz_neutra"
+    T_CAB_LUZ_MIRED = "cab_luz_mired"
+    T_CAB_POR_MPX = "cab_por_mpx"
+    T_CAB_RUIDO_DESDE = "cab_ruido_desde"
+    T_CAB_SR_Z2 = "cab_sr_z2"
+    T_CAB_SR_ZV = "cab_sr_zv"
+    T_CAB_TV_ISO = "cab_tv_iso"
+    T_LUZ_CALIDA = "luz_calida"
+    T_LUZ_FLASH = "luz_flash"
+    T_LUZ_LED_FRIO = "luz_led_frio"
+    T_LUZ_SOL = "luz_sol"
+    T_NOTA_NEUTRAS = "nota_neutras"
+    T_SIN_DATOS_NEUTRA = "sin_datos_neutra"
+
+    # --- Kelvin neutros, junto a la tabla de balances: qué Kelvin poner en
+    #     la cámara para que salga neutra con cada luz habitual (su rótulo
+    #     y su Kelvin, de menor a mayor: no en orden alfabético), con esta
+    #     tolerancia en mired (MIRED entre los Kelvin; Kelvin y mired a la
+    #     vez, para ir metiendo el mired en el vocabulario del alumno).
+    #     Los Kelvin de la cámara se redondean a REDONDEO_KELVIN, y hacen
+    #     falta al menos PUNTOS_NEUTRAS balances con Kelvin anotado y
+    #     medido. Si la luz queda fuera de lo medido, se estima prolongando
+    #     la curva hasta EXTRAPOLA_MIRED mired más allá (y se marca como
+    #     estimado); más lejos, sin datos. 5500 K es una referencia, no el
+    #     Sol de mediodía; los LED de tienda son de 3200 o 6400 K (Tony,
+    #     2026-11-13: «prefiero una estimación que una nada»)
+    LUCES_NEUTRAS = ((T_LUZ_CALIDA, 3200), (T_LUZ_SOL, 5000),
+                     (T_LUZ_FLASH, 5500), (T_LUZ_LED_FRIO, 6400))
+    EXTRAPOLA_MIRED = 15
+    MIRED = 1000000
+    PUNTOS_NEUTRAS = 2
+    REDONDEO_KELVIN = 10
+    TOLERANCIA_MIRED = 5
 
 
 # --- Ver KPDF.MOTOR
@@ -247,7 +313,8 @@ class Pdf(object):
     si no hay); escribir() la graba.
     """
 
-    __slots__ = ["__datos", "__estudiante", "__excel", "__ruta", "__textos"]
+    __slots__ = ["__datos", "__estudiante", "__excel", "__iso_aparte",
+                 "__ruta", "__textos"]
 
     #
     def __init__(self, ruta: Path, textos: dict[str, str],
@@ -260,6 +327,10 @@ class Pdf(object):
         self.__datos = excel.review
         self.__estudiante: str = estudiante
 
+        # --- True si la secuencia de ISO no cabe en la página 2 y va en una
+        #     tercera (se decide al escribir)
+        self.__iso_aparte: bool = False
+
     #
     # --- Métodos públicos
     #
@@ -268,8 +339,10 @@ class Pdf(object):
     #
     def escribir(self) -> None:
         """
-        Escribe las dos páginas: la latitud y las gráficas; las
-        recomendaciones, el ruido aceptable y los balances.
+        Escribe las dos páginas: la latitud, las gráficas y las
+        recomendaciones; los balances, el ruido aceptable, los píxeles
+        defectuosos y, si cabe debajo, la secuencia de ISO (si no, en una
+        tercera página).
         """
         k = self.__excel.valores_constantes()
         puntos = self.__excel.puntos_curva(k)
@@ -280,59 +353,73 @@ class Pdf(object):
         #     (RcKeyType); un diccionario de cadenas funciona igual
         with (matplotlib.rc_context(estilo),                 # type: ignore
               PdfPages(self.__ruta) as pdf):
+            self.__iso_aparte = self.iso_no_cabe(k, puntos)
             pdf.savefig(self.pagina_curva(k, puntos))
-            pdf.savefig(self.pagina_datos(k, puntos))
-            if self.__datos.isos:
+            pdf.savefig(self.pagina_datos(k, puntos)[0])
+            if self.__iso_aparte:
                 pdf.savefig(self.pagina_iso(k))
 
     #
     def paginas(self) -> int:
-        """ Cuántas páginas tiene: con secuencia de ISO, una más. """
-        return KPDF.PAGINAS + (1 if self.__datos.isos else 0)
+        """ Cuántas páginas tiene: una más si la secuencia de ISO no cabe
+            en la segunda. """
+        return KPDF.PAGINAS + (1 if self.__iso_aparte else 0)
+
+    #
+    def iso_no_cabe(self, k: dict, puntos: list[PuntoCurva]) -> bool:
+        """
+        Saber si hay secuencia de ISO y no cabe debajo de lo que lleva la
+        página 2: se dibuja la página 2 y la sección de ISO en páginas de
+        prueba, que se tiran, y se mide dónde acaba (sin pasar de
+        KPDF.LIMITE_ABAJO).
+        """
+        if not self.__datos.isos:
+            return False
+        fin = self.pagina_datos(k, puntos)[1] - KPDF.ENTRE_APARTADOS
+        prueba = Figure(figsize=KPDF.PAGINA)
+        return self.seccion_iso(prueba, fin, k) < KPDF.LIMITE_ABAJO
 
     #
     def pagina_curva(self, k: dict, puntos: list[PuntoCurva]) -> Figure:
         """
         Página 1: la latitud de texturas (escala de zonas en su gris, con
-        los tramos apreciable y recomendado, y las dos cifras) y las
-        gráficas de la curva tonal y de la diferencia en L*.
+        los tramos apreciable y recomendado, y las dos cifras), las
+        gráficas de la curva tonal y de la diferencia en L*, una al lado
+        de la otra, y las recomendaciones para la curva del revelador.
         """
         t = self.__textos
         fig = self.pagina(1)
         limites = self.__excel.limites_texturas(k, self.__excel.texturas(k))
         self.apartado(fig, KPDF.APARTADO_LATITUD, t[KXL.T_TEXTURAS])
         sin_tela = not isinstance(self.__datos.tela, Ventana)
-        fin = self.nota(fig, KPDF.APARTADO_LATITUD - KPDF.A_LA_NOTA,
-                        t[KXL.T_SIN_TELA] if sin_tela
-                        else t[KPDF.T_NOTA_TEXTURAS_PDF])
-
-        # --- Si el paño tiene poca textura, por qué las sombras no salen
-        poca = "" if sin_tela else self.__excel.aviso_poca_textura(k)
-        if poca:
-            self.nota(fig, fin - KPDF.ENTRE_NOTAS, poca, KXL.COLOR_NEGATIVO)
+        self.nota(fig, KPDF.APARTADO_LATITUD - KPDF.A_LA_NOTA,
+                  t[KXL.T_SIN_TELA] if sin_tela
+                  else t[KPDF.T_NOTA_TEXTURAS_PDF])
         self.escala(fig, k, puntos, None if sin_tela else limites)
         for i, (clave, valores) in enumerate(limites.items()):
             self.cifra(fig, KPDF.IZQUIERDA + (i * KPDF.CIFRAS_PASO), k,
                        t[clave], valores)
         self.apartado(fig, KPDF.APARTADO_CURVA,
-                      self.titulo_graf(KXL.T_G_CURVA))
+                      self.titulo_graf(KXL.T_G_CURVA),
+                      desde=KPDF.TITULO_CURVA[0], hasta=KPDF.TITULO_CURVA[1])
         self.graf_curva(fig, k, puntos)
-        self.apartado(fig, KPDF.APARTADO_DIFERENCIA,
-                      self.titulo_graf(KXL.T_G_DIFERENCIA))
+        self.apartado(fig, KPDF.APARTADO_CURVA,
+                      self.titulo_graf(KXL.T_G_DIFERENCIA),
+                      desde=KPDF.TITULO_DIFERENCIA[0],
+                      hasta=KPDF.TITULO_DIFERENCIA[1])
         self.graf_diferencia(fig, k, puntos)
+        self.recomendaciones(fig, KPDF.APARTADO_RECOMENDACIONES, k, puntos)
         return fig
 
     #
-    def pagina_datos(self, k: dict, puntos: list[PuntoCurva]) -> Figure:
+    def recomendaciones(self, fig: Figure, y: float, k: dict,
+                        puntos: list[PuntoCurva]) -> float:
         """
-        Página 2: recomendaciones para la curva del revelador (las zonas
-        enteras: L* objetivo y del revelador, entrada y salida), ruido
-        aceptable por color (una franja de zonas y una frase por canal) y
-        balances de blancos (sin tomas de balance, lo dice).
+        Recomendaciones para la curva del revelador, desde y (el título)
+        hacia abajo: una tabla con las zonas enteras (L* objetivo y del
+        revelador, entrada y salida). Devuelve dónde acaba.
         """
-        t, d = self.__textos, self.__datos
-        fig = self.pagina(2)
-        y = KPDF.APARTADO_RECOMENDACIONES
+        t = self.__textos
         self.apartado(fig, y, t[KXL.T_RECOMENDACIONES])
         fin = self.nota(fig, y - KPDF.A_LA_NOTA,
                         t[KPDF.T_NOTA_RECOMENDACIONES])
@@ -347,31 +434,37 @@ class Pdf(object):
             KPDF.ANCHOS_RECOMENDACIONES)
         if all(p.revelador is None for p in enteras):
             y = self.nota(fig, y - KPDF.TABLA_A_NOTA, t[KPDF.T_SIN_FASE_2])
+        return y
 
-        # --- Ruido aceptable por color: el umbral y, por canal, una franja
-        #     de zonas y su frase
-        y -= KPDF.ENTRE_APARTADOS
-        self.apartado(fig, y, self.__excel.titulo_ruido_color())
-        fin = self.nota(fig, y - KPDF.A_LA_NOTA,
-                        t[KXL.T_RUIDO_COLOR_NOTA].format(
-                            umbral=k[KXL.C_SNR_MINIMA]))
-        y = self.franjas_ruido(fig, fin - KPDF.NOTA_A_TABLA, k)
+    #
+    def pagina_datos(self, k: dict,
+                     puntos: list[PuntoCurva]) -> tuple[Figure, float]:
+        """
+        Página 2: balances de blancos (sin tomas de balance, lo dice) con
+        los Kelvin que poner en la cámara con cada luz, y debajo el ruido
+        aceptable por color con los píxeles defectuosos y, si cabe, la
+        secuencia de ISO. Devuelve la página y dónde acaba lo de antes de
+        la secuencia de ISO.
+        """
+        fig = self.pagina(2)
+        y = self.balances(fig, KPDF.APARTADO_PAGINA)
+        y = self.ruido_y_pixeles(fig, y - KPDF.ENTRE_APARTADOS, k)
+        if self.__datos.isos and (not self.__iso_aparte):
+            self.seccion_iso(fig, y - KPDF.ENTRE_APARTADOS, k)
+        return fig, y
 
-        # --- Píxeles defectuosos, debajo del ruido
-        lineas = self.__excel.lineas_pixeles()
-        if lineas:
-            y -= KPDF.ENTRE_APARTADOS
-            self.apartado(fig, y, t[KXL.T_PIXELES])
-            y -= KPDF.A_LA_NOTA + KPDF.ALTO_FRASE
-            fig.text(KPDF.IZQUIERDA, y, KPDF.SEPARADOR_LINEAS.join(lineas),
-                     fontsize=KPDF.LETRA_NOTA, color=KPDF.TINTA, va="center")
-
-        # --- Balances de blancos
-        y -= KPDF.ENTRE_APARTADOS
+    #
+    def balances(self, fig: Figure, y: float) -> float:
+        """
+        Balances de blancos, desde y (el título) hacia abajo: la tabla de
+        las tomas a la izquierda y, a su derecha, los Kelvin que poner en
+        la cámara con cada luz habitual. Sin tomas de balance, lo dice.
+        Devuelve dónde acaba.
+        """
+        t, d = self.__textos, self.__datos
         self.apartado(fig, y, t[KXL.T_BALANCES])
         if not d.balancesDistintos:
-            self.nota(fig, y - KPDF.A_LA_NOTA, t[KXL.T_SIN_BALANCES])
-            return fig
+            return self.nota(fig, y - KPDF.A_LA_NOTA, t[KXL.T_SIN_BALANCES])
         fin = self.nota(fig, y - KPDF.A_LA_NOTA, t[KXL.T_NOTA_BALANCES])
 
         # --- Cada Kelvin en dos columnas: el anotado, número y color; el
@@ -382,53 +475,215 @@ class Pdf(object):
                 b.kelvin_cam)
             colores[(fila, KPDF.COL_COLOR_MEDIDO)] = self.color_kelvin(
                 b.kelvin)
-        self.tabla(fig, self.bajo_nota(y, fin), (
+        arriba = self.bajo_nota(y, fin)
+        y_tabla = self.tabla(fig, arriba, (
             t[KXL.T_CAB_BALANCE], t[KXL.T_CAB_KELVIN_ANOTADO], "",
             t[KXL.T_CAB_KELVIN_MEDIDO], ""), [
             (self.__excel.nombre_balance(b.nombre),
              self.numero(b.kelvin_cam, 0), "", "",
              self.numero(b.kelvin, 0))
             for b in d.balancesDistintos], KPDF.ANCHOS_BALANCES,
-            colores, KPDF.UNIONES_BALANCES)
-        return fig
+            colores, KPDF.UNIONES_BALANCES, derecha=KPDF.IZQUIERDA + (
+                KPDF.BALANCES_ANCHO * (KPDF.DERECHA - KPDF.IZQUIERDA)))
+
+        # --- A la derecha, qué Kelvin poner en la cámara con cada luz
+        #     habitual
+        return min(y_tabla,
+                   self.kelvin_neutros(fig, arriba, d.balancesDistintos))
+
+    #
+    def ruido_y_pixeles(self, fig: Figure, y: float, k: dict) -> float:
+        """
+        Ruido aceptable por color, desde y (el título) hacia abajo: en el
+        título, al final de la línea, el umbral; debajo, por canal, la zona
+        desde la que es aceptable (a la izquierda) y los píxeles
+        defectuosos (a la derecha). Devuelve dónde acaba.
+        """
+        t = self.__textos
+        self.apartado(fig, y, self.__excel.titulo_ruido_color(),
+                      t[KXL.T_RUIDO_COLOR_NOTA].format(
+                          umbral=k[KXL.C_SNR_MINIMA]))
+        arriba = y - KPDF.A_LA_TABLA_SIN_NOTA
+        return min(self.tabla_ruido(fig, arriba, k),
+                   self.tabla_pixeles(fig, arriba))
+
+    #
+    def kelvin_neutros(self, fig: Figure, y: float,
+                       balances: list[BalanceMedido]) -> float:
+        """
+        A la derecha de la tabla de balances, desde y hacia abajo: una
+        tabla con una fila por luz habitual (KPDF.LUCES_NEUTRAS: su Kelvin,
+        el rango que cubre la tolerancia en mired y el rango de Kelvin que
+        poner en la cámara para que salga neutra con ella; «≈» si es una
+        estimación, o «sin datos») y debajo una nota que explica el mired.
+        Devuelve dónde acaba (y, si no hay nada que decir).
+        """
+        t = self.__textos
+        rangos = self.rangos_neutros(balances)
+        if not rangos:
+            return y
+        mired = KPDF.TOLERANCIA_MIRED
+        filas, colores = [], {}
+        for i, (clave, kelvin, luz_de, luz_a, cam_de, cam_a,
+                estimado) in enumerate(rangos):
+            if cam_de is None:
+                camara = t[KPDF.T_SIN_DATOS_NEUTRA]
+            else:
+                camara = f"{'≈ ' if estimado else ''}{cam_de}–{cam_a}"
+            filas.append((t[clave], str(kelvin), f"{luz_de}–{luz_a}",
+                          camara))
+            colores[(i, 1)] = self.color_kelvin(kelvin)
+        izquierda = self.columna_derecha()
+        y = self.tabla(fig, y, (
+            t[KPDF.T_CAB_LUZ], t[KPDF.T_CAB_KELVIN_LUZ],
+            t[KPDF.T_CAB_LUZ_MIRED].format(mired=mired),
+            t[KPDF.T_CAB_EN_CAMARA]), filas, KPDF.ANCHOS_NEUTRAS, colores,
+            izquierda=izquierda)
+        return self.nota(fig, y - KPDF.TABLA_A_NOTA,
+                         t[KPDF.T_NOTA_NEUTRAS].format(mired=mired),
+                         izquierda=izquierda)
+
+    #
+    def rangos_neutros(self, balances: list[BalanceMedido]) -> list[
+            tuple[str, int, int, int, int | None, int | None, bool]]:
+        """
+        Por cada luz de KPDF.LUCES_NEUTRAS: (rótulo, su Kelvin, Kelvin
+        mínimo y máximo de la luz dentro de la tolerancia, Kelvin mínimo y
+        máximo que poner en la cámara, si es una estimación). Se invierte
+        la curva de los balances (Kelvin anotado → medido) con una recta
+        entre cada par de puntos, en mired; el medido que se busca es el
+        de la luz. Fuera de lo medido se prolonga la recta de los dos
+        últimos puntos, hasta KPDF.EXTRAPOLA_MIRED mired (estimación);
+        más lejos, los dos Kelvin de la cámara son None. Con menos de
+        KPDF.PUNTOS_NEUTRAS balances, ninguna luz.
+        """
+        puntos = sorted(
+            (self.mired(b.kelvin), self.mired(b.kelvin_cam))
+            for b in balances
+            if (b.kelvin is not None) and (b.kelvin_cam is not None))
+        if len(puntos) < KPDF.PUNTOS_NEUTRAS:
+            return []
+        rangos = []
+        for clave, kelvin in KPDF.LUCES_NEUTRAS:
+            centro = self.mired(kelvin)
+            bajo = centro - KPDF.TOLERANCIA_MIRED
+            alto = centro + KPDF.TOLERANCIA_MIRED
+            luz = (self.kelvin_redondo(alto), self.kelvin_redondo(bajo))
+            fuera = max(puntos[0][0] - bajo, alto - puntos[-1][0], 0)
+            if fuera > KPDF.EXTRAPOLA_MIRED:
+                rangos.append((clave, kelvin, *luz, None, None, False))
+                continue
+            en_cam = (self.interpolar(puntos, bajo),
+                      self.interpolar(puntos, alto))
+            rangos.append((
+                clave, kelvin, *luz,
+                self.kelvin_redondo(max(en_cam)),
+                self.kelvin_redondo(min(en_cam)), fuera > 0))
+        return rangos
+
+    #
+    @staticmethod
+    def mired(kelvin: float) -> float:
+        """ Mired de una temperatura de color: KPDF.MIRED entre los Kelvin
+            (a más Kelvin, menos mired). """
+        return KPDF.MIRED / kelvin
+
+    #
+    @staticmethod
+    def kelvin_redondo(mired: float) -> int:
+        """ Kelvin de un mired, redondeado a KPDF.REDONDEO_KELVIN. """
+        return int(round((KPDF.MIRED / mired) / KPDF.REDONDEO_KELVIN)
+                   * KPDF.REDONDEO_KELVIN)
+
+    #
+    @staticmethod
+    def interpolar(puntos: list[tuple[float, float]], x: float) -> float:
+        """
+        y de una x, con una recta entre cada par de puntos (x, y) ordenados
+        por x. Fuera de ellos, se prolonga la recta de los dos primeros o de
+        los dos últimos. Si dos puntos tienen la misma x, vale la y del
+        primero.
+        """
+        pares = list(zip(puntos, puntos[1:]))
+        if x < puntos[0][0]:
+            pares = pares[:1]
+        elif x > puntos[-1][0]:
+            pares = pares[-1:]
+        for (x0, y0), (x1, y1) in pares:
+            if (x0 <= x <= x1) or (x < puntos[0][0]) or (x > puntos[-1][0]):
+                if x1 == x0:
+                    return y0
+                return y0 + ((y1 - y0) * ((x - x0) / (x1 - x0)))
+        return puntos[-1][1]
 
     #
     def pagina_iso(self, k: dict) -> Figure:
         """
-        Página de la secuencia de ISO (la última), para el estudiante: su
-        nota, una tabla con una columna por ISO (la exposición frente al
-        ISO inicial y la textura en sombras, en semáforo; los números, en
-        la hoja ISO del libro), una nota por ISO estimado o sin medir y la
-        conclusión.
+        Página de la secuencia de ISO (la última), para el estudiante, si
+        no cabe en la página 2: solo su sección (ver seccion_iso).
+        """
+        fig = self.pagina(self.paginas())
+        self.seccion_iso(fig, KPDF.APARTADO_PAGINA, k)
+        return fig
+
+    #
+    def seccion_iso(self, fig: Figure, y: float, k: dict) -> float:
+        """
+        Sección de la secuencia de ISO, desde y (el título) hacia abajo:
+        su nota y una tabla con una columna por ISO bajo una banda «ISO»:
+        el tiempo de la ZV, el señal/ruido en la ZV y en la Z2, la textura
+        en la Z2 y desde qué zona hay textura. Los de ruido y textura,
+        en semáforo y con su número o texto; los números de cada ISO, en
+        la hoja ISO del libro. Debajo, un aviso por exposición que se
+        aparta del ISO inicial y una nota por ISO estimado o sin medir.
+        Devuelve dónde acaba.
         """
         t, excel = self.__textos, self.__excel
         filas_iso = self.__datos.filasISO
         umbral = excel.umbral_iso(k)
-        fig = self.pagina(self.paginas())
-        y = KPDF.APARTADO_RECOMENDACIONES
         self.apartado(fig, y, t[KXL.T_TITULO_ISO])
-        fin = self.nota(fig, y - KPDF.A_LA_NOTA, t[KXL.T_NOTA_ISO_PDF])
+        fin = self.nota(fig, y - KPDF.A_LA_NOTA,
+                        excel.rotulo_sombra(t[KXL.T_NOTA_ISO_PDF]))
+        diafragma = excel.diafragma_iso()
+        rotulo_tv = (t[KPDF.T_CAB_TV_ISO].format(f=diafragma) if diafragma
+                     else t[KXL.T_TV])
         filas = [
-            (t[KXL.T_CAB_EXPOSICION_ISO],
-             *(excel.exposicion_iso(f, k) or KPDF.SIN_DATO
+            (rotulo_tv, *(excel.tv_iso(f) or KPDF.SIN_DATO
+                          for f in filas_iso)),
+            (t[KPDF.T_CAB_SR_ZV],
+             *(excel.senal_ruido_iso(f.ruido_zv) or KPDF.SIN_DATO
                for f in filas_iso)),
-            (t[KXL.T_CAB_SE_APRECIA],
+            (excel.rotulo_sombra(t[KPDF.T_CAB_SR_Z2]),
+             *(excel.senal_ruido_iso(f.ruido_z2) or KPDF.SIN_DATO
+               for f in filas_iso)),
+            (excel.rotulo_sombra(t[KXL.T_CAB_SE_APRECIA]),
              *(excel.aprecia_iso(f, k, umbral) or KPDF.SIN_DATO
                for f in filas_iso)),
             (t[KXL.T_CAB_SOMBRAS_ISO],
              *(excel.sombras_iso(f, k, umbral) or KPDF.SIN_DATO
                for f in filas_iso))]
-        fila_textura = 1
         colores = {}
         for i, f in enumerate(filas_iso):
-            nivel = excel.nivel_textura_iso(f, k, umbral)
-            if nivel is not None:
-                colores[(fila_textura, i + 1)] = KPDF.SEMAFORO_ISO[nivel]
+            for fila, nivel in (
+                    (KPDF.FILA_SR_ZV, excel.nivel_ruido_iso(f.ruido_zv, k)),
+                    (KPDF.FILA_SR_Z2, excel.nivel_ruido_iso(f.ruido_z2, k)),
+                    (KPDF.FILA_TEXTURA_ISO,
+                     excel.nivel_textura_iso(f, k, umbral))):
+                if nivel is not None:
+                    colores[(fila, i + 1)] = KPDF.SEMAFORO_ISO[nivel]
         y = self.tabla(
             fig, self.bajo_nota(y, fin),
-            (t[KXL.T_CAB_ISO], *(str(f.iso) for f in filas_iso)), filas,
+            ("", *(str(f.iso) for f in filas_iso)), filas,
             (KPDF.ANCHO_ROTULO_ISO,
-             *((KPDF.ANCHO_COLUMNA_ISO,) * len(filas_iso))), colores)
+             *((KPDF.ANCHO_COLUMNA_ISO,) * len(filas_iso))), colores,
+            banda=(t[KXL.T_CAB_ISO], 1, len(filas_iso)))
+        for f in filas_iso:
+            exposicion = excel.exposicion_iso(f, k)
+            if exposicion and (exposicion != t[KXL.T_EXPOSICION_IGUAL]):
+                y = self.nota(fig, y - KPDF.TABLA_A_NOTA,
+                              t[KPDF.T_AVISO_EXPOSICION_ISO].format(
+                                  rotulo=t[KXL.T_CAB_ISO], iso=f.iso,
+                                  desvio=exposicion), KXL.COLOR_NEGATIVO)
         for f in filas_iso:
             nota = excel.nota_iso(f)
             if nota:
@@ -436,10 +691,7 @@ class Pdf(object):
                               KPDF.FORMATO_NOTA_ISO.format(
                                   rotulo=t[KXL.T_CAB_ISO], iso=f.iso,
                                   nota=nota))
-        conclusion = excel.conclusion_iso(k, umbral)
-        if conclusion:
-            self.nota(fig, y - KPDF.TABLA_A_NOTA, conclusion, KPDF.TINTA)
-        return fig
+        return y
 
     # endregion Métodos públicos
 
@@ -485,36 +737,45 @@ class Pdf(object):
         return fig
 
     #
-    def apartado(self, fig: Figure, y: float, texto: str) -> None:
-        """ Título de una sección, en verde, con una raya debajo. """
-        fig.text(KPDF.IZQUIERDA, y, texto, fontsize=KPDF.LETRA_APARTADO,
+    def apartado(self, fig: Figure, y: float, texto: str,
+                 derecha: str = "", desde: float = KPDF.IZQUIERDA,
+                 hasta: float = KPDF.DERECHA) -> None:
+        """ Título de una sección, en verde, con una raya debajo (entre
+            desde y hasta: de margen a margen, si no se dice) y, si se da,
+            un texto en gris al final de su línea (a la derecha). """
+        fig.text(desde, y, texto, fontsize=KPDF.LETRA_APARTADO,
                  weight="bold", color=KPDF.VERDE)
+        if derecha:
+            fig.text(hasta, y, derecha, fontsize=KPDF.LETRA_NOTA,
+                     color=KPDF.GRIS, ha="right")
         raya = y - KPDF.SUBRAYA
-        fig.lines.append(Line2D([KPDF.IZQUIERDA, KPDF.DERECHA], [raya, raya],
+        fig.lines.append(Line2D([desde, hasta], [raya, raya],
                                 transform=fig.transFigure, color=KPDF.BORDE,
                                 linewidth=1))
 
     #
     def nota(self, fig: Figure, y: float, texto: str,
-             color: str = KPDF.GRIS) -> float:
+             color: str = KPDF.GRIS, izquierda: float = KPDF.IZQUIERDA,
+             derecha: float = KPDF.DERECHA) -> float:
         """
         Nota en gris (o en este color), desde y (lo alto de su primera
         línea) hacia abajo, partida en líneas que no pasan de la raya de
-        las secciones (de KPDF.IZQUIERDA a KPDF.DERECHA). Devuelve dónde
-        acaba.
+        las secciones (de KPDF.IZQUIERDA a KPDF.DERECHA, si no se dice).
+        Devuelve dónde acaba.
         """
-        nota = fig.text(KPDF.IZQUIERDA, y, "\n".join(self.partir(
-            fig, texto, KPDF.LETRA_NOTA)), fontsize=KPDF.LETRA_NOTA,
-            color=color, va="top")
+        nota = fig.text(izquierda, y, "\n".join(self.partir(
+            fig, texto, KPDF.LETRA_NOTA, derecha - izquierda)),
+            fontsize=KPDF.LETRA_NOTA, color=color, va="top")
         return self.caja(fig, nota).y0
 
     #
-    def partir(self, fig: Figure, texto: str, letra: float) -> list[str]:
+    def partir(self, fig: Figure, texto: str, letra: float,
+               ancho: float = KPDF.DERECHA - KPDF.IZQUIERDA) -> list[str]:
         """
-        Líneas de un texto, palabra a palabra, sin pasar del ancho entre
-        márgenes con ese tamaño de letra (lo mide como lo dibujará).
+        Líneas de un texto, palabra a palabra, sin pasar del ancho (el de
+        entre márgenes, si no se dice) con ese tamaño de letra (lo mide
+        como lo dibujará).
         """
-        ancho = KPDF.DERECHA - KPDF.IZQUIERDA
         medida = fig.text(0, 0, "", fontsize=letra)
         lineas: list[str] = []
         linea = ""
@@ -682,7 +943,7 @@ class Pdf(object):
         Diferencia en L* del revelador con el objetivo: cuánto se separa
         el revelado de la escala que se busca, lo que el estudiante
         corrige (el signo se lee en el eje); sin dato, hueco. La leyenda,
-        encima, fuera de las barras. Sin revelador, lo dice.
+        dentro, arriba a la izquierda. Sin revelador, lo dice.
         """
         t = self.__textos
         ax = fig.add_axes(KPDF.GRAF_DIFERENCIA)
@@ -698,8 +959,7 @@ class Pdf(object):
                 else (p.revelador - p.objetivo) for p in puntos],
                width=KPDF.BARRA, color=KPDF.REVELADOR,
                label=t[KXL.T_S_REVELADOR])
-        ax.legend(loc="lower right", bbox_to_anchor=(1, 1),
-                  frameon=False, fontsize=KPDF.LETRA_NOTA)
+        ax.legend(loc="upper left", frameon=False, fontsize=KPDF.LETRA_NOTA)
 
     #
     def ejes(self, ax: Axes, k: dict, nombre_y: str) -> None:
@@ -720,72 +980,110 @@ class Pdf(object):
         ax.spines[["top", "right"]].set_visible(False)
 
     #
-    def franjas_ruido(self, fig: Figure, y: float, k: dict) -> float:
+    def tabla_ruido(self, fig: Figure, y: float, k: dict) -> float:
         """
-        Ruido aceptable por color, desde y hacia abajo: una franja por
-        canal (un paso por tercio, de Z0 a ZX; verde si el ruido es
-        aceptable, rojo si se nota, gris sin dato), el nombre de las zonas
-        enteras debajo y la frase de cada canal, en su color. Devuelve
-        dónde acaba.
+        Ruido aceptable por color, desde y hacia abajo: una tabla de tres
+        filas (rojo, verde y azul) con la zona desde la que el ruido de
+        cada canal es aceptable, en la mitad izquierda de la página (hasta
+        KPDF.RUIDO_TABLA_ANCHO). El canal, con su color aclarado; la zona,
+        en verde si lo es en todo el rango, en ámbar si desde una zona y en
+        rojo si en ninguna. Devuelve dónde acaba.
+        """
+        t, excel = self.__textos, self.__excel
+        filas, colores = [], {}
+        for j, (clave, suelo) in enumerate(zip(KXL.T_CANALES,
+                                               excel.suelos_ruido(k))):
+            zona, estado = excel.zona_ruido(suelo)
+            filas.append((t[clave], zona))
+            colores[(j, 0)] = self.aclarar(KXL.COLORES_CANALES[j])
+            colores[(j, 1)] = KPDF.TINTES_RUIDO.get(
+                estado, KPDF.COLOR_SIN_KELVIN)
+        derecha = KPDF.IZQUIERDA + (
+            KPDF.RUIDO_TABLA_ANCHO * (KPDF.DERECHA - KPDF.IZQUIERDA))
+        return self.tabla(fig, y, (
+            t[KXL.T_CAB_CANAL], t[KPDF.T_CAB_RUIDO_DESDE]), filas,
+            KPDF.ANCHOS_RUIDO, colores, derecha=derecha)
+
+    #
+    def tabla_pixeles(self, fig: Figure, y: float) -> float:
+        """
+        Píxeles defectuosos, a la derecha de la tabla del ruido (desde
+        KPDF.TABLAS_DERECHA_DESDE), desde y hacia abajo: una fila por tipo
+        (calientes y muertos) con cuántos y cuántos por megapíxel, en verde
+        si no hay ninguno y en ámbar si hay. Sin tapadas no se pueden
+        contar los calientes: lo dice una nota debajo. Devuelve dónde
+        acaba (y, si no se contaron píxeles).
         """
         t = self.__textos
-        suelos = self.__excel.suelos_ruido(k)
-        pasos = [self.__excel.ruido_por_tercio(suelo) for suelo in suelos]
-        cuantos = len(pasos[0])
-        izquierda = KPDF.IZQUIERDA + KPDF.MARCA_FRANJA + KPDF.SEPARA_FRANJA
-        ancho = (KPDF.DERECHA - izquierda) / cuantos
-        for j, aceptable in enumerate(pasos):
-            abajo = y - ((KPDF.ALTO_FRANJA + KPDF.HUECO_FRANJA) * (j + 1))
-            fig.patches.append(Rectangle(
-                (KPDF.IZQUIERDA, abajo), KPDF.MARCA_FRANJA, KPDF.ALTO_FRANJA,
-                transform=fig.transFigure, color=KXL.COLORES_CANALES[j]))
-            for i, bien in enumerate(aceptable):
-                color = (KPDF.RUIDO_SIN_DATO if bien is None
-                         else (KPDF.RUIDO_BIEN if bien else KPDF.RUIDO_MAL))
-                fig.patches.append(Rectangle(
-                    (izquierda + (i * ancho), abajo), ancho, KPDF.ALTO_FRANJA,
-                    transform=fig.transFigure, facecolor=color,
-                    edgecolor="white", linewidth=0.5))
-
-        # --- Zonas enteras (de la primera de cada tres tercios) y, debajo,
-        #     la frase de cada canal
-        y -= (KPDF.ALTO_FRANJA + KPDF.HUECO_FRANJA) * len(pasos)
-        mitad = (cuantos - 1) // 2
-        for i in range(0, cuantos, KP.TERCIOS):
-            fig.text(izquierda + ((i + 0.5) * ancho),
-                     y - KPDF.ALTO_ZONAS_FRANJA / 2,
-                     self.__excel.nombre_zona(i - mitad),
-                     fontsize=KPDF.LETRA_PIE, color=KPDF.GRIS,
-                     ha="center", va="center")
-        y -= KPDF.ALTO_ZONAS_FRANJA
-        for j, (clave, suelo) in enumerate(zip(KXL.T_CANALES, suelos)):
-            frase = self.__excel.frase_ruido(t[clave], suelo)
-            if frase:
-                y -= KPDF.ALTO_FRASE
-                fig.text(KPDF.IZQUIERDA, y, frase, fontsize=KPDF.LETRA_NOTA,
-                         color=KXL.COLORES_CANALES[j], weight="bold",
-                         va="center")
+        filas = self.__excel.filas_pixeles()
+        if not filas:
+            return y
+        colores = {}
+        for i, (_, _, _, ninguno) in enumerate(filas):
+            colores[(i, 1)] = colores[(i, 2)] = (
+                KPDF.COLOR_SIN_KELVIN if (ninguno is None)
+                else (KPDF.TINTE_BIEN if ninguno else KPDF.TINTE_AVISO))
+        izquierda = self.columna_derecha()
+        y = self.tabla(fig, y, (
+            t[KXL.T_PIXELES], t[KPDF.T_CAB_CANTIDAD],
+            t[KPDF.T_CAB_POR_MPX]), [fila[:3] for fila in filas],
+            KPDF.ANCHOS_PIXELES, colores, izquierda=izquierda)
+        if self.__datos.pixeles.calientes is None:               # type: ignore
+            y = self.nota(fig, y - KPDF.TABLA_A_NOTA,
+                          t[KXL.T_PIXELES_SIN_TAPADAS], izquierda=izquierda)
         return y
+
+    #
+    @staticmethod
+    def columna_derecha() -> float:
+        """ Dónde empiezan las tablas de la derecha (ver
+            KPDF.TABLAS_DERECHA_DESDE). """
+        return KPDF.IZQUIERDA + (KPDF.TABLAS_DERECHA_DESDE
+                                 * (KPDF.DERECHA - KPDF.IZQUIERDA))
+
+    #
+    @staticmethod
+    def aclarar(color: str) -> str:
+        """ Color más claro: el suyo mezclado con blanco (KPDF.CANAL_ACLARADO
+            hacia el blanco). """
+        return to_hex([c + ((1 - c) * KPDF.CANAL_ACLARADO)
+                       for c in to_rgb(color)])
 
     #
     def tabla(self, fig: Figure, y: float, cabeceras: tuple[str, ...],
               filas: list[tuple], anchos: tuple[float, ...],
               colores: dict[tuple[int, int], str] | None = None,
-              uniones: tuple[tuple[int, int], ...] = ()) -> float:
+              uniones: tuple[tuple[int, int], ...] = (),
+              izquierda: float = KPDF.IZQUIERDA,
+              derecha: float = KPDF.DERECHA,
+              banda: tuple[str, int, int] | None = None) -> float:
         """
-        Tabla como las del libro (cabecera verde, filas alternas), a todo
-        el ancho, desde y hacia abajo. Devuelve dónde acaba. colores: el
+        Tabla como las del libro (cabecera verde, filas alternas), entre
+        izquierda y derecha (a todo el ancho entre márgenes, si no se
+        dice), desde y hacia abajo. Devuelve dónde acaba. colores: el
         fondo propio de algunas celdas, {(fila, columna): color}, con la
         fila contada sin la cabecera. uniones: celdas de la cabecera que
         ocupan varias columnas, (primera columna, cuántas); su texto es el
-        de la primera
+        de la primera. banda: una fila verde sobre la cabecera, solo sobre
+        algunas columnas (texto, primera columna, cuántas)
         """
-        ancho = KPDF.DERECHA - KPDF.IZQUIERDA
+        ancho = derecha - izquierda
         total = sum(anchos)
-        bordes = [KPDF.IZQUIERDA]
+        bordes = [izquierda]
         for a in anchos:
             bordes.append(bordes[-1] + ((ancho * a) / total))
         alto = KPDF.ALTO_FILA
+        if banda is not None:
+            texto_banda, primera, n_banda = banda
+            desde, hasta = bordes[primera], bordes[primera + n_banda]
+            fig.patches.append(Rectangle(
+                (desde, y - alto), hasta - desde, alto,
+                transform=fig.transFigure, facecolor=KPDF.VERDE,
+                edgecolor="white", linewidth=0.5))
+            fig.text((desde + hasta) / 2, y - (alto / 2), texto_banda,
+                     color="white", weight="bold", fontsize=KPDF.LETRA_NOTA,
+                     ha="center", va="center")
+            y -= alto
         cuantas = dict(uniones)
         cubiertas = {c for primera, n in uniones
                      for c in range(primera + 1, primera + n)}

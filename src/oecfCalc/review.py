@@ -26,7 +26,7 @@ from bib import std
 from bib.oecfMediadores import KP
 from kernel import COM as KCOM
 from .pixeles import Pixeles
-from .secuencia import KS, z2_medible
+from .secuencia import KS, tercios_sombra, z2_medible
 from .teselas import KTE, Ventana
 from .transferencia import Transferencia
 
@@ -244,9 +244,10 @@ class MedidaISO(NamedTuple):
 class FilaISO(NamedTuple):
     """
     Un ISO de la secuencia de ISO, en verde: el ISO, el tercioEV de su
-    Z2 (None si falta), si se mide (con Z-V y Z2, y la Z2 a KS.MARGEN_Z2
-    tercios de KS.TERCIOS_Z2 como mucho) y si es una estimación (la Z2 no
-    está justo en KS.TERCIOS_Z2); y, si se mide (si no, None): cuánto se
+    toma de sombras, la Z2 o la Z3 (None si falta), si se mide (con Z-V y
+    toma de sombras, a KS.MARGEN_Z2 tercios de KS.TERCIOS_Z2 o de
+    KS.TERCIOS_Z3 como mucho) y si es una estimación (no está justo en su
+    sitio, ver tercios_sombra); y, si se mide (si no, None): cuánto se
     aparta su Z-V de la del ISO inicial (en zonas), el ruido de lectura
     (del borde oscuro; None si no hay), el ruido de la tarjeta en la Z-V
     y en la Z2 (dispersión relativa), la textura del paño en la Z2 (sin
@@ -488,7 +489,7 @@ class Review:
                 iso=m.iso,
                 tercio_z2=tercio,
                 medible=True,
-                estimada=(tercio != KS.TERCIOS_Z2),
+                estimada=(tercio != tercios_sombra(tercio)),
                 desviacion=(float(np.log2(nivel / base))
                             if (base and (nivel > 0)) else None),
                 lectura=(None if (m.ruido_borde is None)

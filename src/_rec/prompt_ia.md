@@ -48,7 +48,7 @@ Los colores del texto significan: **azul** = dato leído de los RAW;
 
 | Hoja | Qué contiene |
 |---|---|
-| **Análisis** | Cámara, fecha, profundidad RAW, exposición de la Z‑V; **latitud de texturas** (apreciable y recomendada: sombras, altas luces y latitud, en tercios); **ruido aceptable por color** (una frase por canal: desde qué zona la señal/ruido llega a `{snr_minima}`, según el suelo sugerido; el ruido de lectura y el negro **no** salen aquí, solo en Datos); **píxeles defectuosos** (calientes y muertos, con su cantidad y por megapíxel); balances de blancos (Kelvin anotado frente a medido); un **aviso de poca textura** del paño, si toca; sugerencia de revelado (puntos de la curva de Lightroom, 0–255); tabla por zona con el **L\* leído** (lo escribe el usuario o el programa), la diferencia del sensor y la del revelador. Lo estimado, en otro color. |
+| **Análisis** | Cámara, fecha, profundidad RAW, exposición de la Z‑V; **latitud de texturas** (apreciable y recomendada: sombras, altas luces y latitud, en tercios); **ruido aceptable por color** (una frase por canal: desde qué zona la señal/ruido llega a `{snr_minima}`, según el suelo sugerido; el ruido de lectura y el negro **no** salen aquí, solo en Datos); **píxeles defectuosos** (calientes y muertos, con su cantidad y por megapíxel); balances de blancos (Kelvin anotado frente a medido); sugerencia de revelado (puntos de la curva de Lightroom, 0–255); tabla por zona con el **L\* leído** (lo escribe el usuario o el programa), la diferencia del sensor y la del revelador. Lo estimado, en otro color. |
 | **Gráficos** | 1 curva tonal en L\*; 2 diferencia en L\*; 3 esperado y obtenido; 4 y 5 desviación (tramo lineal y rango completo); 6 señal/ruido normalizada a 8 Mpx, en escala logarítmica, con el modelo del verde y los umbrales 1, 10 y 40. Leen de Cálculo. Identifícalas por su título, no por su número: el orden puede cambiar. Cada canal lleva un marcador distinto (cuadrado el rojo, círculo el verde, triángulo el azul) para leer las series aunque se solapen. |
 | **Datos** | Lo leído de los RAW, sin cálculos salvo la media de las Z‑V y los tercios estimados: serie por zonas (archivo, nivel y dispersión por canal), Z‑V de control y su media, ruido de lectura de la **franja oscura del sensor** (o su ausencia), el de la **superficie real** con las tomas tapadas (para comparar) y el **negro digital** con su origen (tapadas, estimado en las sombras o declarado), con sus avisos; **píxeles defectuosos**; la **curva de transferencia** (lectura, ganancia, proporcional; aleatorio y fijo de la Z‑V; megapíxeles del sensor), balances de blancos, **paño por zona** (dispersión y fracción recortada de la ventana del paño, por canal) y L\* del revelador por zona: el L\* leído de Análisis y, en un tercio sin él, el estimado. |
 | **Constantes** | Cada constante del método con nombre, valor, unidad y qué es, por orden alfabético. Las fórmulas usan esos nombres. Incluye la nota sobre `{snr_minima}` y `{snr_excelente}` (ISO 12232) y `{mpx_referencia}`. |
@@ -71,7 +71,7 @@ de lo que sigue, **manda la hoja**. Valores por defecto: `{zona_zv}` = 5,
 `{tercio_por_zona}` = 3, `{factor_zona}` = 2, `{lzv}` = 50, `{l_por_zona}` = 10,
 `{ratio_sr}` = 1, `{snr_minima}` = 10, `{snr_excelente}` = 40,
 `{mpx_referencia}` = 8, `{tolerancia_lineal}` = 0,1,
-`{umbral_recorte}` = 0,995, `{escala_curva}` = 255, `{rose_textura}` = 5,
+`{umbral_recorte}` = 0,995, `{escala_curva}` = 255, `{rose_textura}` = 1,3,
 `{textura_conservada}` = 0,5, `{tela_recortado_max}` = 0,1, `{margen_sombras}` = 1,
 `{ancho_zona}` = 1. CIELAB: 116, 16, 0,008856 y
 903,3. sRGB: 0,0031308, 12,92, 1,055, 2,4 y 0,055.
@@ -197,15 +197,11 @@ razón, pero no es un fallo de cálculo.
     los RAW.
 14. Las **sombras apreciables** están un tercio por debajo de las
     recomendadas a propósito: la resolución de la serie.
-15. `{rose_textura}` = 5 (**criterio de Rose**; Rose 1948; Burgess 1999)
-    ya no decide la latitud de texturas: solo la **secuencia de ISO**, a
-    escala de pantalla.
-16. El aviso de **«el paño tiene poca textura»** (Análisis) es intencionado:
-    sale cuando la textura/ruido del paño en la Z‑V no llega a
-    `{rose_textura}`, y entonces las sombras de la latitud de texturas
-    **no se pueden medir**. No es un fallo de cálculo; el remedio es otro
-    paño, otra luz u otro diafragma.
-17. El **ruido aceptable por color** (Análisis) sale del suelo sugerido de
+15. `{rose_textura}` = 1,3 (valor aproximado, ajustado a ojo con la R7 y
+    la 60D; el **criterio de Rose**, 5, resultaba demasiado estricto) ya no
+    decide la latitud de texturas: solo la **secuencia de ISO**, a escala de
+    pantalla.
+16. El **ruido aceptable por color** (Análisis) sale del suelo sugerido de
     Cálculo (bloque 1), así que depende de `{snr_minima}` y comparte su
     carácter extrapolado: «aceptable desde Z2 1/3» puede quedar por debajo
     de lo medido.

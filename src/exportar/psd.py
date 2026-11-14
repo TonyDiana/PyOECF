@@ -3,14 +3,13 @@
     :Propósito: Láminas PSD de una serie (pieza E): la plantilla con sus
                 31 cuadros rellenos con el recorte del paño de cada zona,
                 a 16 bits, y su cajetín de datos (texto editable).
-                Revelado propio y neutro, desde los RAW
+                Con las exportaciones TIFF del revelador
     :Autor:     Tony Diana
     :Versión:   26.10.18
 """
 
 # cSpell:ignore findfont, getbbox, getlength, getmetrics, iinfo, imread, kcom
-# cSpell:ignore kpsd, oecf, postprocess, rawpy, recoloca, recolocada, Rght
-# cSpell:ignore tobytes
+# cSpell:ignore kpsd, oecf, recoloca, recolocada, Rght, tobytes
 
 __all__ = ["KPSD", "Psd"]
 
@@ -21,7 +20,6 @@ import re
 
 # --- Bibliotecas externas
 import numpy as np
-import rawpy
 import tifffile
 from psd_tools import PSDImage
 from psd_tools.api.layers import AdjustmentLayer, Group, Layer, TypeLayer
@@ -41,20 +39,8 @@ from oecfCalc import Ventana, porcentaje, recorte
 class KPSD(std.EnumMutable):
     """ Constantes de las láminas. """
 
-    # --- Revelado neutro: el balance con que se hizo la toma (el
-    #     personalizado), sin aclarado automático y sin curva, sin girar
-    #     (los píxeles, como en el sensor: así vale la ventana del paño)
     BITS = 16
-    """Bits por canal del revelado y de las capas del PSD."""
-
-    # --- type: ignore: es la forma pública de rawpy, pero rawpy no la
-    #     declara como exportada
-    ESPACIO = rawpy.ColorSpace.Adobe                        # type: ignore
-    """Espacio del revelado: el de la plantilla (Adobe RGB 1998)."""
-
-    GAMMA = (2.2, 0)
-    """Curva del revelado: la de Adobe RGB, una potencia de 2,2 sin tramo
-    lineal."""
+    """Bits por canal de las capas del PSD."""
 
     # --- Cartela de datos (Tony, 2026-10-16): sus capas de texto, de
     #     arriba abajo, se rellenan con las líneas que da la aplicación (ya
@@ -159,11 +145,9 @@ class Psd(object):
     def imagen(self, archivo: Path) -> tuple[np.ndarray, Ventana]:
         """
         Imagen de una zona (RGB de 16 bits) y la ventana del paño en ella:
-        el RAW, revelado en neutro, con la ventana tal cual; la TIFF del
-        revelador, leída, con la ventana recolocada por su recorte.
+        la TIFF del revelador, leída, con la ventana recolocada por su
+        recorte.
         """
-        if archivo.suffix.lower() not in KCOM.EXTENSIONES_TIFF:
-            return self.revelar(archivo), self.__ventana
         imagen = tifffile.imread(archivo)
         alto, ancho = self.__sensor
         dy, dx = (alto - imagen.shape[0]) // 2, (ancho - imagen.shape[1]) // 2
@@ -248,9 +232,8 @@ class Psd(object):
         hueco = (libre - (len(lineas) * alto)) / (len(lineas) + 1)
         x = lineas[0].transform[KPSD.TRANSFORM_X]
 
-        # --- Si la plantilla tiene menos capas que líneas (una plantilla
-        #     antigua, sin la del estudiante), sobran las de arriba: así
-        #     las demás siguen en su capa (Tony, 2026-11-13)
+        # --- Si la plantilla tiene menos capas que líneas, sobran las de
+        #     arriba: así las demás siguen en su capa (Tony, 2026-11-13)
         textos = self.__cartela[-len(lineas):]
         for i, (capa, texto) in enumerate(zip(lineas, textos)):
             base = arriba + (hueco * (i + 1)) + (alto * i) + ascenso
@@ -383,13 +366,3 @@ class Psd(object):
         """
         return (f"{self.__plantilla.stem}{porcentaje(factor)}"
                 f"{self.__plantilla.suffix}")
-
-    #
-    @staticmethod
-    def revelar(archivo: Path) -> np.ndarray:
-        """ Toma revelada en neutro (ver KPSD), RGB de 16 bits. """
-        with rawpy.imread(str(archivo)) as raw:
-            return raw.postprocess(use_camera_wb=True, no_auto_bright=True,
-                                   output_bps=KPSD.BITS,
-                                   output_color=KPSD.ESPACIO,
-                                   gamma=KPSD.GAMMA, user_flip=0)

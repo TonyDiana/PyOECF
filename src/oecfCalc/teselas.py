@@ -8,8 +8,8 @@
 """
 
 # cSpell:ignore asim, bincount, errstate, idxs, imread, kcom, linalg
-# cSpell:ignore lstsq, mccamy, nanargmax, nanmax, oecf, otsu, postprocess
-# cSpell:ignore rawpy, rcond, teselas
+# cSpell:ignore lstsq, mccamy, nanargmax, nanmax, oecf, otsu, rawpy, rcond
+# cSpell:ignore teselas
 
 __all__ = ["KTE", "Teselas", "Ventana", "Select", "medir_teselas",
            "buscar_tela", "seleccionar", "porcentaje", "Oscuridad",
@@ -17,7 +17,7 @@ __all__ = ["KTE", "Teselas", "Ventana", "Select", "medir_teselas",
            "Medida", "medir_toma", "exceso_negro", "restar_exceso",
            "ruido_temporal", "part_recortada", "matriz_color",
            "temperatura",
-           "factores", "revelar", "recorte", "bloque_pantalla"]
+           "factores", "recorte", "bloque_pantalla"]
 
 # --- Bibliotecas estándar Python
 from collections import deque
@@ -225,10 +225,6 @@ class KTE(std.EnumMutable):
     MCCAMY = (449.0, 3525.0, 6823.3, 5520.33)
     """Temperatura de la luz: coeficientes de la fórmula de McCamy
     (n = (x − X_E) / (Y_E − y) y K = A·n³ + B·n² + C·n + D)."""
-
-    # --- Vista previa
-    BITS_PANTALLA = 8
-    """Bits por canal de la toma revelada para verla en pantalla."""
 
 
 #
@@ -806,18 +802,6 @@ def factores(ventana: Ventana) -> tuple[int, ...]:
     return tuple(f for f in KTE.FACTORES
                  if ((ancho * f) <= ventana.ancho)
                  and ((alto * f) <= ventana.alto))
-
-
-#
-def revelar(archivo: Path) -> np.ndarray:
-    """
-    Toma revelada en RGB de 8 bits, para verla en pantalla (no para la
-    lámina): balance de la cámara, sin aclarar y sin girar, para que sus
-    píxeles coincidan con los del sensor.
-    """
-    with rawpy.imread(str(archivo)) as raw:
-        return raw.postprocess(use_camera_wb=True, no_auto_bright=True,
-                               output_bps=KTE.BITS_PANTALLA, user_flip=0)
 
 
 #

@@ -18,10 +18,8 @@ from typing import NamedTuple
 # --- Bibliotecas internas
 from bib.oecfMediadores import KFR, KI, KP
 from kernel import COM as KCOM
-from leer import bits_tiff
 from .oecf import OECF
-from .revelado import KRV
-from .secuencia import KS, z2_medible
+from .secuencia import KS, tercios_sombra, z2_medible
 from .teselas import KTE, Select
 
 
@@ -188,7 +186,7 @@ def calcular_incidencias(oecf: OECF) -> list[Incidencia]:
         if not z2_medible(tercio, bloque.zv is not None):
             sin_medir.append(bloque.zv if (bloque.zv is not None)
                              else bloque.z2)                    # type: ignore
-        elif tercio != KS.TERCIOS_Z2:
+        elif tercio != tercios_sombra(tercio):
             estimados.append(bloque.z2)                         # type: ignore
     if estimados:
         lista.append(Incidencia(codigo=KI.ISO_ESTIMADO,
@@ -244,14 +242,4 @@ def calcular_incidencias(oecf: OECF) -> list[Incidencia]:
             lista.append(Incidencia(
                 codigo=KI.SOMBRAS_ALZADAS,
                 porcentaje=KCOM.CIEN * ((2.0 ** alzadas) - 1)))
-
-    # --- Exportaciones del revelador con menos bits que las definitivas
-    pocos = []
-    for tercio_ev, ruta in sorted(oecf.exportaciones.items()):
-        bits = bits_tiff(ruta)
-        if (bits is not None) and (bits < KRV.BITS_DEFINITIVOS):
-            pocos.append(tercio_ev)
-    if pocos:
-        lista.append(Incidencia(codigo=KI.TIFF_8_BITS, n=len(pocos),
-                                tercioEVs=tuple(pocos)))
     return lista

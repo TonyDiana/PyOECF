@@ -76,13 +76,6 @@ _F = KPDF
 
 
 #
-# --- Texto aún sin traducir: el español en los tres idiomas, hasta que
-#     llegue la traducción (PENDIENTE DE DEEPSEEK; Tony, 2026-11-10)
-def _solo_es(texto: str) -> dict[str, str]:
-    return {K.ES: texto, K.EN: texto, K.CA: texto}
-
-
-#
 # --- {clave: {idioma: texto}}
 TEXTOS = {
     # --- Nombres de las hojas
@@ -168,31 +161,15 @@ TEXTOS = {
                          K.EN: "Cannot be measured",
                          K.CA: "No es pot mesurar"},
     _L.T_NOTA_ISO_PDF: {
-        K.ES: "Qué pasa al subir el ISO, con una ZV y una Z2 por ISO. "
-              "Exposición: si la imagen sale igual, más clara o más oscura "
-              "que al ISO inicial. Textura en sombras: si se ve la textura "
-              "del paño en la Z2 (verde, se ve; amarillo, justa; rojo, se "
-              "pierde). Sombras con textura desde: dónde colocar las "
-              "sombras importantes a ese ISO (≈, estimado solo con su ZV y "
-              "su Z2); «Ninguna»: ni en la ZV llega la textura a la del ISO "
-              "inicial. Los números, en la hoja ISO del libro.",
-        K.EN: "What happens when raising the ISO, with one ZV and one Z2 per "
-              "ISO. Exposure: whether the image comes out the same, lighter "
-              "or darker than at the initial ISO. Shadow texture: whether "
-              "the cloth's texture is visible in Z2 (green, visible; yellow, "
-              "borderline; red, lost). Shadows with texture from: where to "
-              "place the important shadows at that ISO (≈, estimated only "
-              "from its ZV and Z2); «None»: not even in ZV does the texture "
-              "reach that of the initial ISO. The figures, in the ISO sheet "
-              "of the workbook.",
-        K.CA: "Què passa en pujar l'ISO, amb una ZV i una Z2 per ISO. "
-              "Exposició: si la imatge ix igual, més clara o més fosca que "
-              "a l'ISO inicial. Textura en ombres: si es veu la textura del "
-              "drap en la Z2 (verd, es veu; groc, justa; roig, es perd). "
-              "Ombres amb textura des de: on col·locar les ombres "
-              "importants a eixe ISO (≈, estimat només amb la seua ZV i la "
-              "seua Z2); «Cap»: ni en la ZV arriba la textura a la de l'ISO "
-              "inicial. Els números, en el full ISO del llibre."},
+        K.ES: "Qué pasa con las sombras al subir el ISO: una ZV y una Z2 "
+              "por ISO, con el tiempo que da la reciprocidad. Los números "
+              "de cada ISO, en la hoja ISO del libro.",
+        K.EN: "What happens to the shadows when raising the ISO: one ZV and "
+              "one Z2 per ISO, with the shutter time given by reciprocity. "
+              "The figures for each ISO, in the ISO sheet of the workbook.",
+        K.CA: "Què passa amb les ombres en pujar l'ISO: una ZV i una Z2 per "
+              "ISO, amb el temps que dona la reciprocitat. Els números de "
+              "cada ISO, en el full ISO del llibre."},
     _L.T_CAB_EXPOSICION_ISO: {K.ES: "Exposición", K.EN: "Exposure",
                               K.CA: "Exposició"},
     _L.T_EXPOSICION_IGUAL: {K.ES: "Igual", K.EN: "Same", K.CA: "Igual"},
@@ -210,28 +187,6 @@ TEXTOS = {
                            K.CA: "Ombres amb textura des de"},
     _L.T_SOMBRAS_ISO: {K.ES: "≈{zona}", K.EN: "≈{zona}", K.CA: "≈{zona}"},
     _L.T_SOMBRAS_NINGUNA: {K.ES: "Ninguna", K.EN: "None", K.CA: "Cap"},
-    _L.T_ISO_HASTA: {
-        K.ES: "Hasta ISO {hasta}, las sombras de la Z2 conservan la "
-              "textura. A partir de ISO {desde}, coloca las sombras "
-              "importantes más arriba.",
-        K.EN: "Up to ISO {hasta}, the Z2 shadows keep their texture. From "
-              "ISO {desde} on, place the important shadows higher.",
-        K.CA: "Fins a ISO {hasta}, les ombres de la Z2 conserven la "
-              "textura. A partir d'ISO {desde}, col·loca les ombres "
-              "importants més amunt."},
-    _L.T_ISO_TODOS: {
-        K.ES: "En todos los ISO medidos, las sombras de la Z2 conservan la "
-              "textura.",
-        K.EN: "At every ISO measured, the Z2 shadows keep their texture.",
-        K.CA: "En tots els ISO mesurats, les ombres de la Z2 conserven la "
-              "textura."},
-    _L.T_ISO_NINGUNO: {
-        K.ES: "Ni siquiera a ISO {iso} conservan la textura las sombras de "
-              "la Z2: coloca las sombras importantes más arriba.",
-        K.EN: "Not even at ISO {iso} do the Z2 shadows keep their texture: "
-              "place the important shadows higher.",
-        K.CA: "Ni tan sols a ISO {iso} conserven la textura les ombres de "
-              "la Z2: col·loca les ombres importants més amunt."},
 
     # --- Hoja Constantes
     _L.T_TITULO_CONSTANTES: {K.ES: "Constantes del método",
@@ -333,40 +288,32 @@ TEXTOS = {
               "considered clipped.",
         K.CA: "Fracció del màxim d'un canal des de la qual un valor es "
               "considera retallat."},
-    _L.C_PANO_MINIMO: {
-        K.ES: "Textura/ruido mínima del paño en la ZV. Por debajo, el paño "
-              "es demasiado suave y la latitud de texturas en las sombras "
-              "puede salir corta: se avisa.",
-        K.EN: "Minimum texture/noise of the cloth at ZV. Below it, the "
-              "cloth is too smooth and the texture latitude in the shadows "
-              "may come out short: a warning is given.",
-        K.CA: "Textura/soroll mínima del drap en la ZV. Per davall, el drap "
-              "és massa suau i la latitud de textures en les ombres pot "
-              "eixir curta: s'avisa."},
     _L.C_ROSE_TEXTURA: {
         K.ES: "Secuencia de ISO: textura/ruido desde la que se aprecia la "
               "textura del paño en la Z2 de cada ISO: la textura del paño "
               "(su dispersión sin el ruido de la tarjeta) entre el ruido de "
               "la tarjeta, medidas como se verían con la foto entera en una "
               "pantalla Full HD (cada bloque de píxeles del sensor que ocupa "
-              "un píxel de la pantalla, en uno). Del criterio de Rose (Rose "
-              "1948; Burgess 1999). La latitud de texturas ya no lo usa: ver "
+              "un píxel de la pantalla, en uno). Valor aproximado, ajustado "
+              "a ojo con la R7 y la 60D (el criterio de Rose daba 5, "
+              "demasiado estricto). La latitud de texturas ya no lo usa: ver "
               "{contraste_sombras}.",
         K.EN: "ISO sequence: texture/noise from which the cloth's texture is "
               "visible in each ISO's Z2: the cloth's texture (its dispersion "
               "without the card's noise) divided by the card's noise, "
               "measured as they would look with the whole photo on a Full HD "
               "screen (each block of sensor pixels that fills one screen "
-              "pixel, as one). From the Rose criterion (Rose 1948; Burgess "
-              "1999). The texture latitude no longer uses it: see "
-              "{contraste_sombras}.",
+              "pixel, as one). Approximate value, tuned by eye with the R7 "
+              "and the 60D (the Rose criterion gave 5, too strict). The "
+              "texture latitude no longer uses it: see {contraste_sombras}.",
         K.CA: "Seqüència d'ISO: textura/soroll des de la qual s'aprecia la "
               "textura del drap en la Z2 de cada ISO: la textura del drap "
               "(la seua dispersió sense el soroll de la targeta) entre el "
               "soroll de la targeta, mesurades com es veurien amb la foto "
               "sencera en una pantalla Full HD (cada bloc de píxels del "
-              "sensor que ocupa un píxel de la pantalla, en un). Del criteri "
-              "de Rose (Rose 1948; Burgess 1999). La latitud de textures ja "
+              "sensor que ocupa un píxel de la pantalla, en un). Valor "
+              "aproximat, ajustat a ull amb la R7 i la 60D (el criteri de "
+              "Rose donava 5, massa estricte). La latitud de textures ja "
               "no l'usa: vegeu {contraste_sombras}."},
     _L.C_TEXTURA_JUSTA: {
         K.ES: "Fracción del umbral de sombras desde la que la textura de la "
@@ -996,6 +943,8 @@ TEXTOS = {
         K.ES: "{canal}: ruido aceptable en todo el rango.",
         K.EN: "{canal}: acceptable noise across the whole range.",
         K.CA: "{canal}: soroll acceptable en tot el rang."},
+    _L.T_RUIDO_COLOR_NINGUNA: {K.ES: "Ninguna zona", K.EN: "No zone",
+                               K.CA: "Cap zona"},
     _L.T_RUIDO_COLOR_DESDE: {K.ES: "{canal}: aceptable desde {zona}.",
                              K.EN: "{canal}: acceptable from {zona}.",
                              K.CA: "{canal}: acceptable des de {zona}."},
@@ -1009,6 +958,10 @@ TEXTOS = {
     # --- Píxeles defectuosos (Datos, Análisis y PDF)
     _L.T_PIXELES: {K.ES: "Píxeles defectuosos", K.EN: "Defective pixels",
                    K.CA: "Píxels defectuosos"},
+    _L.T_PIXELES_TIPO_CALIENTES: {K.ES: "Calientes", K.EN: "Hot",
+                                  K.CA: "Calents"},
+    _L.T_PIXELES_TIPO_MUERTOS: {K.ES: "Muertos", K.EN: "Dead",
+                                K.CA: "Morts"},
     _L.T_PIXELES_CALIENTES: {
         K.ES: "Calientes: {n} ({por_mpx} por Mpx)",
         K.EN: "Hot: {n} ({por_mpx} per Mpx)",
@@ -1294,10 +1247,10 @@ TEXTOS = {
                               K.CA: "Retallat verd"},
     _L.T_CAB_TELA_REC_AZUL: {K.ES: "Recortado azul", K.EN: "Blue clipped",
                              K.CA: "Retallat blau"},
-    _L.T_CAB_TELA_PANTALLA: {K.ES: "Paño verde", K.EN: "Green cloth",
-                             K.CA: "Drap verd"},
-    _L.T_CAB_TARJETA_PANTALLA: {K.ES: "Tarjeta verde", K.EN: "Green card",
-                                K.CA: "Targeta verda"},
+    _L.T_CAB_TELA_PIXEL: {K.ES: "Paño verde", K.EN: "Green cloth",
+                          K.CA: "Drap verd"},
+    _L.T_CAB_TARJETA_PIXEL: {K.ES: "Tarjeta verde", K.EN: "Green card",
+                             K.CA: "Targeta verda"},
 
     # --- Latitud de texturas (Cálculo, bloque 4, y Análisis)
     _L.T_TEXTURAS: {K.ES: "Latitud de texturas", K.EN: "Texture latitude",
@@ -1406,19 +1359,6 @@ TEXTOS = {
         K.ES: "Sin paño: no se puede medir la latitud de texturas.",
         K.EN: "No cloth: the texture latitude cannot be measured.",
         K.CA: "Sense drap: no es pot mesurar la latitud de textures."},
-    _L.T_POCA_TEXTURA: {
-        K.ES: "El paño tiene poca textura (en la Z-V, {textura} veces el "
-              "ruido; hacen falta {minimo}): la latitud de texturas en las "
-              "sombras puede salir corta o no medirse. Use un paño con la "
-              "trama más marcada y revise la luz y el diafragma.",
-        K.EN: "The cloth has little texture (in Z-V, {textura} times the "
-              "noise; {minimo} are needed): texture latitude in the shadows "
-              "may come out short or not be measurable. Use a cloth with a "
-              "more marked weave and check the light and the aperture.",
-        K.CA: "El drap té poca textura (en la Z-V, {textura} vegades el "
-              "soroll; calen {minimo}): la latitud de textures en les ombres "
-              "pot eixir curta o no mesurar-se. Useu un drap amb la trama "
-              "més marcada i reviseu la llum i el diafragma."},
 
     # --- PDF de la cámara (exportar.Pdf; usa también textos del
     #     libro)
@@ -1466,6 +1406,59 @@ TEXTOS = {
                    K.CA: f"Generat amb {K.NOMBRE} {K.version}"},
     _F.T_PAGINA: {K.ES: "{pagina} / {paginas}", K.EN: "{pagina} / {paginas}",
                   K.CA: "{pagina} / {paginas}"},
+
+    # --- Tablas nuevas de la página 2 del PDF (Tony, 2026-11-13): el ruido
+    #     y los píxeles defectuosos, y los Kelvin neutros junto a los
+    #     balances. ES de Claude; EN y CA de Claude, pendientes de DeepSeek
+    _F.T_AVISO_EXPOSICION_ISO: {
+        K.ES: "{rotulo} {iso}: la exposición se aparta de la del ISO "
+              "inicial ({desvio}); revise el tiempo.",
+        K.EN: "{rotulo} {iso}: the exposure differs from that of the "
+              "initial ISO ({desvio}); check the shutter time.",
+        K.CA: "{rotulo} {iso}: l'exposició s'aparta de la de l'ISO inicial "
+              "({desvio}); reviseu el temps."},
+    _F.T_CAB_CANTIDAD: {K.ES: "Cantidad", K.EN: "Count", K.CA: "Quantitat"},
+    _F.T_CAB_EN_CAMARA: {K.ES: "En la cámara", K.EN: "On the camera",
+                         K.CA: "A la càmera"},
+    _F.T_CAB_KELVIN_LUZ: {K.ES: "Kelvin", K.EN: "Kelvin", K.CA: "Kelvin"},
+    _F.T_CAB_LUZ: {K.ES: "Luz", K.EN: "Light", K.CA: "Llum"},
+    _F.T_CAB_LUZ_MIRED: {K.ES: "±{mired} mired", K.EN: "±{mired} mired",
+                         K.CA: "±{mired} mired"},
+    _F.T_CAB_POR_MPX: {K.ES: "Por Mpx", K.EN: "Per Mpx", K.CA: "Per Mpx"},
+    _F.T_CAB_RUIDO_DESDE: {K.ES: "Ruido aceptable desde",
+                           K.EN: "Acceptable noise from",
+                           K.CA: "Soroll acceptable des de"},
+    _F.T_CAB_SR_Z2: {K.ES: "Señal/ruido en la Z2",
+                     K.EN: "Signal/noise at Z2",
+                     K.CA: "Senyal/soroll en la Z2"},
+    _F.T_CAB_SR_ZV: {K.ES: "Señal/ruido en la ZV",
+                     K.EN: "Signal/noise at ZV",
+                     K.CA: "Senyal/soroll en la ZV"},
+    _F.T_CAB_TV_ISO: {K.ES: "Tv (f/{f})", K.EN: "Tv (f/{f})",
+                      K.CA: "Tv (f/{f})"},
+    _F.T_LUZ_CALIDA: {K.ES: "Cálida", K.EN: "Warm", K.CA: "Càlida"},
+    _F.T_LUZ_FLASH: {K.ES: "Flash", K.EN: "Flash", K.CA: "Flaix"},
+    _F.T_LUZ_LED_FRIO: {K.ES: "LED frío", K.EN: "Cool LED",
+                        K.CA: "LED fred"},
+    _F.T_LUZ_SOL: {K.ES: "Sol", K.EN: "Sun", K.CA: "Sol"},
+    _F.T_NOTA_NEUTRAS: {
+        K.ES: "Kelvin que poner en la cámara para que la foto salga neutra "
+              "con cada luz, según la tabla de balances (anotado → medido). "
+              "Mired = 1.000.000 ÷ Kelvin: un mismo paso de mired se nota "
+              "igual con cualquier luz. ≈ estimado. Cálida: bombilla o LED "
+              "cálido. Flash: referencia de luz día.",
+        K.EN: "Kelvin to set on the camera so the photo comes out neutral "
+              "under each light, from the balances table (recorded → "
+              "measured). Mired = 1,000,000 ÷ Kelvin: the same mired step "
+              "looks the same under any light. ≈ estimated. Warm: bulb or "
+              "warm LED. Flash: daylight reference.",
+        K.CA: "Kelvin que posar a la càmera perquè la foto isca neutra amb "
+              "cada llum, segons la taula de balanços (anotat → mesurat). "
+              "Mired = 1.000.000 ÷ Kelvin: un mateix pas de mired es nota "
+              "igual amb qualsevol llum. ≈ estimat. Càlida: bombeta o LED "
+              "càlid. Flaix: referència de llum de dia."},
+    _F.T_SIN_DATOS_NEUTRA: {K.ES: "sin datos", K.EN: "no data",
+                            K.CA: "sense dades"},
 }
 
 

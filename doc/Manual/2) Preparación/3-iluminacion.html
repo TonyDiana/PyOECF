@@ -856,14 +856,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/13-previo.html" class="md-nav__link">
+      <a href="../3%29%20Captura/10-previo.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Checklist previos a la captura
+    Lista de verificación previa a la captura
   
 
     
@@ -884,14 +884,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/x-captura.html" class="md-nav__link">
+      <a href="../3%29%20Captura/11-captura.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Checklist de la sesión de captura
+    Lista de verificación de la sesión de captura
   
 
     
@@ -912,14 +912,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/y-posterior.html" class="md-nav__link">
+      <a href="../3%29%20Captura/12-posterior.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Finalización
+    Lista de verificación posterior a la captura
   
 
     
@@ -940,7 +940,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../3%29%20Captura/z-final.html" class="md-nav__link">
+      <a href="../3%29%20Captura/21-final.html" class="md-nav__link">
         
   
   
@@ -1448,36 +1448,70 @@
 <h2 id="objetivo-a-lograr">Objetivo a lograr<a class="headerlink" href="#objetivo-a-lograr" title="Permanent link">¶</a></h2>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="img/3-01.png" data-desc-position="bottom"><img alt="Ambos paños" src="img/3-01.png"></a></p>
 <p>El objetivo es iluminar tanto el paño como la tarjeta gris de modo que ambos ofrezcan la misma respuesta en la medición. Esto es muy sencillo de enunciar, pero suele resultar más problemático de lo que parece.</p>
-<p>Si ambos lados ofrecen mediciones diferentes, no se logrará ningún resultado aceptable, y no existe un mecanismo automático capaz de detectar que la iluminación ha resultado desigual; el software intenta analizar las capturas y determinar si ambas zonas recibieron la misma luz, pero si bien el análisis del software es muy minucioso, no puede determinar cómo la cámara o el exposímetro unifican las zonas iluminadas con las sombras del paño gris, las cuales resultan cruciales para evaluar las texturas.</p>
+<p>Si ambos lados ofrecen mediciones diferentes, no se logrará ningún resultado aceptable. El software avisa cuando detecta luz desigual o cambios de luz durante la serie, pero no puede determinar cómo la cámara o el exposímetro unifican las zonas iluminadas con las sombras del paño gris, las cuales resultan cruciales para evaluar las texturas.</p>
 <p>Por otra parte, de nada sirve tener un paño iluminado de manera tan perfecta que no ofrezca sombra alguna, ya que esto acabaría con las texturas, que son justo lo que se desea evaluar.</p>
 <blockquote>
-<p>No es necesario repartir la escena a mitades perfectas del encuadre; el paño gris se utilizará para un análisis humano de textura y la tarjeta para un análisis matemático. Es preferible una mayor cantidad de tarjeta gris en el encuadre si esta presenta impedimentos para su neutralidad (diana de enfoque, manchas, etc...). El software puede trabajar con imágenes que supongan 2/3 de tarjeta y 1/3 de paño gris.</p>
+<p>No es necesario repartir la escena a mitades perfectas del encuadre; el paño gris se utilizará para un análisis humano de textura y la tarjeta para un análisis matemático. Es preferible una mayor cantidad de tarjeta gris en el encuadre si esta presenta impedimentos para su neutralidad (diana de enfoque, manchas, etc.). El software puede trabajar con imágenes que supongan 2/3 de tarjeta y 1/3 de paño gris.</p>
 </blockquote>
 <h2 id="problemas-a-evitar">Problemas a evitar<a class="headerlink" href="#problemas-a-evitar" title="Permanent link">¶</a></h2>
 <ul>
-<li>Diferencias de medición entre ambos elementos.</li>
-<li>Diferencias de medición entre el centro y los extremos de la escena.</li>
-<li>Área oscura en la transición entre el paño y la tarjeta<sup id="fnref:trans"><a class="footnote-ref" href="#fn:trans">1</a></sup>.</li>
-<li>Manchas en la tarjeta gris.</li>
-<li>Sombras del paño sobre la tarjeta gris<sup id="fnref:sombra"><a class="footnote-ref" href="#fn:sombra">2</a></sup>.</li>
-<li>Utilizar una tarjeta gris con diana y mezclar o dejar muy juntos la cinta negra con el paño gris<sup id="fnref:diana"><a class="footnote-ref" href="#fn:diana">3</a></sup>.</li>
-<li>Medir exclusivamente la frontera entre ambos elementos.</li>
-<li>Luz parásita en el espacio de trabajo.</li>
-<li>Reflejos sobre los elementos.</li>
-<li>Mezclar fuentes de luz de distinta naturaleza (LED y halógena)<sup id="fnref:led"><a class="footnote-ref" href="#fn:led">4</a></sup>.</li>
-<li>Parpadeo (flicker) en las fuentes LED<sup id="fnref:led2"><a class="footnote-ref" href="#fn:led2">5</a></sup>.</li>
+<li>
+<p>Diferencias de medición entre ambos elementos.</p>
+</li>
+<li>
+<p>Diferencias de medición entre el centro y los extremos de la escena.</p>
+</li>
+<li>
+<p>Área oscura en la transición entre el paño y la tarjeta<sup id="fnref:trans"><a class="footnote-ref" href="#fn:trans">1</a></sup>.</p>
+</li>
+<li>
+<p>Manchas en la tarjeta gris.</p>
+</li>
+<li>
+<p>Sombras del paño sobre la tarjeta gris<sup id="fnref:sombra"><a class="footnote-ref" href="#fn:sombra">2</a></sup>.</p>
+</li>
+<li>
+<p>Con una tarjeta con diana, dejar el borde negro mezclado o muy junto al paño gris<sup id="fnref:diana"><a class="footnote-ref" href="#fn:diana">3</a></sup>.</p>
+</li>
+<li>
+<p>Medir exclusivamente la transición entre ambos elementos.</p>
+</li>
+<li>
+<p>Luz parásita en el espacio de trabajo.</p>
+</li>
+<li>
+<p>Reflejos sobre los elementos.</p>
+</li>
+<li>
+<p>Mezclar fuentes de luz de distinta naturaleza (LED y halógena)<sup id="fnref:led"><a class="footnote-ref" href="#fn:led">4</a></sup>.</p>
+</li>
+<li>
+<p>Parpadeo (flicker) en las fuentes LED<sup id="fnref:led2"><a class="footnote-ref" href="#fn:led2">5</a></sup>.</p>
+</li>
 </ul>
 <h2 id="cosas-que-suelen-funcionar">Cosas que suelen funcionar<a class="headerlink" href="#cosas-que-suelen-funcionar" title="Permanent link">¶</a></h2>
 <ul>
-<li>Utilizar dos fuentes de luz, una a cada lado de la escena.</li>
-<li>Separar o acercar cada fuente de luz de forma distinta (normalmente, más alejada la del lado del paño).</li>
-<li>Medir entre la transición de los elementos y su centro (que es lo que se va a fotografiar), en vez de medir el centro y bordes de cada elemento.</li>
-<li>Alejar las fuentes lo suficiente para que la caída de luz entre el centro y los bordes de la escena sea mínima (ley del inverso del cuadrado).</li>
-<li>Repetir la medición varias veces en cada punto y promediar, especialmente si se usa el exposímetro de la cámara en lugar de uno externo calibrado.</li>
-<li>Realizar una toma de prueba completa antes de la sesión definitiva. Esto permite detectar problemas de iluminación, enfoque o configuración antes de invertir tiempo en el proceso completo<sup id="fnref:truco"><a class="footnote-ref" href="#fn:truco">6</a></sup>.</li>
+<li>
+<p>Utilizar dos fuentes de luz, una a cada lado de la escena.</p>
+</li>
+<li>
+<p>Separar o acercar cada fuente de luz de forma distinta (normalmente, más alejada la del lado del paño).</p>
+</li>
+<li>
+<p>Medir entre la transición de los elementos y su centro (que es lo que se va a fotografiar), en vez de medir el centro y bordes de cada elemento.</p>
+</li>
+<li>
+<p>Alejar las fuentes lo suficiente para que la caída de luz entre el centro y los bordes de la escena sea mínima (ley del inverso del cuadrado).</p>
+</li>
+<li>
+<p>Repetir la medición varias veces en cada punto y promediar, especialmente si se usa el exposímetro de la cámara en lugar de uno externo calibrado.</p>
+</li>
+<li>
+<p>Realizar una toma de prueba completa antes de la sesión definitiva. Esto permite detectar problemas de iluminación, enfoque o configuración antes de invertir tiempo en el proceso completo<sup id="fnref:truco"><a class="footnote-ref" href="#fn:truco">6</a></sup>.</p>
+</li>
 </ul>
 <blockquote>
-<p>No intentar colocar las luces de manera simétrica en posición; se busca simetría en el resultado no en su ubicación.</p>
+<p>No intentar colocar las luces de manera simétrica en posición; se busca simetría en el resultado, no en su ubicación.</p>
 </blockquote>
 <h2 id="notas-a-pie-de-pagina">Notas a pie de página<a class="headerlink" href="#notas-a-pie-de-pagina" title="Permanent link">¶</a></h2>
 <div class="footnote">
@@ -1493,13 +1527,13 @@
 <p>En este caso es mejor colocar el paño sobre la tarjeta para tapar el borde negro. No obstante, en esa disposición debería colocarse un elemento de igual grosor al otro lado del paño, a fin de evitar que este quede inclinado y ofrezca una respuesta a la iluminación degradada en lugar de constante.&nbsp;<a class="footnote-backref" href="#fnref:diana" title="Jump back to footnote 3 in the text">↩</a></p>
 </li>
 <li id="fn:led">
-<p>Aunque el proceso no analiza el color, sí pueden introducir diferencias de respuesta espectral que afecten al contraste capturado.&nbsp;<a class="footnote-backref" href="#fnref:led" title="Jump back to footnote 4 in the text">↩</a></p>
+<p>Aunque el proceso no analiza el color, las fuentes mezcladas sí pueden introducir diferencias de respuesta espectral que afecten al contraste capturado.&nbsp;<a class="footnote-backref" href="#fnref:led" title="Jump back to footnote 4 in the text">↩</a></p>
 </li>
 <li id="fn:led2">
 <p>Algunas fuentes LED parpadean a frecuencias que el ojo no percibe pero que la cámara sí registra, generando variaciones entre tomas idénticas e incluso entre áreas de la misma toma fotográfica.&nbsp;<a class="footnote-backref" href="#fnref:led2" title="Jump back to footnote 5 in the text">↩</a></p>
 </li>
 <li id="fn:truco">
-<p>Se puede capturar en una fotografía cada elemento y analizarlo en un editor gráfico, analizar el histograma, el cual deberá estar lo más unificado y centrado posible, y analizar la imagen por áreas de iluminación en un software de edición fotográfica. Este sub procedimiento, aunque tedioso, suele ayudar mucho a las personas sin acceso a un exposímetro calibrado o con poca experiencia en iluminación.&nbsp;<a class="footnote-backref" href="#fnref:truco" title="Jump back to footnote 6 in the text">↩</a></p>
+<p>Se puede capturar en una fotografía cada elemento y analizarlo en un editor gráfico, analizar el histograma, el cual deberá estar lo más unificado y centrado posible, y analizar la imagen por áreas de iluminación en un software de edición fotográfica. Este subprocedimiento, aunque tedioso, suele ayudar mucho a las personas sin acceso a un exposímetro calibrado o con poca experiencia en iluminación.&nbsp;<a class="footnote-backref" href="#fnref:truco" title="Jump back to footnote 6 in the text">↩</a></p>
 </li>
 </ol>
 </div>

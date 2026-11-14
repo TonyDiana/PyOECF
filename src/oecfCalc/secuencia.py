@@ -12,7 +12,7 @@
 # cSpell:ignore leidas, oecf
 
 __all__ = ["KS", "BloqueISO", "Secuencia", "balance_personalizado",
-           "z2_medible", "repartir_secuencia"]
+           "tercios_sombra", "z2_medible", "repartir_secuencia"]
 
 # --- Bibliotecas estándar Python
 from typing import NamedTuple
@@ -63,10 +63,20 @@ class KS(std.EnumMutable):
     TERCIOS_Z2 = -ZONAS_Z2 * KP.TERCIOS
     """tercioEV de la Z2 de la secuencia de ISO."""
 
+    ZONAS_Z3 = 2
+    """Zonas de la Z3 por debajo de la Z-V: la otra toma de sombras que
+    acepta la secuencia de ISO (Tony, 2026-11-13: la Z2 busca un límite
+    que los reveladores resuelven bien; la Z3, saber qué pasa con la
+    nitidez)."""
+
+    TERCIOS_Z3 = -ZONAS_Z3 * KP.TERCIOS
+    """tercioEV de la Z3 de la secuencia de ISO."""
+
     MARGEN_Z2 = 1
-    """Tercios que la Z2 de un ISO puede apartarse de TERCIOS_Z2 (en el
-    ISO más alto, por el tiempo más corto de la cámara): se mide como
-    estimación. Más, no se mide (Tony, 2026-11-10)."""
+    """Tercios que la toma de sombras de un ISO (la Z2 o la Z3) puede
+    apartarse de TERCIOS_Z2 o de TERCIOS_Z3 (en el ISO más alto, por el
+    tiempo más corto de la cámara): se mide como estimación. Más, no se
+    mide (Tony, 2026-11-10)."""
 
 
 #
@@ -131,15 +141,28 @@ def balance_personalizado(tercioEVs: list[int | None],
 
 
 #
+def tercios_sombra(tercio: int | None) -> int | None:
+    """
+    El sitio que le toca a la toma de sombras de un ISO (su tercioEV): el
+    de la Z2 (KS.TERCIOS_Z2) o el de la Z3 (KS.TERCIOS_Z3), el que esté a
+    KS.MARGEN_Z2 tercios o menos; None si no hay toma o no se acerca a
+    ninguno.
+    """
+    if tercio is None:
+        return None
+    return next((sitio for sitio in (KS.TERCIOS_Z2, KS.TERCIOS_Z3)
+                 if abs(tercio - sitio) <= KS.MARGEN_Z2), None)
+
+
+#
 def z2_medible(tercio_z2: int | None, hay_zv: bool) -> bool:
     """
-    ¿Se puede medir un ISO de la secuencia de ISO? Sí, si tiene Z-V y Z2
-    y su Z2 (tercio_z2, su tercioEV) está a KS.MARGEN_Z2 tercios de
-    KS.TERCIOS_Z2 como mucho. Si no está justo en KS.TERCIOS_Z2, es una
-    estimación
+    ¿Se puede medir un ISO de la secuencia de ISO? Sí, si tiene Z-V y una
+    toma de sombras (la Z2 o la Z3; tercio_z2, su tercioEV) a
+    KS.MARGEN_Z2 tercios o menos de su sitio (ver tercios_sombra). Si no
+    está justo en su sitio, es una estimación
     """
-    return (hay_zv and (tercio_z2 is not None)
-            and (abs(tercio_z2 - KS.TERCIOS_Z2) <= KS.MARGEN_Z2))
+    return hay_zv and (tercios_sombra(tercio_z2) is not None)
 
 
 #

@@ -182,28 +182,32 @@ class Rejilla(tk.Canvas):
                   "inicial."}
         TXT_ISO_ESTIMADO = {
             K.ES: _ES[_KI.ISO_ESTIMADO],
-            K.EN: ("In {n} ISO, the Z2 did not reach its place because of "
-                   "the camera's shortest shutter speed: its texture is an "
-                   "estimate: {idents}.",
-                   "In {n} ISOs, the Z2 did not reach its place because of "
-                   "the camera's shortest shutter speed: its texture is an "
-                   "estimate: {idents}."),
-            K.CA: ("En {n} ISO, la Z2 no va arribar al seu lloc pel temps "
-                   "més curt de la càmera: la seua textura és una "
-                   "estimació: {idents}.",
-                   "En {n} ISO, la Z2 no va arribar al seu lloc pel temps "
-                   "més curt de la càmera: la seua textura és una "
-                   "estimació: {idents}.")}
+            K.EN: ("In {n} ISO, the shadow shot (Z2 or Z3) did not reach "
+                   "its place because of the camera's shortest shutter "
+                   "speed: its texture is an estimate: {idents}.",
+                   "In {n} ISOs, the shadow shot (Z2 or Z3) did not reach "
+                   "its place because of the camera's shortest shutter "
+                   "speed: its texture is an estimate: {idents}."),
+            K.CA: ("En {n} ISO, la presa d'ombres (Z2 o Z3) no va arribar al "
+                   "seu lloc pel temps més curt de la càmera: la seua "
+                   "textura és una estimació: {idents}.",
+                   "En {n} ISO, la presa d'ombres (Z2 o Z3) no va arribar al "
+                   "seu lloc pel temps més curt de la càmera: la seua "
+                   "textura és una estimació: {idents}.")}
         TXT_ISO_SIN_MEDIR = {
             K.ES: _ES[_KI.ISO_SIN_MEDIR],
-            K.EN: ("{n} ISO of the sequence cannot be measured: its ZV or Z2 "
-                   "is missing, or its Z2 is too far off: {idents}.",
+            K.EN: ("{n} ISO of the sequence cannot be measured: its ZV or "
+                   "shadow shot (Z2 or Z3) is missing, or the latter is too "
+                   "far off: {idents}.",
                    "{n} ISOs of the sequence cannot be measured: their ZV or "
-                   "Z2 is missing, or their Z2 is too far off: {idents}."),
+                   "shadow shot (Z2 or Z3) is missing, or the latter is too "
+                   "far off: {idents}."),
             K.CA: ("No es pot mesurar {n} ISO de la seqüència: li falta la "
-                   "ZV o la Z2, o la seua Z2 s'aparta massa: {idents}.",
+                   "ZV o la presa d'ombres (Z2 o Z3), o esta s'aparta "
+                   "massa: {idents}.",
                    "No es poden mesurar {n} ISO de la seqüència: els falta "
-                   "la ZV o la Z2, o la seua Z2 s'aparta massa: {idents}.")}
+                   "la ZV o la presa d'ombres (Z2 o Z3), o esta s'aparta "
+                   "massa: {idents}.")}
 
         # --- Secuencia de tomas (ver OECF.secuencia)
         TXT_INICIALES_SOBRAN = {
@@ -412,23 +416,6 @@ class Rejilla(tk.Canvas):
                   "o d'una llum que parpelleja: desactiveu "
                   "l'antiparpelleig i repetiu la sèrie."}
 
-        # --- Exportaciones del revelador de menos bits que las
-        #     definitivas (con sus zonas): solo valen para probar
-        TXT_TIFF_8_BITS = {
-            K.ES: _ES[_KI.TIFF_8_BITS],
-            K.EN: ("This export from the raw developer has fewer than "
-                   "{definitivos} bits: it is fine for testing, not for "
-                   "the final analysis: {zonas}.",
-                   "These exports from the raw developer have fewer than "
-                   "{definitivos} bits: they are fine for testing, not for "
-                   "the final analysis: {zonas}."),
-            K.CA: ("Esta exportació del revelador té menys de "
-                   "{definitivos} bits: val per a provar, no per a "
-                   "l'anàlisi definitiva: {zonas}.",
-                   "Estes exportacions del revelador tenen menys de "
-                   "{definitivos} bits: valen per a provar, no per a "
-                   "l'anàlisi definitiva: {zonas}.")}
-
         # --- Separador decimal de cada idioma (los formatos de los números,
         #     en oecfMediadores.marcadores_incidencia)
         SEP_DECIMAL = {K.ES: ",", K.EN: ".", K.CA: ","}
@@ -477,8 +464,7 @@ class Rejilla(tk.Canvas):
             _KI.REVISAR_SERIE: TXT_REVISAR_SERIE,
             _KI.REPETIR_SERIE: TXT_REPETIR_SERIE,
             _KI.LUZ_CAMBIO: TXT_LUZ_CAMBIO,
-            _KI.SOMBRAS_ALZADAS: TXT_SOMBRAS_ALZADAS,
-            _KI.TIFF_8_BITS: TXT_TIFF_8_BITS}
+            _KI.SOMBRAS_ALZADAS: TXT_SOMBRAS_ALZADAS}
 
     #
     def __init__(self, master: ctk.CTkBaseClass) -> None:

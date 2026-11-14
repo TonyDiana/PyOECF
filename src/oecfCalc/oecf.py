@@ -879,31 +879,11 @@ class OECF(object):
         zonas: dict[int, ZonaMedida] = {}
         control: list[ZonaMedida] = []
         for n, (tercio_ev, raw, m) in enumerate(medidas):
-            nivel = dict(zip(m.canales, m.nivel))
-
             recortado = {} if (m.tela is None) else {
                 c: part_recortada(h, oscuro.negro[int(c[1:])]
-                                  +
-                                  (KCOM.UMBRAL_RECORTE * topes[c]))
-
+                                  + (KCOM.UMBRAL_RECORTE * topes[c]))
                 for c, h in zip(m.canales, m.tela.histograma)}
-
-            copia = self.copias.get(raw)
-            zona = ZonaMedida(
-                tercio_ev=tercio_ev,
-                archivo=raw.name,
-                copia=copia.name if copia else None,
-                nivel=nivel,
-                disp=dict(zip(m.canales, m.disp)),
-                tela_nivel={} if (m.tela is None) else dict(
-                    zip(m.canales, m.tela.nivel)),
-                tela_disp={} if (m.tela is None) else dict(
-                    zip(m.canales, m.tela.disp)),
-                tela_recortado=recortado,
-                dev=tuple(float(x) for x in m.dev_rechazadas),
-                disp_pantalla=dict(zip(m.canales, m.disp_pantalla)),
-                tela_disp_pantalla={} if (m.tela is None) else dict(
-                    zip(m.canales, m.tela.disp_pantalla)))
+            zona = self.__zona_medida(tercio_ev, raw, m, recortado)
             if n < (len(medidas) - len(otras)):
                 zonas[tercio_ev] = zona
             else:
@@ -1226,10 +1206,11 @@ class OECF(object):
         return self.copias.get(raw, raw)
 
     #
-    # --- Toma medida (de la secuencia de ISO) desde su medida: sin el
-    #     recorte del paño, que en la Z-V y la Z2 no hace falta
-    def __zona_medida(self, tercio_ev: int, raw: Path,
-                      m: Medida) -> ZonaMedida:
+    # --- Toma medida desde su medida. Recortado: el del paño por canal; sin
+    #     él, vacío (en la Z-V y la Z2 de la secuencia de ISO no hace falta)
+    def __zona_medida(self, tercio_ev: int, raw: Path, m: Medida,
+                      recortado: dict[str, float] | None = None
+                      ) -> ZonaMedida:
         copia = self.copias.get(raw)
         return ZonaMedida(
             tercio_ev=tercio_ev,
@@ -1241,7 +1222,7 @@ class OECF(object):
                 zip(m.canales, m.tela.nivel)),
             tela_disp={} if (m.tela is None) else dict(
                 zip(m.canales, m.tela.disp)),
-            tela_recortado={},
+            tela_recortado={} if (recortado is None) else recortado,
             dev=tuple(float(x) for x in m.dev_rechazadas),
             disp_pantalla=dict(zip(m.canales, m.disp_pantalla)),
             tela_disp_pantalla={} if (m.tela is None) else dict(
