@@ -74,6 +74,14 @@ from .excel import KXL
 _L = KXL
 _F = KPDF
 
+
+#
+# --- Texto aún sin traducir: el español en los tres idiomas, hasta que
+#     llegue la traducción (PENDIENTE DE DEEPSEEK; Tony, 2026-11-10)
+def _solo_es(texto: str) -> dict[str, str]:
+    return {K.ES: texto, K.EN: texto, K.CA: texto}
+
+
 #
 # --- {clave: {idioma: texto}}
 TEXTOS = {
@@ -90,6 +98,140 @@ TEXTOS = {
     _L.T_HOJA_RECHAZADAS: {K.ES: "Rechazadas", K.EN: "Rejected",
                            K.CA: "Rebutjades"},
     _L.T_HOJA_IA: {K.ES: "IA", K.EN: "IA", K.CA: "IA"},
+    _L.T_HOJA_ISO: {K.ES: "ISO", K.EN: "ISO", K.CA: "ISO"},
+
+    # --- Hoja ISO y página de la secuencia de ISO en el PDF. EN y CA, de
+    #     Claude a petición de Tony (2026-11-13)
+    _L.T_TITULO_ISO: {K.ES: "Secuencia de ISO", K.EN: "ISO sequence",
+                      K.CA: "Seqüència d'ISO"},
+    _L.T_NOTA_ISO: {
+        K.ES: "Una ZV y una Z2 por ISO, tomadas entre los dos marcadores, "
+              "tras los balances de blancos. Todo en el canal verde. "
+              "Desviación: cuánto se aparta la ZV de cada ISO de la del ISO "
+              "inicial, en zonas. Ruido de lectura: el del borde oscuro del "
+              "sensor, en niveles. Ruido: dispersión relativa de la tarjeta "
+              "gris. Textura: la del paño en la Z2, sin el ruido de la "
+              "tarjeta. Ruido y textura, a escala de pantalla (la foto "
+              "entera en una pantalla Full HD). Umbral: textura/ruido de "
+              "{umbral} ({rose_textura}, en Constantes). La textura se ve "
+              "desde el 100 % del umbral, es justa desde el {justa} % "
+              "({textura_justa}) y por debajo se pierde.",
+        K.EN: "One ZV and one Z2 per ISO, taken between the two markers, "
+              "after the white balances. All in the green channel. "
+              "Deviation: how far the ZV of each ISO is from that of the "
+              "initial ISO, in zones. Read noise: that of the dark edge of "
+              "the sensor, in levels. Noise: relative dispersion of the grey "
+              "card. Texture: that of the cloth in Z2, without the card's "
+              "noise. Noise and texture, at screen scale (the whole photo on "
+              "a Full HD screen). Threshold: texture/noise of {umbral} "
+              "({rose_textura}, in Constants). The texture is visible from "
+              "100 % of the threshold, borderline from {justa} % "
+              "({textura_justa}) and lost below that.",
+        K.CA: "Una ZV i una Z2 per ISO, preses entre els dos marcadors, "
+              "després dels balanços de blancs. Tot en el canal verd. "
+              "Desviació: quant s'aparta la ZV de cada ISO de la de l'ISO "
+              "inicial, en zones. Soroll de lectura: el de la vora fosca del "
+              "sensor, en nivells. Soroll: dispersió relativa de la targeta "
+              "grisa. Textura: la del drap en la Z2, sense el soroll de la "
+              "targeta. Soroll i textura, a escala de pantalla (la foto "
+              "sencera en una pantalla Full HD). Llindar: textura/soroll de "
+              "{umbral} ({rose_textura}, en Constants). La textura es veu "
+              "des del 100 % del llindar, és justa des del {justa} % "
+              "({textura_justa}) i per davall es perd."},
+    _L.T_CAB_ISO: {K.ES: "ISO", K.EN: "ISO", K.CA: "ISO"},
+    _L.T_CAB_Z2: {K.ES: "Z2", K.EN: "Z2", K.CA: "Z2"},
+    _L.T_CAB_DESVIACION_ISO: {K.ES: "Desviación ZV (zonas)",
+                              K.EN: "ZV deviation (zones)",
+                              K.CA: "Desviació ZV (zones)"},
+    _L.T_CAB_LECTURA_ISO: {K.ES: "Ruido de lectura", K.EN: "Read noise",
+                           K.CA: "Soroll de lectura"},
+    _L.T_CAB_RUIDO_ZV: {K.ES: "Ruido ZV", K.EN: "ZV noise",
+                        K.CA: "Soroll ZV"},
+    _L.T_CAB_RUIDO_Z2: {K.ES: "Ruido Z2", K.EN: "Z2 noise",
+                        K.CA: "Soroll Z2"},
+    _L.T_CAB_TEXTURA_Z2: {K.ES: "Textura Z2", K.EN: "Z2 texture",
+                          K.CA: "Textura Z2"},
+    _L.T_CAB_TEXTURA_RUIDO_Z2: {K.ES: "Textura/ruido Z2",
+                                K.EN: "Z2 texture/noise",
+                                K.CA: "Textura/soroll Z2"},
+    _L.T_CAB_PORCENTAJE_UMBRAL: {K.ES: "% del umbral",
+                                 K.EN: "% of threshold",
+                                 K.CA: "% del llindar"},
+    _L.T_CAB_SE_APRECIA: {K.ES: "Textura en sombras (Z2)",
+                          K.EN: "Shadow texture (Z2)",
+                          K.CA: "Textura en ombres (Z2)"},
+    _L.T_CAB_NOTA_ISO: {K.ES: "Nota", K.EN: "Note", K.CA: "Nota"},
+    _L.T_ISO_ESTIMADO: {K.ES: "Estimación: la Z2 solo llegó a {zona}",
+                        K.EN: "Estimate: Z2 only reached {zona}",
+                        K.CA: "Estimació: la Z2 només va arribar a {zona}"},
+    _L.T_ISO_SIN_MEDIR: {K.ES: "No se puede medir",
+                         K.EN: "Cannot be measured",
+                         K.CA: "No es pot mesurar"},
+    _L.T_NOTA_ISO_PDF: {
+        K.ES: "Qué pasa al subir el ISO, con una ZV y una Z2 por ISO. "
+              "Exposición: si la imagen sale igual, más clara o más oscura "
+              "que al ISO inicial. Textura en sombras: si se ve la textura "
+              "del paño en la Z2 (verde, se ve; amarillo, justa; rojo, se "
+              "pierde). Sombras con textura desde: dónde colocar las "
+              "sombras importantes a ese ISO (≈, estimado solo con su ZV y "
+              "su Z2); «Ninguna»: ni en la ZV llega la textura a la del ISO "
+              "inicial. Los números, en la hoja ISO del libro.",
+        K.EN: "What happens when raising the ISO, with one ZV and one Z2 per "
+              "ISO. Exposure: whether the image comes out the same, lighter "
+              "or darker than at the initial ISO. Shadow texture: whether "
+              "the cloth's texture is visible in Z2 (green, visible; yellow, "
+              "borderline; red, lost). Shadows with texture from: where to "
+              "place the important shadows at that ISO (≈, estimated only "
+              "from its ZV and Z2); «None»: not even in ZV does the texture "
+              "reach that of the initial ISO. The figures, in the ISO sheet "
+              "of the workbook.",
+        K.CA: "Què passa en pujar l'ISO, amb una ZV i una Z2 per ISO. "
+              "Exposició: si la imatge ix igual, més clara o més fosca que "
+              "a l'ISO inicial. Textura en ombres: si es veu la textura del "
+              "drap en la Z2 (verd, es veu; groc, justa; roig, es perd). "
+              "Ombres amb textura des de: on col·locar les ombres "
+              "importants a eixe ISO (≈, estimat només amb la seua ZV i la "
+              "seua Z2); «Cap»: ni en la ZV arriba la textura a la de l'ISO "
+              "inicial. Els números, en el full ISO del llibre."},
+    _L.T_CAB_EXPOSICION_ISO: {K.ES: "Exposición", K.EN: "Exposure",
+                              K.CA: "Exposició"},
+    _L.T_EXPOSICION_IGUAL: {K.ES: "Igual", K.EN: "Same", K.CA: "Igual"},
+    _L.T_EXPOSICION_CLARA: {K.ES: "+{cuanto} zona", K.EN: "+{cuanto} zone",
+                            K.CA: "+{cuanto} zona"},
+    _L.T_EXPOSICION_OSCURA: {K.ES: "−{cuanto} zona", K.EN: "−{cuanto} zone",
+                             K.CA: "−{cuanto} zona"},
+    _L.T_TEXTURA_ISO[0]: {K.ES: "Se pierde", K.EN: "Lost",
+                          K.CA: "Es perd"},
+    _L.T_TEXTURA_ISO[1]: {K.ES: "Justa", K.EN: "Borderline",
+                          K.CA: "Justa"},
+    _L.T_TEXTURA_ISO[2]: {K.ES: "Se ve", K.EN: "Visible", K.CA: "Es veu"},
+    _L.T_CAB_SOMBRAS_ISO: {K.ES: "Sombras con textura desde",
+                           K.EN: "Shadows with texture from",
+                           K.CA: "Ombres amb textura des de"},
+    _L.T_SOMBRAS_ISO: {K.ES: "≈{zona}", K.EN: "≈{zona}", K.CA: "≈{zona}"},
+    _L.T_SOMBRAS_NINGUNA: {K.ES: "Ninguna", K.EN: "None", K.CA: "Cap"},
+    _L.T_ISO_HASTA: {
+        K.ES: "Hasta ISO {hasta}, las sombras de la Z2 conservan la "
+              "textura. A partir de ISO {desde}, coloca las sombras "
+              "importantes más arriba.",
+        K.EN: "Up to ISO {hasta}, the Z2 shadows keep their texture. From "
+              "ISO {desde} on, place the important shadows higher.",
+        K.CA: "Fins a ISO {hasta}, les ombres de la Z2 conserven la "
+              "textura. A partir d'ISO {desde}, col·loca les ombres "
+              "importants més amunt."},
+    _L.T_ISO_TODOS: {
+        K.ES: "En todos los ISO medidos, las sombras de la Z2 conservan la "
+              "textura.",
+        K.EN: "At every ISO measured, the Z2 shadows keep their texture.",
+        K.CA: "En tots els ISO mesurats, les ombres de la Z2 conserven la "
+              "textura."},
+    _L.T_ISO_NINGUNO: {
+        K.ES: "Ni siquiera a ISO {iso} conservan la textura las sombras de "
+              "la Z2: coloca las sombras importantes más arriba.",
+        K.EN: "Not even at ISO {iso} do the Z2 shadows keep their texture: "
+              "place the important shadows higher.",
+        K.CA: "Ni tan sols a ISO {iso} conserven la textura les ombres de "
+              "la Z2: col·loca les ombres importants més amunt."},
 
     # --- Hoja Constantes
     _L.T_TITULO_CONSTANTES: {K.ES: "Constantes del método",
@@ -191,19 +333,48 @@ TEXTOS = {
               "considered clipped.",
         K.CA: "Fracció del màxim d'un canal des de la qual un valor es "
               "considera retallat."},
+    _L.C_PANO_MINIMO: {
+        K.ES: "Textura/ruido mínima del paño en la ZV. Por debajo, el paño "
+              "es demasiado suave y la latitud de texturas en las sombras "
+              "puede salir corta: se avisa.",
+        K.EN: "Minimum texture/noise of the cloth at ZV. Below it, the "
+              "cloth is too smooth and the texture latitude in the shadows "
+              "may come out short: a warning is given.",
+        K.CA: "Textura/soroll mínima del drap en la ZV. Per davall, el drap "
+              "és massa suau i la latitud de textures en les ombres pot "
+              "eixir curta: s'avisa."},
     _L.C_ROSE_TEXTURA: {
-        K.ES: "Textura/ruido desde la que se aprecia la textura del paño en "
-              "las sombras: la textura del paño (su dispersión sin el ruido "
-              "de la tarjeta) entre el ruido de la tarjeta, por píxel. Del "
-              "criterio de Rose (Rose 1948; Burgess 1999).",
-        K.EN: "Texture/noise from which the cloth's texture is visible in "
-              "the shadows: the cloth's texture (its dispersion without the "
-              "card's noise) divided by the card's noise, per pixel. From "
-              "the Rose criterion (Rose 1948; Burgess 1999).",
-        K.CA: "Textura/soroll des de la qual s'aprecia la textura del drap "
-              "en les ombres: la textura del drap (la seua dispersió sense "
-              "el soroll de la targeta) entre el soroll de la targeta, per "
-              "píxel. Del criteri de Rose (Rose 1948; Burgess 1999)."},
+        K.ES: "Secuencia de ISO: textura/ruido desde la que se aprecia la "
+              "textura del paño en la Z2 de cada ISO: la textura del paño "
+              "(su dispersión sin el ruido de la tarjeta) entre el ruido de "
+              "la tarjeta, medidas como se verían con la foto entera en una "
+              "pantalla Full HD (cada bloque de píxeles del sensor que ocupa "
+              "un píxel de la pantalla, en uno). Del criterio de Rose (Rose "
+              "1948; Burgess 1999). La latitud de texturas ya no lo usa: ver "
+              "{contraste_sombras}.",
+        K.EN: "ISO sequence: texture/noise from which the cloth's texture is "
+              "visible in each ISO's Z2: the cloth's texture (its dispersion "
+              "without the card's noise) divided by the card's noise, "
+              "measured as they would look with the whole photo on a Full HD "
+              "screen (each block of sensor pixels that fills one screen "
+              "pixel, as one). From the Rose criterion (Rose 1948; Burgess "
+              "1999). The texture latitude no longer uses it: see "
+              "{contraste_sombras}.",
+        K.CA: "Seqüència d'ISO: textura/soroll des de la qual s'aprecia la "
+              "textura del drap en la Z2 de cada ISO: la textura del drap "
+              "(la seua dispersió sense el soroll de la targeta) entre el "
+              "soroll de la targeta, mesurades com es veurien amb la foto "
+              "sencera en una pantalla Full HD (cada bloc de píxels del "
+              "sensor que ocupa un píxel de la pantalla, en un). Del criteri "
+              "de Rose (Rose 1948; Burgess 1999). La latitud de textures ja "
+              "no l'usa: vegeu {contraste_sombras}."},
+    _L.C_TEXTURA_JUSTA: {
+        K.ES: "Fracción del umbral de sombras desde la que la textura de la "
+              "Z2 de un ISO es justa; por debajo, se pierde.",
+        K.EN: "Fraction of the shadow threshold from which the texture of "
+              "an ISO's Z2 is borderline; below it, it is lost.",
+        K.CA: "Fracció del llindar d'ombres des de la qual la textura de "
+              "la Z2 d'un ISO és justa; per davall, es perd."},
     _L.C_TEXTURA_CONSERVADA: {
         K.ES: "Fracción de la textura del paño en la ZV que debe conservar "
               "una zona de luces para que se aprecie su textura.",
@@ -211,6 +382,13 @@ TEXTOS = {
               "must keep for its texture to be visible.",
         K.CA: "Fracció de la textura del drap en la ZV que ha de conservar "
               "una zona de llums perquè s'aprecie la seua textura."},
+    _L.C_TELA_RECORTADO_APRECIABLE: {
+        K.ES: "Fracción del paño recortado que admite como mucho la zona de "
+              "luces apreciable.",
+        K.EN: "Largest clipped fraction of the cloth allowed in the "
+              "visible highlight zone.",
+        K.CA: "Fracció del drap retallat que admet com a molt la zona de "
+              "llums apreciable."},
     _L.C_TELA_RECORTADO_MAX: {
         K.ES: "Fracción del paño recortado que admite como mucho la zona de "
               "luces recomendada.",
@@ -218,13 +396,35 @@ TEXTOS = {
               "recommended highlight zone.",
         K.CA: "Fracció del drap retallat que admet com a molt la zona de "
               "llums recomanada."},
+    _L.C_CONTRASTE_SOMBRAS: {
+        K.ES: "Fracción del contraste de la trama del paño en la ZV desde la "
+              "que la textura de una zona de sombras es aprovechable (las "
+              "sombras recomendadas). El contraste: la diferencia de L* "
+              "entre lo más claro y lo más oscuro del paño (percentiles 95 y "
+              "5), en las exportaciones del revelador, es decir, lo que se "
+              "ve al revelar. Relativo a la ZV para no depender del paño. "
+              "Ajustado a ojo en 8 series (error de un tercio como mucho).",
+        K.EN: "Fraction of the cloth weave's contrast at ZV from which the "
+              "texture of a shadow zone is usable (the recommended shadows). "
+              "The contrast: the L* difference between the lightest and the "
+              "darkest of the cloth (95th and 5th percentiles), in the "
+              "developer exports, that is, what is seen after developing. "
+              "Relative to ZV so as not to depend on the cloth. Fitted by eye "
+              "on 8 series (an error of one third at most).",
+        K.CA: "Fracció del contrast de la trama del drap en la ZV des de la "
+              "qual la textura d'una zona d'ombres és aprofitable (les ombres "
+              "recomanades). El contrast: la diferència de L* entre el més "
+              "clar i el més fosc del drap (percentils 95 i 5), en les "
+              "exportacions del revelador, és a dir, el que es veu en "
+              "revelar. Relatiu a la ZV per no dependre del drap. Ajustat a "
+              "ull en 8 sèries (un error d'un terç com a molt)."},
     _L.C_MARGEN_SOMBRAS: {
-        K.ES: "Tercios por encima de las sombras apreciables donde empiezan "
-              "las recomendadas: la resolución de la serie.",
-        K.EN: "Thirds above the visible shadows where the recommended ones "
+        K.ES: "Tercios por debajo de las sombras recomendadas donde empiezan "
+              "las apreciables: la resolución de la serie.",
+        K.EN: "Thirds below the recommended shadows where the visible ones "
               "begin: the resolution of the series.",
-        K.CA: "Terços per damunt de les ombres apreciables on comencen les "
-              "recomanades: la resolució de la sèrie."},
+        K.CA: "Terços per davall de les ombres recomanades on comencen les "
+              "apreciables: la resolució de la sèrie."},
     _L.C_ANCHO_ZONA: {
         K.ES: "Lo que suma una zona al contar una latitud: cuentan las dos "
               "puntas (de Z3 a Z8 son 6 zonas, no 5).",
@@ -289,6 +489,16 @@ TEXTOS = {
         K.ES: "Cuando ningún valor llega al umbral o al recorte.",
         K.EN: "When no value reaches the threshold or clipping.",
         K.CA: "Quan cap valor arriba al llindar o al retall."},
+    _L.C_TEXTO_SIN_REVELADO: {
+        K.ES: "Cuando las sombras de la latitud de texturas aún no se pueden "
+              "medir: faltan las exportaciones del revelador (se miden al "
+              "analizar el revelado).",
+        K.EN: "When the shadows of the texture latitude cannot be measured "
+              "yet: the developer exports are missing (they are measured "
+              "when analyzing the development).",
+        K.CA: "Quan les ombres de la latitud de textures encara no es poden "
+              "mesurar: falten les exportacions del revelador (es mesuren en "
+              "analitzar el revelat)."},
     _L.C_TEXTO_SATURADO: {
         K.ES: "Marca de señal/ruido sin medir porque el canal está "
               "saturado (dispersión 0): no es un dato que falte.",
@@ -323,6 +533,8 @@ TEXTOS = {
     _L.V_NINGUNO: {K.ES: "ninguno", K.EN: "none", K.CA: "cap"},
     _L.V_NO_ALCANZADO: {K.ES: "no alcanzado", K.EN: "not reached",
                         K.CA: "no assolit"},
+    _L.V_SIN_REVELADO: {K.ES: "sin revelado", K.EN: "no development",
+                        K.CA: "sense revelat"},
     _L.V_SATURADO: {K.ES: "saturado", K.EN: "saturated",
                     K.CA: "saturat"},
     _L.V_PUNTO: {K.ES: "●", K.EN: "●", K.CA: "●"},
@@ -399,15 +611,21 @@ TEXTOS = {
     _L.T_NOTA_REVELADOR: {
         K.ES: "Lee el L* leído de Análisis (a mano o de las exportaciones "
               "del revelador). Un tercio sin él se estima entre las dos "
-              "zonas enteras vecinas.",
+              "zonas enteras vecinas. Al lado, el contraste de la trama del "
+              "paño medido en cada exportación (en blanco sin ella).",
         K.EN: "Reads the L* read from Analysis (by hand or from the "
               "developer exports). A third without it is estimated between "
-              "the two neighbouring whole zones.",
+              "the two neighbouring whole zones. Next to it, the cloth "
+              "weave's contrast measured in each export (blank without it).",
         K.CA: "Llig el L* llegit d'Anàlisi (a mà o de les exportacions del "
               "revelador). Un terç sense ell s'estima entre les dues zones "
-              "senceres veïnes."},
+              "senceres veïnes. Al costat, el contrast de la trama del drap "
+              "mesurat en cada exportació (en blanc sense ella)."},
     _L.T_CAB_REVELADOR: {K.ES: "L* del revelador", K.EN: "Developer L*",
                          K.CA: "L* del revelador"},
+    _L.T_CAB_CONTRASTE: {K.ES: "Contraste del paño (L*)",
+                         K.EN: "Cloth contrast (L*)",
+                         K.CA: "Contrast del drap (L*)"},
 
     # --- Hoja Cálculo
     _L.T_TITULO_CALCULO: {K.ES: "Cálculo", K.EN: "Calculation",
@@ -766,6 +984,11 @@ TEXTOS = {
     _L.T_RUIDO_COLOR: {K.ES: "Ruido aceptable por color",
                        K.EN: "Acceptable noise per color",
                        K.CA: "Soroll acceptable per color"},
+    # --- Lo mismo con el ISO de la serie (Tony, 2026-11-13). EN y CA, de
+    #     Claude a petición de Tony
+    _L.T_RUIDO_COLOR_ISO: {K.ES: "Ruido aceptable por color a ISO {iso}",
+                           K.EN: "Acceptable noise per color at ISO {iso}",
+                           K.CA: "Soroll acceptable per color a ISO {iso}"},
     _L.T_RUIDO_COLOR_NOTA: {K.ES: "Señal/ruido ≥ {umbral}",
                             K.EN: "Signal/noise ≥ {umbral}",
                             K.CA: "Senyal/soroll ≥ {umbral}"},
@@ -794,6 +1017,16 @@ TEXTOS = {
         K.ES: "Muertos: {n} ({por_mpx} por Mpx)",
         K.EN: "Dead: {n} ({por_mpx} per Mpx)",
         K.CA: "Morts: {n} ({por_mpx} per Mpx)"},
+    _L.T_PIXELES_SIN_CALIENTES: {K.ES: "Calientes: ninguno",
+                                 K.EN: "Hot: none",
+                                 K.CA: "Calents: cap"},
+    _L.T_PIXELES_SIN_MUERTOS: {K.ES: "Muertos: ninguno",
+                               K.EN: "Dead: none",
+                               K.CA: "Morts: cap"},
+    _L.T_PIXELES_NINGUNO: {
+        K.ES: "No hay píxeles defectuosos: ni calientes ni muertos.",
+        K.EN: "There are no defective pixels: neither hot nor dead.",
+        K.CA: "No hi ha píxels defectuosos: ni calents ni morts."},
     _L.T_PIXELES_SIN_TAPADAS: {
         K.ES: "Sin tomas tapadas no se pueden contar los píxeles calientes.",
         K.EN: "Without covered shots, hot pixels cannot be counted.",
@@ -1042,19 +1275,29 @@ TEXTOS = {
     _L.T_NOTA_TELA: {
         K.ES: "Lo leído en la ventana del paño de cada toma: dispersión "
               "(relativa) y fracción de sus píxeles recortados, por canal. "
-              "En blanco si no hay paño.",
+              "Al final, las dispersiones del verde del paño y de la "
+              "tarjeta, por píxel, con las que se mide la latitud de "
+              "texturas. En blanco si no hay paño.",
         K.EN: "What was read in the cloth window of each shot: dispersion "
               "(relative) and fraction of its clipped pixels, by channel. "
-              "Blank if there is no cloth.",
+              "Last, the green dispersions of the cloth and the card, per "
+              "pixel, used to measure the texture latitude. Blank if there "
+              "is no cloth.",
         K.CA: "El que s'ha llegit en la finestra del drap de cada presa: "
               "dispersió (relativa) i fracció dels seus píxels retallats, "
-              "per canal. En blanc si no hi ha drap."},
+              "per canal. Al final, les dispersions del verd del drap i de "
+              "la targeta, per píxel, amb què es mesura la latitud de "
+              "textures. En blanc si no hi ha drap."},
     _L.T_CAB_TELA_REC_ROJO: {K.ES: "Recortado rojo", K.EN: "Red clipped",
                              K.CA: "Retallat roig"},
     _L.T_CAB_TELA_REC_VERDE: {K.ES: "Recortado verde", K.EN: "Green clipped",
                               K.CA: "Retallat verd"},
     _L.T_CAB_TELA_REC_AZUL: {K.ES: "Recortado azul", K.EN: "Blue clipped",
                              K.CA: "Retallat blau"},
+    _L.T_CAB_TELA_PANTALLA: {K.ES: "Paño verde", K.EN: "Green cloth",
+                             K.CA: "Drap verd"},
+    _L.T_CAB_TARJETA_PANTALLA: {K.ES: "Tarjeta verde", K.EN: "Green card",
+                                K.CA: "Targeta verda"},
 
     # --- Latitud de texturas (Cálculo, bloque 4, y Análisis)
     _L.T_TEXTURAS: {K.ES: "Latitud de texturas", K.EN: "Texture latitude",
@@ -1063,27 +1306,34 @@ TEXTOS = {
                        K.EN: "4. Texture latitude (green)",
                        K.CA: "4. Latitud de textures (verd)"},
     _L.T_NOTA_TEXTURAS: {
-        K.ES: "Canal verde. Sombras: la primera zona desde la que la "
-              "textura/ruido llega a {rose_textura} y no vuelve a bajar "
-              "hasta la ZV (entre los dos tercios vecinos, al tercio más "
-              "próximo); recomendadas, {margen_sombras} tercios más arriba. "
-              "Luces: la última zona, desde la ZV, que conserva "
-              "{textura_conservada} de la textura de la ZV; recomendadas, "
+        K.ES: "Sombras, en las exportaciones del revelador: recomendadas, la "
+              "primera zona cuyo contraste de la trama del paño llega a "
+              "{contraste_sombras} del de la ZV y no vuelve a bajar hasta "
+              "ella; apreciables, {margen_sombras} tercios más abajo; sin "
+              "exportaciones, {texto_sin_revelado}. Luces, en el canal verde "
+              "de los RAW: la última zona, desde la ZV, que conserva "
+              "{textura_conservada} de la textura de la ZV sin pasar de "
+              "{tela_recortado_apreciable} de paño recortado; recomendadas, "
               "la última sin pasar de {tela_recortado_max} de paño "
               "recortado.",
-        K.EN: "Green channel. Shadows: the first zone from which "
-              "texture/noise reaches {rose_textura} and does not drop again "
-              "up to ZV (between the two neighbouring thirds, to the nearest "
-              "third); recommended, {margen_sombras} thirds higher. "
-              "Highlights: the last zone, from ZV, that keeps "
-              "{textura_conservada} of the ZV texture; recommended, the last "
-              "one not exceeding {tela_recortado_max} of clipped cloth.",
-        K.CA: "Canal verd. Ombres: la primera zona des de la qual la "
-              "textura/soroll arriba a {rose_textura} i no torna a baixar "
-              "fins a la ZV (entre els dos terços veïns, al terç més "
-              "pròxim); recomanades, {margen_sombras} terços més amunt. "
-              "Llums: l'última zona, des de la ZV, que conserva "
-              "{textura_conservada} de la textura de la ZV; recomanades, "
+        K.EN: "Shadows, in the developer exports: recommended, the first "
+              "zone whose cloth weave contrast reaches {contraste_sombras} of "
+              "the ZV's and does not drop again up to it; visible, "
+              "{margen_sombras} thirds lower; without exports, "
+              "{texto_sin_revelado}. Highlights, in the green channel of the "
+              "RAW files: the last zone, from ZV, that keeps "
+              "{textura_conservada} of the ZV texture without exceeding "
+              "{tela_recortado_apreciable} of clipped cloth; recommended, "
+              "the last one not exceeding {tela_recortado_max} of clipped "
+              "cloth.",
+        K.CA: "Ombres, en les exportacions del revelador: recomanades, la "
+              "primera zona el contrast de la trama del drap de la qual "
+              "arriba a {contraste_sombras} del de la ZV i no torna a baixar "
+              "fins a ella; apreciables, {margen_sombras} terços més avall; "
+              "sense exportacions, {texto_sin_revelado}. Llums, en el canal "
+              "verd dels RAW: l'última zona, des de la ZV, que conserva "
+              "{textura_conservada} de la textura de la ZV sense passar de "
+              "{tela_recortado_apreciable} de drap retallat; recomanades, "
               "l'última sense passar de {tela_recortado_max} de drap "
               "retallat."},
     _L.T_CAB_TEXTURA: {K.ES: "Textura del paño", K.EN: "Cloth texture",
@@ -1101,6 +1351,8 @@ TEXTOS = {
                             K.CA: "Compleix llums"},
     _L.T_CAB_SIN_RECORTE: {K.ES: "Cumple recorte", K.EN: "Meets clipping",
                            K.CA: "Compleix retall"},
+    _L.T_CAB_CONTRASTE_ZV: {K.ES: "Contraste / ZV", K.EN: "Contrast / ZV",
+                            K.CA: "Contrast / ZV"},
     _L.T_CAB_SOMBRAS: {K.ES: "Sombras", K.EN: "Shadows", K.CA: "Ombres"},
     _L.T_CAB_LUCES: {K.ES: "Altas luces", K.EN: "Highlights",
                      K.CA: "Altes llums"},
@@ -1112,21 +1364,28 @@ TEXTOS = {
     _L.T_RECOMENDADA: {K.ES: "Recomendada", K.EN: "Recommended",
                        K.CA: "Recomanada"},
     _L.T_NOTA_TEXTURAS_RESUMEN: {
-        K.ES: "Medida en el paño, canal verde. Apreciable: en sombras, "
-              "desde donde su textura es {rose} veces el ruido; en luces, "
-              "hasta donde conserva el {conservada} % de su textura. "
-              "Recomendada: {margen} tercio más arriba en sombras y, en "
-              "luces, sin pasar del {recortado} % del paño recortado.",
-        K.EN: "Measured on the cloth, green channel. Visible: in shadows, "
-              "from where its texture is {rose} times the noise; in "
-              "highlights, up to where it keeps {conservada} % of its "
-              "texture. Recommended: {margen} third higher in shadows and, "
-              "in highlights, not exceeding {recortado} % of clipped cloth.",
-        K.CA: "Mesurada en el drap, canal verd. Apreciable: en ombres, des "
-              "d'on la seua textura és {rose} vegades el soroll; en llums, "
-              "fins on conserva el {conservada} % de la seua textura. "
-              "Recomanada: {margen} terç més amunt en ombres i, en llums, "
-              "sense passar del {recortado} % del drap retallat."},
+        K.ES: "Medida en el paño. Sombras, en las exportaciones del "
+              "revelador (lo que ves al revelar): recomendada desde donde "
+              "el contraste de su trama llega al {umbral} % del de la ZV; "
+              "apreciable, {margen} tercio más abajo. Luces, en el canal "
+              "verde de los RAW: apreciable hasta donde conserva el "
+              "{conservada} % de su textura, sin pasar del "
+              "{recortado_apreciable} % del paño recortado; recomendada, sin "
+              "pasar del {recortado} %.",
+        K.EN: "Measured on the cloth. Shadows, in the developer exports "
+              "(what you see after developing): recommended from where its "
+              "weave contrast reaches {umbral} % of the ZV's; visible, "
+              "{margen} third lower. Highlights, in the green channel of the "
+              "RAW files: visible up to where it keeps {conservada} % of its "
+              "texture, not exceeding {recortado_apreciable} % of clipped "
+              "cloth; recommended, not exceeding {recortado} %.",
+        K.CA: "Mesurada en el drap. Ombres, en les exportacions del revelador "
+              "(el que veus en revelar): recomanada des d'on el contrast de "
+              "la seua trama arriba al {umbral} % del de la ZV; apreciable, "
+              "{margen} terç més avall. Llums, en el canal verd dels RAW: "
+              "apreciable fins on conserva el {conservada} % de la seua "
+              "textura, sense passar del {recortado_apreciable} % del drap "
+              "retallat; recomanada, sense passar del {recortado} %."},
     _L.T_DECISIONES: {K.ES: "Decisiones propias", K.EN: "Own decisions",
                       K.CA: "Decisions pròpies"},
     _L.T_RECOMENDACIONES: {K.ES: "Recomendaciones",
@@ -1149,17 +1408,17 @@ TEXTOS = {
         K.CA: "Sense drap: no es pot mesurar la latitud de textures."},
     _L.T_POCA_TEXTURA: {
         K.ES: "El paño tiene poca textura (en la Z-V, {textura} veces el "
-              "ruido; hacen falta {rose}): no se puede medir la latitud de "
-              "texturas en las sombras. Revise el paño, la luz y el "
-              "diafragma.",
+              "ruido; hacen falta {minimo}): la latitud de texturas en las "
+              "sombras puede salir corta o no medirse. Use un paño con la "
+              "trama más marcada y revise la luz y el diafragma.",
         K.EN: "The cloth has little texture (in Z-V, {textura} times the "
-              "noise; {rose} are needed): texture latitude in the shadows "
-              "cannot be measured. Check the cloth, the light and the "
-              "aperture.",
+              "noise; {minimo} are needed): texture latitude in the shadows "
+              "may come out short or not be measurable. Use a cloth with a "
+              "more marked weave and check the light and the aperture.",
         K.CA: "El drap té poca textura (en la Z-V, {textura} vegades el "
-              "soroll; calen {rose}): no es pot mesurar la latitud de "
-              "textures en les ombres. Reviseu el drap, la llum i el "
-              "diafragma."},
+              "soroll; calen {minimo}): la latitud de textures en les ombres "
+              "pot eixir curta o no mesurar-se. Useu un drap amb la trama "
+              "més marcada i reviseu la llum i el diafragma."},
 
     # --- PDF de la cámara (exportar.Pdf; usa también textos del
     #     libro)

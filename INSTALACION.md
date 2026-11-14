@@ -13,11 +13,11 @@ No necesita instalar nada más.
 
 2. La primera vez que lo abra, el sistema puede avisar de que el programa no está firmado:
 
-    - **Windows**: el archivo es un único `.exe` portable: no hay que instalar ni descomprimir nada. Haga doble clic en él desde donde lo haya guardado. Puede aparecer «Windows protegió su PC»: pulse **Más información** y después **Ejecutar de todas formas**. Si Microsoft Defender lo marca como amenaza o lo borra, vea el apartado «Si Windows borra o bloquea el programa».
+    - **Windows**: el archivo es un único `.exe` portable: no hay que instalar ni descomprimir nada. Haga doble click en él desde donde lo haya guardado. Puede aparecer «Windows protegió su PC»: pulse **Más información** y después **Ejecutar de todas formas**. Si Microsoft Defender lo marca como amenaza o lo borra, vea el apartado «Si Windows borra o bloquea el programa».
 
     - **macOS**: solo para equipos con Apple Silicon (M1 o posterior). Si dice que no se puede abrir, vaya a **Ajustes del Sistema → Privacidad y seguridad** (en versiones anteriores, **Preferencias del Sistema → Seguridad y privacidad**) y pulse **Abrir igualmente**. Hace falta una cuenta de administrador.
 
-    - **Linux**: descomprima el archivo y haga doble clic en `PyOECF`.
+    - **Linux**: descomprima el archivo y haga doble click en `PyOECF`.
 
 3. Opcional, para comprobar que el archivo es el publicado: cada versión lleva un `SHA256SUMS.txt`. En PowerShell:
 

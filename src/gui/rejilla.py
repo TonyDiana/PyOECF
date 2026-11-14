@@ -156,6 +156,55 @@ class Rejilla(tk.Canvas):
                             K.EN: "There are no camera white balances.",
                             K.CA: "No hi ha balanços de càmera."}
 
+        # --- Secuencia de ISO (Tony, 2026-11-10). EN y CA, de Claude a
+        #     petición de Tony (2026-11-13)
+        TXT_MARCADOR_TAPADAS = {
+            K.ES: _ES[_KI.MARCADOR_TAPADAS],
+            K.EN: ("The ISO sequence marker was taken with the settings of "
+                   "the covered shots (f/11 and 1/160): {idents}. It is "
+                   "accepted, but it should be taken with the ZV settings.",
+                   "The ISO sequence markers were taken with the settings "
+                   "of the covered shots (f/11 and 1/160): {idents}. They "
+                   "are accepted, but they should be taken with the ZV "
+                   "settings."),
+            K.CA: ("El marcador de la seqüència d'ISO es va fer amb els "
+                   "valors de les preses tapades (f/11 i 1/160): {idents}. "
+                   "S'accepta, però s'ha de fer amb els valors de la ZV.",
+                   "Els marcadors de la seqüència d'ISO es van fer amb els "
+                   "valors de les preses tapades (f/11 i 1/160): {idents}. "
+                   "S'accepten, però s'han de fer amb els valors de la ZV.")}
+        TXT_SIN_MARCADOR_FINAL = {
+            K.ES: _ES[_KI.SIN_MARCADOR_FINAL],
+            K.EN: "The final marker of the ISO sequence is missing: all the "
+                  "shots after the initial marker are taken as part of it.",
+            K.CA: "Falta el marcador final de la seqüència d'ISO: es prenen "
+                  "com a seues totes les preses que segueixen el marcador "
+                  "inicial."}
+        TXT_ISO_ESTIMADO = {
+            K.ES: _ES[_KI.ISO_ESTIMADO],
+            K.EN: ("In {n} ISO, the Z2 did not reach its place because of "
+                   "the camera's shortest shutter speed: its texture is an "
+                   "estimate: {idents}.",
+                   "In {n} ISOs, the Z2 did not reach its place because of "
+                   "the camera's shortest shutter speed: its texture is an "
+                   "estimate: {idents}."),
+            K.CA: ("En {n} ISO, la Z2 no va arribar al seu lloc pel temps "
+                   "més curt de la càmera: la seua textura és una "
+                   "estimació: {idents}.",
+                   "En {n} ISO, la Z2 no va arribar al seu lloc pel temps "
+                   "més curt de la càmera: la seua textura és una "
+                   "estimació: {idents}.")}
+        TXT_ISO_SIN_MEDIR = {
+            K.ES: _ES[_KI.ISO_SIN_MEDIR],
+            K.EN: ("{n} ISO of the sequence cannot be measured: its ZV or Z2 "
+                   "is missing, or its Z2 is too far off: {idents}.",
+                   "{n} ISOs of the sequence cannot be measured: their ZV or "
+                   "Z2 is missing, or their Z2 is too far off: {idents}."),
+            K.CA: ("No es pot mesurar {n} ISO de la seqüència: li falta la "
+                   "ZV o la Z2, o la seua Z2 s'aparta massa: {idents}.",
+                   "No es poden mesurar {n} ISO de la seqüència: els falta "
+                   "la ZV o la Z2, o la seua Z2 s'aparta massa: {idents}.")}
+
         # --- Secuencia de tomas (ver OECF.secuencia)
         TXT_INICIALES_SOBRAN = {
             K.ES: _ES[_KI.INICIALES_SOBRAN],
@@ -278,25 +327,33 @@ class Rejilla(tk.Canvas):
         TXT_TARJETA_SUCIA = {
             K.ES: _ES[_KI.TARJETA_SUCIA],
             K.EN: "{porcentaje}% of the card tiles have unusual noise or "
-                  "values: the card may have dust, marks or a defect. Clean "
-                  "or replace it.",
+                  "values, perhaps because of dust, marks or a defect on "
+                  "the card. The analysis goes ahead; for the next series "
+                  "it is best to clean the card or use another one.",
             K.CA: "El {porcentaje} % de les tessel·les de targeta té un "
-                  "soroll o uns valors estranys: la targeta pot tindre pols, "
-                  "marques o un defecte. Netegeu-la o canvieu-la."}
+                  "soroll o uns valors estranys, potser per pols, marques "
+                  "o algun defecte de la targeta. L'anàlisi continua; per "
+                  "a la pròxima sèrie convé netejar la targeta o "
+                  "utilitzar-ne una altra."}
         TXT_LUZ_DESIGUAL = {
             K.ES: _ES[_KI.LUZ_DESIGUAL],
             K.EN: "{porcentaje}% of the card tiles get a different light "
-                  "from the rest: the light is not even{lados}. Move the "
-                  "light or centre the card.",
+                  "from the rest: the light is not even{lados}. The "
+                  "analysis goes ahead; in the next series it is best to "
+                  "place the light differently or centre the card better.",
             K.CA: "El {porcentaje} % de les tessel·les de targeta rep una "
                   "llum diferent de la de la resta: la llum no és uniforme"
-                  "{lados}. Moveu la llum o centreu la targeta."}
+                  "{lados}. L'anàlisi continua; en la pròxima sèrie convé "
+                  "col·locar la llum d'una altra manera o centrar millor "
+                  "la targeta."}
         TXT_REVISAR_SERIE = {
             K.ES: _ES[_KI.REVISAR_SERIE],
-            K.EN: "In total, {porcentaje}% of the card tiles are left out: "
-                  "check the light and the card.",
+            K.EN: "In total, {porcentaje}% of the card tiles are left out. "
+                  "The analysis goes ahead; in the next series it is best "
+                  "to check the light and the card.",
             K.CA: "En total queda fora el {porcentaje} % de les tessel·les "
-                  "de targeta: reviseu la llum i la targeta."}
+                  "de targeta. L'anàlisi continua; en la pròxima sèrie "
+                  "convé comprovar la llum i la targeta."}
         TXT_REPETIR_SERIE = {
             K.ES: _ES[_KI.REPETIR_SERIE],
             K.EN: "In total, {porcentaje}% of the card tiles are left out: "
@@ -405,6 +462,10 @@ class Rejilla(tk.Canvas):
             _KI.TAPADAS_CON_LUZ: TXT_TAPADAS_CON_LUZ,
             _KI.ISO_TAPADAS: TXT_ISO_TAPADAS,
             _KI.SIN_BALANCES: TXT_SIN_BALANCES,
+            _KI.MARCADOR_TAPADAS: TXT_MARCADOR_TAPADAS,
+            _KI.SIN_MARCADOR_FINAL: TXT_SIN_MARCADOR_FINAL,
+            _KI.ISO_ESTIMADO: TXT_ISO_ESTIMADO,
+            _KI.ISO_SIN_MEDIR: TXT_ISO_SIN_MEDIR,
             _KI.SIN_TOMA: TXT_SIN_TOMA,
             _KI.REPETIDA: TXT_REPETIDA,
             _KI.FUERA: TXT_FUERA,

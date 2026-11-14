@@ -5,15 +5,16 @@
                 segunda parte (las exportaciones del revelador) se puede
                 hacer otro día, en las mismas teselas, sin releer los RAW
     :Autor:     Tony Diana
-    :Versión:   26.10.18
+    :Versión:   26.11.10
 """
 
 # cSpell:ignore asim, kcom, nanmean
 
-__all__ = ["KAN", "ZonaMedida", "BalanceMedido", "Review",
-           "review_a_dict", "review_de_dict"]
+__all__ = ["KAN", "ZonaMedida", "BalanceMedido", "MedidaISO", "FilaISO",
+           "textura", "Review", "review_a_dict", "review_de_dict"]
 
 # --- Bibliotecas estándar Python
+import math
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -25,7 +26,7 @@ from bib import std
 from bib.oecfMediadores import KP
 from kernel import COM as KCOM
 from .pixeles import Pixeles
-from .secuencia import KS
+from .secuencia import KS, z2_medible
 from .teselas import KTE, Ventana
 from .transferencia import Transferencia
 
@@ -60,6 +61,23 @@ class KAN(std.EnumMutable):
     J_MAPA = "mapaTeselas"
     J_TELA = "tela"
     J_TELA_MOTIVO = "telaMotivo"
+
+    # --- Tamaño de la segunda lámina elegido en la caja Lámina (factor de
+    #     KTE.FACTORES): lo graba Generar y lo lee Analizar revelado, que
+    #     es quien hace las láminas, con las exportaciones del revelador.
+    #     No es del análisis: no está en Review, lo leen y graban aparte
+    #     (exportar.jsonSave). Ausente en los JSON 1.0 (Tony, 2026-11-13)
+    J_FACTOR_LAMINA = "factorLamina"
+
+    # --- Versión del análisis (oecf.versionAnalisis del JSON): SÚBELA
+    #     SOLO SI CAMBIA CÓMO SE MIDEN LOS RAW (criterio de textura,
+    #     umbrales, teselas…): un análisis guardado con una anterior se
+    #     vuelve a medir. Un cambio de textos o de claves no la toca (ver
+    #     oecfMediadores.KES, las tres versiones). Tony, 2026-11-13.
+    #     1.1: el límite de sombras de la latitud de texturas sale del
+    #     contraste de la trama del paño en las exportaciones del
+    #     revelador, no de la textura/ruido de los RAW (2026-11-13)
+    VERSION_ANALISIS = "1.1"
     J_X = "x"
     J_Y = "y"
     J_ANCHO_VENTANA = "ancho"
@@ -76,10 +94,14 @@ class KAN(std.EnumMutable):
     J_CONTROL = "control"
     J_TERCIO_EV = "tercioEV"
     J_ARCHIVO = "archivo"
+    J_ISO = "iso"
+    J_ISOS = "secuenciaISO"
     J_NIVEL = "nivel"
     J_DISPERSION = "dispersion"
+    J_DISP_PANTALLA = "dispPantalla"
     J_TELA_NIVEL = "telaNivel"
     J_TELA_DISP = "telaDisp"
+    J_TELA_DISP_PANTALLA = "telaDispPantalla"
     J_TELA_RECORTADO = "telaRecortado"
     J_DEV = "devRechazadas"
     J_BALANCES = "balances"
@@ -94,6 +116,8 @@ class KAN(std.EnumMutable):
     J_CONFIRMADOS = "confirmados"
     J_MUERTOS = "muertos"
     J_MEGAPIXELES = "megapixeles"
+    J_Z2 = "z2"
+    J_ZV = "zv"
 
 
 #
@@ -105,8 +129,10 @@ class ZonaMedida:
     """
     Toma medida: su posición (tercioEV), su RAW y su copia, la tarjeta
     por canal (nivel sobre el negro y dispersión), el paño por canal
-    (nivel, dispersión y fracción recortada; {} si no hay paño) y la
-    desviación de cada tesela rechazada (en zonas).
+    (nivel, dispersión y fracción recortada; {} si no hay paño), la
+    desviación de cada tesela rechazada (en zonas) y las dispersiones de
+    la tarjeta y del paño a escala de pantalla (ver
+    teselas.bloque_pantalla; {} si no se midieron)
     """
     tercio_ev: int
     archivo: str
@@ -117,6 +143,8 @@ class ZonaMedida:
     tela_disp: dict[str, float]
     tela_recortado: dict[str, float]
     dev: tuple[float, ...]
+    disp_pantalla: dict[str, float]
+    tela_disp_pantalla: dict[str, float]
 
     #
     @property
@@ -138,6 +166,25 @@ class ZonaMedida:
         paño).
         """
         return _rgb(self.tela_disp) if self.tela_disp else None
+
+    #
+    @property
+    def dispPantallaRGB(self) -> tuple[float, float, float] | None:
+        """
+        Saber la dispersión de la tarjeta a escala de pantalla en rojo,
+        verde y azul (None si no se midió)
+        """
+        return _rgb(self.disp_pantalla) if self.disp_pantalla else None
+
+    #
+    @property
+    def telaDispPantallaRGB(self) -> tuple[float, float, float] | None:
+        """
+        Saber la dispersión del paño a escala de pantalla en rojo, verde y
+        azul (None sin paño o si no se midió)
+        """
+        return (_rgb(self.tela_disp_pantalla) if self.tela_disp_pantalla
+                else None)
 
     #
     @property
@@ -177,6 +224,63 @@ class BalanceMedido(NamedTuple):
 
 
 #
+# --- Un ISO de la secuencia de ISO, medido
+class MedidaISO(NamedTuple):
+    """
+    Un ISO de la secuencia de ISO: el ISO, el negro restado por canal (el
+    que declara su RAW: las tapadas son del ISO de la serie), el ruido de
+    lectura del borde oscuro de su RAW (None si no hay borde) y su Z-V y
+    su Z2 medidas (None si falta)
+    """
+    iso: int
+    negro: tuple[float, ...]
+    ruido_borde: tuple[float, ...] | None
+    z2: ZonaMedida | None
+    zv: ZonaMedida | None
+
+
+#
+# --- Lo que se enseña de un ISO de la secuencia de ISO (en verde)
+class FilaISO(NamedTuple):
+    """
+    Un ISO de la secuencia de ISO, en verde: el ISO, el tercioEV de su
+    Z2 (None si falta), si se mide (con Z-V y Z2, y la Z2 a KS.MARGEN_Z2
+    tercios de KS.TERCIOS_Z2 como mucho) y si es una estimación (la Z2 no
+    está justo en KS.TERCIOS_Z2); y, si se mide (si no, None): cuánto se
+    aparta su Z-V de la del ISO inicial (en zonas), el ruido de lectura
+    (del borde oscuro; None si no hay), el ruido de la tarjeta en la Z-V
+    y en la Z2 (dispersión relativa), la textura del paño en la Z2 (sin
+    el ruido de la tarjeta; None sin paño), textura/ruido en la Z2, el
+    nivel de la tarjeta en la Z-V y en la Z2 (sobre el negro) y si los
+    ruidos y la textura son a escala de pantalla (si no, por píxel: JSON
+    anteriores)
+    """
+    iso: int
+    tercio_z2: int | None
+    medible: bool
+    estimada: bool
+    desviacion: float | None
+    lectura: float | None
+    ruido_zv: float | None
+    ruido_z2: float | None
+    textura_z2: float | None
+    textura_ruido: float | None
+    nivel_zv: float | None
+    nivel_z2: float | None
+    es_pantalla: bool
+
+
+#
+def textura(tela_disp: float, tarjeta_disp: float) -> float:
+    """
+    Textura del paño: su dispersión sin el ruido de la tarjeta (las dos,
+    dispersiones relativas de la misma toma), la raíz de la diferencia de
+    sus cuadrados (0 si la del paño no llega)
+    """
+    return math.sqrt(max(0.0, (tela_disp ** 2) - (tarjeta_disp ** 2)))
+
+
+#
 # --- El análisis de una serie: lo que se midió en los RAW. Clase y no
 #     tupla, como ZonaMedida: tiene comportamiento propio y se crea
 #     siempre con los nombres de los campos
@@ -189,12 +293,15 @@ class Review:
     demás Z-V, para la cabecera del libro, la cámara (su nombre), la
     fecha de la Z-V (ISO 8601) y su exposición (f, Tv en segundos, ISO),
     los balances de la cámara, el L* del revelador por zona (las 31, de
-    sus exportaciones; () hasta la segunda parte), la profundidad de bits
+    sus exportaciones; () hasta la segunda parte), el contraste de la
+    trama del paño por zona en esas exportaciones (las 31, en L*; NaN sin
+    él; () hasta la segunda parte), la profundidad de bits
     de los RAW (None si no se leyó), la curva de transferencia del ruido
     por canal ({canal: Transferencia}; None si no se pudo ajustar) y el
     ruido aleatorio de la tarjeta en la Z-V por canal (dispersión
-    relativa, con una Z-V de control; None sin ella) y los píxeles
-    defectuosos del sensor (None si no se contaron).
+    relativa, con una Z-V de control; None sin ella), los píxeles
+    defectuosos del sensor (None si no se contaron) y la secuencia de ISO
+    medida, de menor a mayor ISO (() si no la hay).
     """
     lado: int
     alto: int
@@ -218,10 +325,12 @@ class Review:
     iso: float | None = None
     balances: tuple[BalanceMedido, ...] = ()
     revelador: tuple[float, ...] = ()
+    contraste: tuple[float, ...] = ()
     bits: int | None = None
     transferencia: dict[str, Transferencia] | None = None
     aleatorio: dict[str, float] | None = None
     pixeles: Pixeles | None = None
+    isos: tuple[MedidaISO, ...] = ()
 
     #
     @property
@@ -335,6 +444,68 @@ class Review:
 
     #
     @property
+    def filasISO(self) -> list[FilaISO]:
+        """
+        Saber lo que se enseña de cada ISO de la secuencia de ISO, de menor
+        a mayor ISO ([] si no la hay). La desviación, frente a la Z-V del
+        primer ISO que la tenga (el inicial)
+        """
+        verde = 1
+        base = next((m.zv.nivelRGB[verde] for m in self.isos
+                     if (m.zv is not None) and (m.zv.nivelRGB[verde] > 0)),
+                    None)
+        filas = []
+        for m in self.isos:
+            tercio = m.z2.tercio_ev if m.z2 else None
+            if not z2_medible(tercio, m.zv is not None):
+                filas.append(FilaISO(
+                    iso=m.iso, tercio_z2=tercio, medible=False,
+                    estimada=False, desviacion=None, lectura=None,
+                    ruido_zv=None, ruido_z2=None, textura_z2=None,
+                    textura_ruido=None, nivel_zv=None, nivel_z2=None,
+                    es_pantalla=False))
+                continue
+            zv, z2 = m.zv, m.z2
+            nivel = zv.nivelRGB[verde]                       # type: ignore
+
+            # --- La textura y el ruido, a escala de pantalla si se
+            #     midieron (si no, JSON anteriores: por píxel)
+            pantalla = ((zv.dispPantallaRGB is not None)     # type: ignore
+                        and (z2.dispPantallaRGB is not None)  # type: ignore
+                        and (z2.telaDispPantallaRGB is not None
+                             or not z2.telaDispRGB))         # type: ignore
+            if pantalla:
+                ruido_zv = zv.dispPantallaRGB[verde]         # type: ignore
+                ruido_z2 = z2.dispPantallaRGB[verde]         # type: ignore
+                tela = z2.telaDispPantallaRGB                # type: ignore
+            else:
+                ruido_zv = zv.dispRGB[verde]                 # type: ignore
+                ruido_z2 = z2.dispRGB[verde]                 # type: ignore
+                tela = z2.telaDispRGB                        # type: ignore
+            tx = (textura(tela[verde], ruido_z2)
+                  if (tela is not None) else None)
+            filas.append(FilaISO(
+                iso=m.iso,
+                tercio_z2=tercio,
+                medible=True,
+                estimada=(tercio != KS.TERCIOS_Z2),
+                desviacion=(float(np.log2(nivel / base))
+                            if (base and (nivel > 0)) else None),
+                lectura=(None if (m.ruido_borde is None)
+                         else _rgb_canales(m.ruido_borde)[verde]),
+                ruido_zv=ruido_zv,
+                ruido_z2=ruido_z2,
+                textura_z2=tx,
+                textura_ruido=((tx / ruido_z2)
+                               if ((tx is not None) and (ruido_z2 > 0))
+                               else None),
+                nivel_zv=nivel,
+                nivel_z2=z2.nivelRGB[verde],                 # type: ignore
+                es_pantalla=pantalla))
+        return filas
+
+    #
+    @property
     def aleatorioRGB(self) -> tuple[float, float, float] | None:
         """ Saber el ruido aleatorio de la Z-V en rojo, verde y azul. """
         a = self.aleatorio
@@ -382,7 +553,8 @@ def review_a_dict(review: Review) -> dict:
             KAN.J_CALIENTES: a.pixeles.calientes,
             KAN.J_CONFIRMADOS: a.pixeles.confirmados,
             KAN.J_MUERTOS: a.pixeles.muertos,
-            KAN.J_MEGAPIXELES: a.pixeles.megapixeles}}
+            KAN.J_MEGAPIXELES: a.pixeles.megapixeles},
+        KAN.J_ISOS: [_iso_a_dict(m) for m in a.isos]}
 
 
 #
@@ -433,7 +605,8 @@ def review_de_dict(datos: dict) -> Review:
             calientes=datos[KAN.J_PIXELES][KAN.J_CALIENTES],
             confirmados=datos[KAN.J_PIXELES][KAN.J_CONFIRMADOS],
             muertos=datos[KAN.J_PIXELES][KAN.J_MUERTOS],
-            megapixeles=datos[KAN.J_PIXELES][KAN.J_MEGAPIXELES]))
+            megapixeles=datos[KAN.J_PIXELES][KAN.J_MEGAPIXELES]),
+        isos=tuple(_iso_de_dict(d) for d in (datos.get(KAN.J_ISOS) or [])))
 
 
 #
@@ -502,7 +675,9 @@ def _zona_a_dict(z: ZonaMedida) -> dict:
             KAN.J_TELA_NIVEL: z.tela_nivel,
             KAN.J_TELA_DISP: z.tela_disp,
             KAN.J_TELA_RECORTADO: z.tela_recortado,
-            KAN.J_DEV: _lista(z.dev)}
+            KAN.J_DEV: _lista(z.dev),
+            KAN.J_DISP_PANTALLA: z.disp_pantalla,
+            KAN.J_TELA_DISP_PANTALLA: z.tela_disp_pantalla}
 
 
 def _zona_de_dict(d: dict) -> ZonaMedida:
@@ -514,4 +689,25 @@ def _zona_de_dict(d: dict) -> ZonaMedida:
                       tela_nivel=d[KAN.J_TELA_NIVEL],
                       tela_disp=d[KAN.J_TELA_DISP],
                       tela_recortado=d[KAN.J_TELA_RECORTADO],
-                      dev=_tupla(d[KAN.J_DEV]) or ())
+                      dev=_tupla(d[KAN.J_DEV]) or (),
+                      # --- JSON anteriores, sin la escala de pantalla
+                      disp_pantalla=d.get(KAN.J_DISP_PANTALLA) or {},
+                      tela_disp_pantalla=(
+                          d.get(KAN.J_TELA_DISP_PANTALLA) or {}))
+
+
+#
+# --- Un ISO de la secuencia de ISO, a datos de JSON y de vuelta
+def _iso_a_dict(m: MedidaISO) -> dict:
+    return {KAN.J_ISO: m.iso, KAN.J_NEGRO: _lista(m.negro),
+            KAN.J_RUIDO_BORDE: _lista(m.ruido_borde),
+            KAN.J_Z2: _zona_a_dict(m.z2) if m.z2 else None,
+            KAN.J_ZV: _zona_a_dict(m.zv) if m.zv else None}
+
+
+def _iso_de_dict(d: dict) -> MedidaISO:
+    return MedidaISO(iso=d[KAN.J_ISO],
+                     negro=_tupla_num(d[KAN.J_NEGRO]),
+                     ruido_borde=_tupla(d[KAN.J_RUIDO_BORDE]),
+                     z2=_zona_de_dict(d[KAN.J_Z2]) if d[KAN.J_Z2] else None,
+                     zv=_zona_de_dict(d[KAN.J_ZV]) if d[KAN.J_ZV] else None)

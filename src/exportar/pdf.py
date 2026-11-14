@@ -1,15 +1,16 @@
 # -*- coding: utf-8 *-*
 """
     :Propósito: PDF de la cámara para el estudiante (dos páginas A4,
-                con matplotlib): latitud de texturas, curva tonal y
-                diferencia en L*, recomendaciones para la curva del
-                revelador, ruido aceptable por color, y balances de blancos.
+                con matplotlib; tres con secuencia de ISO): latitud de
+                texturas, curva tonal y diferencia en L*, recomendaciones
+                para la curva del revelador, ruido aceptable por color,
+                balances de blancos y la secuencia de ISO.
                 Lo calcula el libro (Excel): el PDF solo lo dibuja. Sin
                 los datos del estudiante (ni sus decisiones ni el L* que
                 escribe a mano). Sin textos propios: los recibe ya
                 traducidos
     :Autor:     Tony Diana
-    :Versión:   26.10.18
+    :Versión:   26.11.10
 """
 
 # cSpell:ignore axhline, backend, backends, boxstyle, capstyle
@@ -59,6 +60,7 @@ class KPDF(std.EnumMutable):
     IZQUIERDA = 0.06
     DERECHA = 0.94
     PAGINAS = 2
+    """ Páginas de siempre; con secuencia de ISO, una más (la última). """
 
     # --- Colores: los del libro (cabecera, filas alternas y bordes) y
     #     los de sus series; el verde oscuro de la latitud recomendada,
@@ -204,7 +206,19 @@ class KPDF(std.EnumMutable):
     BARRA = 0.26
 
     # --- Sin dato en una tabla
-    SIN_DATO = "—"
+    SIN_DATO = KXL.SIN_DATO
+
+    # --- Página de la secuencia de ISO: una columna por ISO (la primera,
+    #     los rótulos, más ancha), porcentajes con un decimal y, debajo,
+    #     una nota por ISO estimado o sin medir y la conclusión. Fondo de
+    #     la textura en sombras, en el orden de KXL.T_TEXTURA_ISO (se
+    #     pierde, justa, se ve)
+    TEXTURA_JUSTA = "#F0C05A"
+    SEMAFORO_ISO = (RUIDO_MAL, TEXTURA_JUSTA, RUIDO_BIEN)
+    ANCHO_ROTULO_ISO = 2.6
+    ANCHO_COLUMNA_ISO = 1
+    FORMATO_PORCENTAJE = "{} %"
+    FORMATO_NOTA_ISO = "{rotulo} {iso}: {nota}"
 
     # --- Textos (claves; los traduce la aplicación)
     T_TITULO_PDF = "titulo_pdf"
@@ -228,21 +242,23 @@ matplotlib.use(KPDF.MOTOR)
 class Pdf(object):
     """
     PDF de una serie, desde su libro ya calculado: se crea con la
-    ruta, los textos ya traducidos ({clave de KXL o KPDF: texto}) y el
-    Excel; escribir() la graba.
+    ruta, los textos ya traducidos ({clave de KXL o KPDF: texto}), el
+    Excel y el nombre del estudiante (el de la carpeta de la serie; ""
+    si no hay); escribir() la graba.
     """
 
-    __slots__ = ["__datos", "__excel", "__ruta", "__textos"]
+    __slots__ = ["__datos", "__estudiante", "__excel", "__ruta", "__textos"]
 
     #
     def __init__(self, ruta: Path, textos: dict[str, str],
-                 excel: Excel) -> None:
+                 excel: Excel, estudiante: str) -> None:
 
         # --- Variables de instancia
         self.__ruta: Path = ruta
         self.__textos: dict[str, str] = textos
         self.__excel: Excel = excel
         self.__datos = excel.review
+        self.__estudiante: str = estudiante
 
     #
     # --- Métodos públicos
@@ -266,6 +282,13 @@ class Pdf(object):
               PdfPages(self.__ruta) as pdf):
             pdf.savefig(self.pagina_curva(k, puntos))
             pdf.savefig(self.pagina_datos(k, puntos))
+            if self.__datos.isos:
+                pdf.savefig(self.pagina_iso(k))
+
+    #
+    def paginas(self) -> int:
+        """ Cuántas páginas tiene: con secuencia de ISO, una más. """
+        return KPDF.PAGINAS + (1 if self.__datos.isos else 0)
 
     #
     def pagina_curva(self, k: dict, puntos: list[PuntoCurva]) -> Figure:
@@ -328,7 +351,7 @@ class Pdf(object):
         # --- Ruido aceptable por color: el umbral y, por canal, una franja
         #     de zonas y su frase
         y -= KPDF.ENTRE_APARTADOS
-        self.apartado(fig, y, t[KXL.T_RUIDO_COLOR])
+        self.apartado(fig, y, self.__excel.titulo_ruido_color())
         fin = self.nota(fig, y - KPDF.A_LA_NOTA,
                         t[KXL.T_RUIDO_COLOR_NOTA].format(
                             umbral=k[KXL.C_SNR_MINIMA]))
@@ -369,6 +392,55 @@ class Pdf(object):
             colores, KPDF.UNIONES_BALANCES)
         return fig
 
+    #
+    def pagina_iso(self, k: dict) -> Figure:
+        """
+        Página de la secuencia de ISO (la última), para el estudiante: su
+        nota, una tabla con una columna por ISO (la exposición frente al
+        ISO inicial y la textura en sombras, en semáforo; los números, en
+        la hoja ISO del libro), una nota por ISO estimado o sin medir y la
+        conclusión.
+        """
+        t, excel = self.__textos, self.__excel
+        filas_iso = self.__datos.filasISO
+        umbral = excel.umbral_iso(k)
+        fig = self.pagina(self.paginas())
+        y = KPDF.APARTADO_RECOMENDACIONES
+        self.apartado(fig, y, t[KXL.T_TITULO_ISO])
+        fin = self.nota(fig, y - KPDF.A_LA_NOTA, t[KXL.T_NOTA_ISO_PDF])
+        filas = [
+            (t[KXL.T_CAB_EXPOSICION_ISO],
+             *(excel.exposicion_iso(f, k) or KPDF.SIN_DATO
+               for f in filas_iso)),
+            (t[KXL.T_CAB_SE_APRECIA],
+             *(excel.aprecia_iso(f, k, umbral) or KPDF.SIN_DATO
+               for f in filas_iso)),
+            (t[KXL.T_CAB_SOMBRAS_ISO],
+             *(excel.sombras_iso(f, k, umbral) or KPDF.SIN_DATO
+               for f in filas_iso))]
+        fila_textura = 1
+        colores = {}
+        for i, f in enumerate(filas_iso):
+            nivel = excel.nivel_textura_iso(f, k, umbral)
+            if nivel is not None:
+                colores[(fila_textura, i + 1)] = KPDF.SEMAFORO_ISO[nivel]
+        y = self.tabla(
+            fig, self.bajo_nota(y, fin),
+            (t[KXL.T_CAB_ISO], *(str(f.iso) for f in filas_iso)), filas,
+            (KPDF.ANCHO_ROTULO_ISO,
+             *((KPDF.ANCHO_COLUMNA_ISO,) * len(filas_iso))), colores)
+        for f in filas_iso:
+            nota = excel.nota_iso(f)
+            if nota:
+                y = self.nota(fig, y - KPDF.TABLA_A_NOTA,
+                              KPDF.FORMATO_NOTA_ISO.format(
+                                  rotulo=t[KXL.T_CAB_ISO], iso=f.iso,
+                                  nota=nota))
+        conclusion = excel.conclusion_iso(k, umbral)
+        if conclusion:
+            self.nota(fig, y - KPDF.TABLA_A_NOTA, conclusion, KPDF.TINTA)
+        return fig
+
     # endregion Métodos públicos
 
     #
@@ -380,7 +452,8 @@ class Pdf(object):
     def pagina(self, numero: int) -> Figure:
         """
         Página nueva con su cabecera (cámara, fecha, bits y exposición de
-        la Z-V, sobre una banda verde) y su pie (con su número).
+        la Z-V, sobre una banda verde, y a la derecha el nombre del
+        estudiante, sin traducir) y su pie (con su número).
         """
         t, d = self.__textos, self.__datos
         fig = Figure(figsize=KPDF.PAGINA)
@@ -391,6 +464,10 @@ class Pdf(object):
                  t[KPDF.T_TITULO_PDF].format(cam=d.cam),
                  fontsize=KPDF.LETRA_TITULO, weight="bold", color="white",
                  va="center")
+        if self.__estudiante:
+            fig.text(KPDF.DERECHA, KPDF.TITULO_Y, self.__estudiante,
+                     fontsize=KPDF.LETRA_TITULO, weight="bold",
+                     color="white", va="center", ha="right")
         fecha = (datetime.fromisoformat(d.fecha).strftime(
             t[KPDF.T_FORMATO_FECHA_PDF]) if d.fecha else KPDF.SIN_DATO)
         exp = (OECF.TextoExp(d.f, d.tv, d.iso, tuple(
@@ -403,7 +480,7 @@ class Pdf(object):
         fig.text(KPDF.IZQUIERDA, KPDF.PIE_Y, t[KPDF.T_PIE_PDF],
                  fontsize=KPDF.LETRA_PIE, color=KPDF.GRIS)
         fig.text(KPDF.DERECHA, KPDF.PIE_Y, t[KPDF.T_PAGINA].format(
-            pagina=numero, paginas=KPDF.PAGINAS), fontsize=KPDF.LETRA_PIE,
+            pagina=numero, paginas=self.paginas()), fontsize=KPDF.LETRA_PIE,
             color=KPDF.GRIS, ha="right")
         return fig
 
@@ -779,6 +856,17 @@ class Pdf(object):
             return KPDF.SIN_DATO
         texto = f"{valor:.{decimales}f}"
         return texto.replace(".", self.__textos[KPDF.T_SEPARADOR_DECIMAL])
+
+    #
+    def porcentaje(self, valor: float | None) -> str:
+        """
+        Fracción como porcentaje con un decimal (con el separador del
+        idioma); sin ella, una raya.
+        """
+        if valor is None:
+            return KPDF.SIN_DATO
+        return KPDF.FORMATO_PORCENTAJE.format(
+            self.numero(valor * KXL.CIEN, 1))
 
     #
     def marca_eje(self, valor: float, _pos: int) -> str:

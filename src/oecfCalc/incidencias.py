@@ -21,7 +21,7 @@ from kernel import COM as KCOM
 from leer import bits_tiff
 from .oecf import OECF
 from .revelado import KRV
-from .secuencia import KS
+from .secuencia import KS, z2_medible
 from .teselas import KTE, Select
 
 
@@ -167,6 +167,35 @@ def calcular_incidencias(oecf: OECF) -> list[Incidencia]:
                                 tomas=tuple(oecf.tapadasOtroISO)))
     if not sec.balances:
         lista.append(Incidencia(codigo=KI.SIN_BALANCES))
+
+    # --- Secuencia de ISO: marcadores con la exposición de las tapadas
+    #     (se aceptan: Tony, 2026-11-10), sin marcador final, ISO cuya
+    #     Z2 no está justo en su sitio (estimación; sus Z2) e ISO que no
+    #     se pueden medir (de cada uno, su Z-V o, sin ella, su Z2)
+    con_tapada = [i for i in sec.marcadores if oecf.tomas[i].tapada]
+    if con_tapada:
+        lista.append(Incidencia(codigo=KI.MARCADOR_TAPADAS,
+                                tomas=tuple(con_tapada)))
+    if len(sec.marcadores) == 1:
+        lista.append(Incidencia(codigo=KI.SIN_MARCADOR_FINAL))
+    estimados: list[int] = []
+    sin_medir: list[int] = []
+    for bloque in sec.bloques.values():
+        if (bloque.zv is None) and (bloque.z2 is None):
+            continue
+        tercio = (oecf.tercioEVs[bloque.z2] if (bloque.z2 is not None)
+                  else None)
+        if not z2_medible(tercio, bloque.zv is not None):
+            sin_medir.append(bloque.zv if (bloque.zv is not None)
+                             else bloque.z2)                    # type: ignore
+        elif tercio != KS.TERCIOS_Z2:
+            estimados.append(bloque.z2)                         # type: ignore
+    if estimados:
+        lista.append(Incidencia(codigo=KI.ISO_ESTIMADO,
+                                tomas=tuple(estimados)))
+    if sin_medir:
+        lista.append(Incidencia(codigo=KI.ISO_SIN_MEDIR,
+                                tomas=tuple(sin_medir)))
 
     # --- Posiciones vacías y repetidas (fuera de ZV), tomas que no caben
     #     y tomas desviadas. Por pasos enteros, los tercios no son huecos

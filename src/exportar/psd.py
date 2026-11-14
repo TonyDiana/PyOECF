@@ -17,6 +17,7 @@ __all__ = ["KPSD", "Psd"]
 # --- Bibliotecas estándar Python
 from collections.abc import Iterator
 from pathlib import Path
+import re
 
 # --- Bibliotecas externas
 import numpy as np
@@ -31,6 +32,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 # --- Bibliotecas internas
 from bib import std
+from bib.oecfMediadores import KP
 from kernel import COM as KCOM
 from oecfCalc import Ventana, porcentaje, recorte
 
@@ -69,6 +71,13 @@ class KPSD(std.EnumMutable):
     BORDE_CARTELA = 10
     """Grosor del borde del marco, en píxeles."""
 
+    # --- Capas de los cuadros de la plantilla: prefijo de zona y su
+    #     número (Z03, Z03_3…). De cada zona, el sufijo no se lee: solo
+    #     su orden por nombre (la entera, el primer y el segundo tercio),
+    #     así el sufijo está únicamente en OECF.KT.TERCIOS_ZONA
+    PATRON_CAPA_ZONA = re.compile(rf"{re.escape(KP.PREFIJO)}(\d+)(?:\D.*)?")
+    """Patrón del nombre de una capa de cuadro; su grupo 1 es la zona."""
+
     # --- Del formato PSD (no son decisiones nuestras): canales de color de
     #     una capa y su transparencia, orden de bytes de los 16 bits,
     #     posición de la x y de la y (línea base) en la transformación de
@@ -94,7 +103,7 @@ class KPSD(std.EnumMutable):
 class Psd(object):
     """
     Láminas de una serie: se crea con la plantilla, la toma de cada zona
-    ({nombre de su capa: archivo}), la ventana del paño, los divisores
+    ({tercioEV: archivo}), la ventana del paño, los divisores
     del recorte (KTE.FACTORES: 1 → 100 %) y el tamaño del sensor (alto,
     ancho). La toma puede ser el RAW (revelado propio y neutro) o la
     exportación del revelador en TIFF (en el espacio de la plantilla; su
@@ -109,19 +118,20 @@ class Psd(object):
                  "__sensor", "__ventana", "__zonas"]
 
     #
-    def __init__(self, plantilla: Path, zonas: dict[str, Path],
+    def __init__(self, plantilla: Path, zonas: dict[int, Path],
                  ventana: Ventana, factores: tuple[int, ...],
                  sensor: tuple[int, int],
                  cartela: tuple[str, ...] = ()) -> None:
 
-        # --- Variables de instancia. cuadros: {divisor: {capa: píxeles}}
+        # --- Variables de instancia. cuadros: {divisor: {tercioEV:
+        #     píxeles}}
         self.__plantilla: Path = plantilla
-        self.__zonas: dict[str, Path] = zonas
+        self.__zonas: dict[int, Path] = zonas
         self.__ventana: Ventana = ventana
         self.__factores: tuple[int, ...] = factores
         self.__sensor: tuple[int, int] = sensor
         self.__cartela: tuple[str, ...] = cartela
-        self.__cuadros: dict[int, dict[str, np.ndarray]] = {
+        self.__cuadros: dict[int, dict[int, np.ndarray]] = {
             f: {} for f in factores}
 
     #
@@ -138,11 +148,11 @@ class Psd(object):
         cada una dice cuántas lleva y cuántas son.
         """
         total = len(self.__zonas)
-        for hechas, (capa, archivo) in enumerate(self.__zonas.items(), 1):
+        for hechas, (tercioEV, archivo) in enumerate(self.__zonas.items(), 1):
             imagen, ventana = self.imagen(archivo)
             for factor in self.__factores:
-                self.__cuadros[factor][capa] = recorte(imagen, ventana,
-                                                       factor)
+                self.__cuadros[factor][tercioEV] = recorte(imagen, ventana,
+                                                           factor)
             yield hechas, total
 
     #
@@ -165,6 +175,29 @@ class Psd(object):
             alto=v.alto)
 
     #
+    @staticmethod
+    def __capas_zona(psd: PSDImage) -> list[tuple[Layer, int]]:
+        """
+        Capas de los cuadros de la plantilla con su tercioEV. De cada zona
+        (las cifras tras la Z) se ordenan sus capas por nombre: la más
+        corta es la entera y siguen el primer y el segundo tercio. El
+        sufijo del nombre no se lee, así que vale cualquiera.
+        """
+        por_zona: dict[int, list[Layer]] = {}
+        for capa in psd.descendants():
+            coincide = KPSD.PATRON_CAPA_ZONA.fullmatch(capa.name)
+            if (coincide is None) or isinstance(capa, (Group, TypeLayer)):
+                continue
+            por_zona.setdefault(int(coincide.group(1)), []).append(capa)
+        capas: list[tuple[Layer, int]] = []
+        for entera, grupo in por_zona.items():
+            grupo.sort(key=lambda c: (len(c.name), c.name))
+            for tercio, capa in enumerate(grupo):
+                capas.append((capa, ((entera - KP.ZONA_REF) * KP.TERCIOS)
+                              + tercio))
+        return capas
+
+    #
     def Escribir(self, factor: int, destino: Path) -> None:
         """
         Graba la lámina de un divisor: la plantilla con cada cuadro en su
@@ -173,8 +206,8 @@ class Psd(object):
         """
         psd = PSDImage.open(self.__plantilla)
         cuadros = self.__cuadros[factor]
-        for capa in psd.descendants():
-            px = cuadros.get(capa.name)
+        for capa, tercioEV in self.__capas_zona(psd):
+            px = cuadros.get(tercioEV)
             if (px is None) or (not capa.has_pixels()):
                 continue
             alto, ancho = capa.height, capa.width
@@ -214,7 +247,12 @@ class Psd(object):
         libre = marco.bottom - KPSD.BORDE_CARTELA - arriba
         hueco = (libre - (len(lineas) * alto)) / (len(lineas) + 1)
         x = lineas[0].transform[KPSD.TRANSFORM_X]
-        for i, (capa, texto) in enumerate(zip(lineas, self.__cartela)):
+
+        # --- Si la plantilla tiene menos capas que líneas (una plantilla
+        #     antigua, sin la del estudiante), sobran las de arriba: así
+        #     las demás siguen en su capa (Tony, 2026-11-13)
+        textos = self.__cartela[-len(lineas):]
+        for i, (capa, texto) in enumerate(zip(lineas, textos)):
             base = arriba + (hueco * (i + 1)) + (alto * i) + ascenso
             self.escribir_texto(capa, texto, x, base, fuente)
 

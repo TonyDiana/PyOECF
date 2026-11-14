@@ -17,7 +17,7 @@ __all__ = ["KTE", "Teselas", "Ventana", "Select", "medir_teselas",
            "Medida", "medir_toma", "exceso_negro", "restar_exceso",
            "ruido_temporal", "part_recortada", "matriz_color",
            "temperatura",
-           "factores", "revelar", "recorte"]
+           "factores", "revelar", "recorte", "bloque_pantalla"]
 
 # --- Bibliotecas estándar Python
 from collections import deque
@@ -42,6 +42,12 @@ class KTE(std.EnumMutable):
     """Lado de la tesela, en píxeles: múltiplo de 2 (Bayer) y de 6
     (X-Trans), para que todas tengan los mismos colores en las mismas
     posiciones (la máscara de colores de una vale para todas)."""
+
+    ANCHO_PANTALLA = 1920
+    """Ancho en píxeles de una pantalla Full HD. La textura y su ruido se
+    miden también como se verían con la foto entera en esa pantalla: cada
+    bloque de ancho del sensor / ANCHO_PANTALLA píxeles, en uno (ver
+    bloque_pantalla)."""
 
     VERDE = "G"
     """Canal de referencia: con él se busca el paño y se filtran las
@@ -365,13 +371,15 @@ class Oscuridad(NamedTuple):
 class Tela(NamedTuple):
     """
     Paño de una toma, por canal: nivel (mediana sobre el negro),
-    dispersión relativa e histograma de sus valores tal como los da el
-    RAW (para contar los recortados cuando se sepa el máximo de la
-    serie: ver part_recortada).
+    dispersión relativa (por píxel y a escala de pantalla, ver
+    bloque_pantalla) e histograma de sus valores tal como los da el RAW
+    (para contar los recortados cuando se sepa el máximo de la serie: ver
+    part_recortada).
     """
     nivel: tuple[float, ...]
     disp: tuple[float, ...]
     histograma: tuple[np.ndarray, ...]
+    disp_pantalla: tuple[float, ...]
 
 
 #
@@ -379,12 +387,14 @@ class Tela(NamedTuple):
 class Medida(NamedTuple):
     """
     Valor típico (sobre el negro) y dispersión de la tarjeta en una
-    toma, por canal; desviación de cada tesela rechazada; y su paño (None
-    si no hay).
+    toma, por canal (por píxel y a escala de pantalla, ver
+    bloque_pantalla); desviación de cada tesela rechazada; y su paño
+    (None si no hay).
     """
     canales: tuple[str, ...]
     nivel: tuple[float, ...]
     disp: tuple[float, ...]
+    disp_pantalla: tuple[float, ...]
 
     # --- Rechazadas (en el orden de np.nonzero de la selección): cuánto
     #     se aparta su verde del de las buenas, en zonas (log2 del
@@ -409,6 +419,8 @@ def medir_toma(archivo: Path, select: Select, negro: tuple[float, ...],
     raw = _leer_raw(archivo)
     teselas = _teselas(raw, negro, KTE.LADO)
     buenas = select.buenas
+    bloque = bloque_pantalla(raw.enteros.shape[1])
+    idxs = [int(nombre[1:]) for nombre in teselas.canales]
     medida_tela = None
     if tela is not None:
         trozo = raw.enteros[tela.y:(tela.y + tela.alto),
@@ -416,16 +428,20 @@ def medir_toma(archivo: Path, select: Select, negro: tuple[float, ...],
         colores = raw.colores[tela.y:(tela.y + tela.alto),
                               tela.x:(tela.x + tela.ancho)]
         niveles, dispersiones, histogramas = [], [], []
-        for nombre in teselas.canales:
-            idx = int(nombre[1:])
+        for idx in idxs:
             valores = trozo[colores == idx]
             neto = valores.astype(np.float32) - negro[idx]
             mediana, disp = _mediana_disp(neto[None, None, :])
             niveles.append(float(mediana[0, 0]))
             dispersiones.append(float(disp[0, 0]))
             histogramas.append(np.bincount(valores))
-        medida_tela = Tela(nivel=tuple(niveles), disp=tuple(dispersiones),
-                           histograma=tuple(histogramas))
+        en_pantalla = _medias_bloque(trozo, colores, negro, idxs, bloque)
+        medida_tela = Tela(
+            nivel=tuple(niveles), disp=tuple(dispersiones),
+            histograma=tuple(histogramas),
+            disp_pantalla=tuple(
+                float(_mediana_disp(m.reshape(1, 1, -1))[1][0, 0])
+                for m in en_pantalla))
     rechazadas = (select.motivo != KTE.BUENA) & (
         select.motivo != KTE.NO_TARJETA)
     verde_buenas = np.median(teselas.nivel_verde[buenas])
@@ -436,6 +452,8 @@ def medir_toma(archivo: Path, select: Select, negro: tuple[float, ...],
         nivel=tuple(float(np.median(n[buenas])) for n in teselas.nivel),
         disp=tuple(float(np.median(d[buenas]))
                    for d in teselas.disp),
+        disp_pantalla=_disp_pantalla_teselas(raw, negro, idxs, buenas,
+                                             bloque),
         dev_rechazadas=dev,
         motivo_rechazadas=select.motivo[rechazadas],
         tela=medida_tela,
@@ -471,11 +489,15 @@ def restar_exceso(medida: Medida, exceso: tuple[float, ...]) -> Medida:
     buenas ya corregido.
     """
     nivel, disp = _bajar(medida.nivel, medida.disp, exceso)
+    _, disp_pantalla = _bajar(medida.nivel, medida.disp_pantalla, exceso)
     tela = medida.tela
     if tela is not None:
         nivel_tela, disp_tela = _bajar(tela.nivel, tela.disp, exceso)
+        _, disp_tela_pantalla = _bajar(tela.nivel, tela.disp_pantalla,
+                                       exceso)
         tela = Tela(nivel=nivel_tela, disp=disp_tela,
-                    histograma=tela.histograma)
+                    histograma=tela.histograma,
+                    disp_pantalla=disp_tela_pantalla)
 
     # --- Rechazadas: su verde y el de las buenas bajan el exceso del verde
     exceso_verde = float(np.mean([e for c, e in zip(medida.canales, exceso)
@@ -485,6 +507,7 @@ def restar_exceso(medida: Medida, exceso: tuple[float, ...]) -> Medida:
     with np.errstate(divide="ignore", invalid="ignore"):
         dev = np.log2((rechazadas - exceso_verde) / verde)
     return medida._replace(nivel=nivel, disp=disp,
+                           disp_pantalla=disp_pantalla,
                            dev_rechazadas=dev, tela=tela,
                            verde=verde)
 
@@ -811,6 +834,64 @@ def recorte(imagen: np.ndarray, ventana: Ventana, factor: int) -> np.ndarray:
     medio = (trozo.reshape(alto, factor, ancho, factor, -1)
              .mean(axis=(1, 3)))
     return np.round(medio).astype(imagen.dtype)
+
+
+#
+def bloque_pantalla(ancho: int) -> int:
+    """
+    Lado del bloque de píxeles del sensor que ocupa un píxel de la
+    pantalla Full HD con la foto entera (KTE.ANCHO_PANTALLA): el divisor
+    de KTE.LADO más próximo a ancho / KTE.ANCHO_PANTALLA (así cada tesela
+    tiene bloques enteros), 1 como poco
+    """
+    ideal = ancho / KTE.ANCHO_PANTALLA
+    divisores = [d for d in range(1, KTE.LADO + 1) if (KTE.LADO % d) == 0]
+    return min(divisores, key=lambda d: abs(d - ideal))
+
+
+#
+# --- Media de cada canal (idxs) en cada bloque de lado × lado píxeles
+#     de un trozo del RAW, sobre su negro: una matriz por canal (filas y
+#     columnas de bloques). Solo cuentan los píxeles de ese canal de cada
+#     bloque (vale para Bayer y para X-Trans)
+def _medias_bloque(trozo: np.ndarray, colores: np.ndarray,
+                   negro: tuple[float, ...], idxs: list[int],
+                   lado: int) -> list[np.ndarray]:
+    filas, columnas = trozo.shape[0] // lado, trozo.shape[1] // lado
+    alto, ancho = filas * lado, columnas * lado
+    imagen = trozo[:alto, :ancho].astype(np.float32)
+    mascara = colores[:alto, :ancho]
+    medias = []
+    for idx in idxs:
+        de_canal = mascara == idx
+        suma = (np.where(de_canal, imagen - negro[idx], 0.0)
+                .reshape(filas, lado, columnas, lado).sum(axis=(1, 3)))
+        cuantos = (de_canal.reshape(filas, lado, columnas, lado)
+                   .sum(axis=(1, 3)))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            medias.append(suma / cuantos)
+    return medias
+
+
+#
+# --- Dispersión relativa de la tarjeta a escala de pantalla, por canal
+#     (idxs): en cada tesela buena, la de sus bloques (ver _medias_bloque);
+#     la mediana de las teselas buenas
+def _disp_pantalla_teselas(raw: _Raw, negro: tuple[float, ...],
+                           idxs: list[int], buenas: np.ndarray,
+                           bloque: int) -> tuple[float, ...]:
+    filas, columnas = buenas.shape
+    lado = KTE.LADO
+    por_tesela = lado // bloque
+    trozo = raw.enteros[:(filas * lado), :(columnas * lado)]
+    colores = raw.colores[:(filas * lado), :(columnas * lado)]
+    resultado = []
+    for medias in _medias_bloque(trozo, colores, negro, idxs, bloque):
+        bloques = (medias.reshape(filas, por_tesela, columnas, por_tesela)
+                   .transpose(0, 2, 1, 3).reshape(filas, columnas, -1))
+        _, disp = _mediana_disp(bloques)
+        resultado.append(float(np.median(disp[buenas])))
+    return tuple(resultado)
 
 
 #

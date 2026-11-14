@@ -19,7 +19,8 @@ import json
 from pathlib import Path
 
 # --- Bibliotecas internas
-from .common import KES, KMED, estado_version, partes_version
+from .common import (KES, KMED, estado_version, partes_version,
+                     version_formato)
 
 
 #
@@ -155,9 +156,10 @@ class Mediador(object):
             datos = json.loads(
                 self.__path.read_text(encoding=KES.CODIFICACION))
             estado = estado_version(
-                datos[KES.OECF][KES.O_VERSION], self.__version, True)
+                version_formato(datos), self.__version, True)
         except (OSError, ValueError, KeyError, TypeError, AttributeError):
-            # JSON mal formado, no se puede leer, o sin oecf.version válida
+            # JSON mal formado, no se puede leer, o sin versión del formato
+            # válida (oecf.versionFormato, u oecf.version en los 1.x)
             self.__estado = KMED.ILEGIBLE
             return
         if estado != KMED.OK:

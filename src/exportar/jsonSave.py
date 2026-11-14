@@ -16,9 +16,12 @@
 
 # cSpell:ignore camara, codificacion, kmed, lstar, oecf, timespec
 
-__all__ = ["es_mas_nuevo", "es_preparada", "grabar_json",
-           "grabar_resultados", "grabar_revelado", "hay_review",
-           "leer_resultados", "leer_review", "restaurar_serie"]
+__all__ = ["archivos_serie", "es_mas_nuevo", "es_preparada",
+           "grabar_factor_lamina",
+           "grabar_json", "grabar_resultados", "grabar_revelado",
+           "hay_review", "leer_factor_lamina", "leer_resultados",
+           "leer_review", "restaurar_serie", "revelado_pendiente",
+           "version_analisis"]
 
 # --- Bibliotecas estándar Python
 import dataclasses
@@ -29,10 +32,11 @@ from pathlib import Path
 
 # --- Bibliotecas internas
 from bib import std
-from bib.oecfMediadores import KES, KMED, estado_version, texto_zona
+from bib.oecfMediadores import (KES, KMED, estado_version, texto_zona,
+                                version_formato)
 from leer import Cam
 from oecfCalc import (BalanceMedido, calcular_incidencias, Exp,
-                      incidencia_a_dict, KS, MedidaTiff, OECF, Review,
+                      incidencia_a_dict, KAN, KS, MedidaTiff, OECF, Review,
                       review_a_dict, review_de_dict, Toma)
 
 
@@ -66,10 +70,10 @@ def _leer(carpeta: Path) -> dict:
 #
 # --- ¿El JSON es de una versión del formato más nueva que la de esta
 #     aplicación? (KeyError, TypeError o ValueError si no trae una versión
-#     que se entienda)
+#     que se entienda). Los 1.x, con la clave antigua: ver version_formato
 def _es_mas_nuevo(datos: dict) -> bool:
-    return (estado_version(datos[KES.OECF][KES.O_VERSION],
-                           KES.VERSION_FORMATO, False)
+    return (estado_version(version_formato(datos), KES.VERSION_FORMATO,
+                           False)
             == KMED.VERSION_NUEVA)
 
 
@@ -107,6 +111,54 @@ def hay_review(carpeta: Path) -> bool:
 
 
 #
+def version_analisis(carpeta: Path) -> str | None:
+    """
+    Versión del análisis guardada en el JSON de esta carpeta OECF
+    (oecf.versionAnalisis): None si no la hay (JSON 1.x, sin medida) o no
+    se puede leer (Tony, 2026-11-13)
+    """
+    try:
+        return _leer(carpeta)[KES.OECF].get(KES.O_VERSION_ANALISIS)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
+#
+def archivos_serie(carpeta: Path) -> list[str] | None:
+    """
+    Nombres de los RAW originales de la serie guardada en el JSON de esta
+    carpeta OECF, en orden de disparo (None si no se puede leer). Para
+    saber si las fotos de la carpeta cambiaron desde que se preparó
+    (Tony, 2026-11-13)
+    """
+    try:
+        return [t[KES.T_ARCHIVO]
+                for t in _leer(carpeta)[KES.SERIE][KES.S_TOMAS]]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+#
+def revelado_pendiente(oecf: OECF) -> bool:
+    """
+    ¿Hay exportaciones del revelador por medir? Sí, si hay alguna y el
+    JSON aún no tiene su revelado, o si alguna es más nueva que el JSON
+    (se volvió a exportar después de medir). No, si no hay ninguna o no
+    se puede leer (Tony, 2026-11-13)
+    """
+    rutas = list(oecf.exportaciones.values())
+    if not rutas:
+        return False
+    try:
+        if _leer(oecf.carpeta).get(KES.REVELADO) is None:
+            return True
+        medido = _ruta(oecf.carpeta).stat().st_mtime
+        return any(ruta.stat().st_mtime > medido for ruta in rutas)
+    except (OSError, ValueError):
+        return False
+
+
+#
 def leer_review(oecf: OECF) -> Review | None:
     """
     El análisis de esta serie guardado en su JSON (None si no lo hay o no
@@ -128,8 +180,9 @@ def leer_review(oecf: OECF) -> Review | None:
 # --- Repone en el análisis leído lo que es de la serie (cada dato, en un
 #     solo sitio: ver review.KAN): la cámara, la fecha, la exposición y
 #     los bits de la ZV, la copia de cada toma medida y, en los balances,
-#     lo que guarda la cámara; y el L* del revelador por zona (las 31: NaN
-#     sin exportación o si no se pudo medir; () sin revelado)
+#     lo que guarda la cámara; y el L* del revelador y el contraste del
+#     paño por zona (las 31: NaN sin exportación o si no se pudo medir; ()
+#     sin revelado)
 def _completar(review: Review, oecf: OECF, revelado: dict | None) -> Review:
     por_nombre = {raw.name: (raw, toma)
                   for raw, toma in zip(oecf.raws, oecf.tomas)}
@@ -149,11 +202,20 @@ def _completar(review: Review, oecf: OECF, revelado: dict | None) -> Review:
                              else None))
 
     revelador: tuple[float, ...] = ()
+    contraste: tuple[float, ...] = ()
     if revelado is not None:
-        lstar = {e[KES.T_TERCIO_EV]: e[KES.E_LSTAR]
-                 for e in revelado[KES.R_EXPORTACIONES]}
+        exportaciones = revelado[KES.R_EXPORTACIONES]
+        lstar = {e[KES.T_TERCIO_EV]: e[KES.E_LSTAR] for e in exportaciones}
         revelador = tuple(
             math.nan if (lstar.get(t) is None) else float(lstar[t])
+            for t in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1))
+
+        # --- El contraste del paño (sin la clave, JSON anteriores al
+        #     2.1: NaN en todas)
+        medido = {e[KES.T_TERCIO_EV]: e.get(KES.E_CONTRASTE)
+                  for e in exportaciones}
+        contraste = tuple(
+            math.nan if (medido.get(t) is None) else float(medido[t])
             for t in range(-KS.TERCIOS_LADO, KS.TERCIOS_LADO + 1))
     exp = oecf.ZV
     return dataclasses.replace(
@@ -169,7 +231,8 @@ def _completar(review: Review, oecf: OECF, revelado: dict | None) -> Review:
         control=tuple(dataclasses.replace(z, copia=copia_de(z.archivo))
                       for z in review.control),
         balances=tuple(balance_de(b) for b in review.balances),
-        revelador=revelador)
+        revelador=revelador,
+        contraste=contraste)
 
 
 #
@@ -186,8 +249,9 @@ def grabar_revelado(oecf: OECF, medidas: dict[int, MedidaTiff]) -> bool:
         datos[KES.REVELADO] = {KES.R_EXPORTACIONES: [
             {KES.T_TERCIO_EV: tercio_ev,
              KES.T_ARCHIVO: _relativa(rutas[tercio_ev], oecf),
-             KES.E_BITS: m.bits, KES.E_ESPACIO: m.espacio,
-             KES.E_LSTAR: m.lstar, KES.E_MOTIVO: m.motivo}
+             KES.E_BITS: m.bits, KES.E_CONTRASTE: m.contraste,
+             KES.E_ESPACIO: m.espacio, KES.E_LSTAR: m.lstar,
+             KES.E_MOTIVO: m.motivo}
             for tercio_ev, m in sorted(medidas.items())]}
         datos[KES.INCIDENCIAS] = _incidencias(oecf)
         _escribir(oecf.carpeta, datos)
@@ -222,6 +286,38 @@ def grabar_resultados(carpeta: Path, resultados: dict) -> bool:
     except (OSError, ValueError):
         return False
     return True
+
+
+#
+def grabar_factor_lamina(carpeta: Path, factor: int) -> bool:
+    """
+    Añade (o sustituye) en la medida del JSON de esta carpeta OECF el
+    tamaño de la segunda lámina elegido en la caja Lámina (lo demás, como
+    estaba). False si no se puede leer o escribir, o si aún no hay medida
+    """
+    try:
+        datos = _leer(carpeta)
+        medida = datos.get(KES.MEDIDA)
+        if not medida:
+            return False
+        medida[KAN.J_FACTOR_LAMINA] = factor
+        _escribir(carpeta, datos)
+    except (OSError, ValueError, TypeError):
+        return False
+    return True
+
+
+#
+def leer_factor_lamina(carpeta: Path) -> int | None:
+    """
+    El tamaño de la segunda lámina guardado en el JSON de esta carpeta
+    OECF (None si no lo hay, como en los JSON 1.0, o no se puede leer)
+    """
+    try:
+        medida = _leer(carpeta).get(KES.MEDIDA)
+        return medida.get(KAN.J_FACTOR_LAMINA) if medida else None
+    except (OSError, ValueError, AttributeError):
+        return None
 
 
 #
@@ -262,10 +358,13 @@ def grabar_json(OECF: OECF, programa: str, version: str) -> Path | None:
             KES.T_PARTE: parte})
 
     datos = {
-        KES.OECF: {KES.O_VERSION: KES.VERSION_FORMATO},
+        KES.OECF: {
+            KES.O_VERSION_APP: version,
+            KES.O_VERSION_FORMATO: KES.VERSION_FORMATO,
+            KES.O_VERSION_ANALISIS: (KAN.VERSION_ANALISIS if OECF.review
+                                     else None)},
         KES.INFO: {
-            KES.I_PROGRAMA: {KES.P_NOMBRE: programa,
-                             KES.P_VERSION: version},
+            KES.I_PROGRAMA: {KES.P_NOMBRE: programa},
             KES.I_FECHA: datetime.now().isoformat(
                 timespec=KEE.FORMATO_FECHA),
             KES.I_CARPETA: str(OECF.path),

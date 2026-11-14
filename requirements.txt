@@ -13,4 +13,5 @@ matplotlib~=3.11
 customtkinter~=6.0
 screeninfo~=0.8.1
 pyobjc-framework-Cocoa; sys_platform == "darwin"
+Send2Trash~=1.8
 

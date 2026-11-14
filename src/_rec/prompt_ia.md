@@ -52,7 +52,7 @@ Los colores del texto significan: **azul** = dato leído de los RAW;
 | **Gráficos** | 1 curva tonal en L\*; 2 diferencia en L\*; 3 esperado y obtenido; 4 y 5 desviación (tramo lineal y rango completo); 6 señal/ruido normalizada a 8 Mpx, en escala logarítmica, con el modelo del verde y los umbrales 1, 10 y 40. Leen de Cálculo. Identifícalas por su título, no por su número: el orden puede cambiar. Cada canal lleva un marcador distinto (cuadrado el rojo, círculo el verde, triángulo el azul) para leer las series aunque se solapen. |
 | **Datos** | Lo leído de los RAW, sin cálculos salvo la media de las Z‑V y los tercios estimados: serie por zonas (archivo, nivel y dispersión por canal), Z‑V de control y su media, ruido de lectura de la **franja oscura del sensor** (o su ausencia), el de la **superficie real** con las tomas tapadas (para comparar) y el **negro digital** con su origen (tapadas, estimado en las sombras o declarado), con sus avisos; **píxeles defectuosos**; la **curva de transferencia** (lectura, ganancia, proporcional; aleatorio y fijo de la Z‑V; megapíxeles del sensor), balances de blancos, **paño por zona** (dispersión y fracción recortada de la ventana del paño, por canal) y L\* del revelador por zona: el L\* leído de Análisis y, en un tercio sin él, el estimado. |
 | **Constantes** | Cada constante del método con nombre, valor, unidad y qué es, por orden alfabético. Las fórmulas usan esos nombres. Incluye la nota sobre `{snr_minima}` y `{snr_excelente}` (ISO 12232) y `{mpx_referencia}`. |
-| **Cálculo** | Bloque 1, por canal: techo, suelo (`{ratio_sr}`), rango, último punto lineal, primer punto recortado, suelo sugerido (`{snr_minima}`), suelo excelente (`{snr_excelente}`) y latitud sugerida. Bloque 2, por tercio: esperado, obtenido, desviación, recortado y señal/ruido por canal (por píxel y a 8 Mpx), y el modelo del verde. Bloque 3, curva tonal por zona: luz y L\* esperados, del sensor y del revelador, sus diferencias, y entrada y salida de la curva. Bloque 4, **latitud de texturas** (verde): arriba los límites; debajo, por zona, textura del paño, textura/ruido, textura conservada, paño recortado y si cumple cada criterio. |
+| **Cálculo** | Bloque 1, por canal: techo, suelo (`{ratio_sr}`), rango, último punto lineal, primer punto recortado, suelo sugerido (`{snr_minima}`), suelo excelente (`{snr_excelente}`) y latitud sugerida. Bloque 2, por tercio: esperado, obtenido, desviación, recortado y señal/ruido por canal (por píxel y a 8 Mpx), y el modelo del verde. Bloque 3, curva tonal por zona: luz y L\* esperados, del sensor y del revelador, sus diferencias, y entrada y salida de la curva. Bloque 4, **latitud de texturas**: arriba los límites; debajo, por zona, textura del paño, textura/ruido, textura conservada, paño recortado, si cumple cada criterio, y el contraste de la trama del paño en las exportaciones del revelador con su fracción del de la ZV (lo que decide las sombras). |
 | **Rechazadas** | Teselas de tarjeta que los filtros dejaron fuera: recuento, porcentaje, motivo y desviación. Solo cuentan teselas de tarjeta: no el paño, su margen ni las oscuras. |
 
 Si una celda está **en blanco**, falta el dato (zona sin toma, toma sin
@@ -108,8 +108,10 @@ ZV, y ningún límite cae en él.
 | Textura del paño | `√(dispersión del paño² − dispersión de la tarjeta²)`, las dos relativas y por píxel |
 | Textura/ruido | textura del paño / dispersión de la tarjeta |
 | Textura conservada | textura del paño / textura del paño en la ZV |
-| Sombras apreciables | La primera zona desde la que textura/ruido ≥ `{rose_textura}` **sin volver a bajar hasta la ZV**; entre ese tercio y el de debajo, interpolada en recta y llevada al tercio más próximo |
-| Sombras recomendadas | apreciables + `{margen_sombras}` / `{tercio_por_zona}` |
+| Contraste del paño | En cada exportación del revelador (Datos, junto al L\* del revelador): L\* del percentil 95 menos L\* del percentil 5 del paño, en el centro de su rectángulo y en bloques de la escala de pantalla. En blanco antes de la segunda fase |
+| Contraste / ZV | contraste del paño / contraste del paño en la ZV |
+| Sombras recomendadas | La primera zona con contraste / ZV ≥ `{contraste_sombras}` **sin volver a bajar hasta la ZV**, sin interpolar; sin ningún contraste (antes de la segunda fase), `{texto_sin_revelado}` |
+| Sombras apreciables | recomendadas − `{margen_sombras}` / `{tercio_por_zona}` |
 | Luces apreciables | La última zona, subiendo **sin cortes** desde la ZV, con textura conservada ≥ `{textura_conservada}` |
 | Luces recomendadas | La última, subiendo sin cortes desde la ZV, con paño recortado ≤ `{tela_recortado_max}`; nunca por encima de las apreciables |
 | Latitud de texturas | luces − sombras + `{ancho_zona}`, en **zonas** (apreciable y recomendada), contando las dos puntas |
@@ -184,17 +186,20 @@ razón, pero no es un fallo de cálculo.
     señal/ruido de la tarjeta; la de texturas, de **dónde se aprecia la
     textura del paño**, y por eso es más estrecha. Las dos son correctas:
     miden cosas distintas.
-13. `{rose_textura}` = 5 viene del **criterio de Rose** (Rose 1948; Burgess
-    1999), pero se aplica **por píxel** a la textura del paño frente al
-    ruido de la tarjeta: no es el criterio de Rose tal cual (que integra
-    el área del objeto). El valor está **validado con la vista** del
-    autor en una Canon R7: el límite de sombras cae donde él deja de ver
-    textura.
-14. Las **sombras recomendadas** están un tercio por encima de las
-    apreciables a propósito: un umbral de Rose más alto no es estable
-    (pasar de 5 a 6 mueve el límite hasta 2 zonas en algunas cámaras).
-15. La latitud de texturas **depende del paño**: con otro paño (más o
-    menos textura) el límite de sombras cambia.
+13. Las **sombras** de la latitud de texturas salen del **contraste de la
+    trama del paño en las exportaciones del revelador**, no de los RAW:
+    miden lo que se ve al revelar, y por eso dependen de la curva del
+    revelador. Es intencionado. `{contraste_sombras}` = 0,4 está
+    **ajustado con la vista** del autor en 8 series de 6 cámaras (error de
+    un tercio como mucho). Es **relativo a la ZV** del mismo paño para no
+    depender del paño. Antes de la segunda fase, las sombras dicen
+    `{texto_sin_revelado}`: no es un error. Las luces siguen saliendo de
+    los RAW.
+14. Las **sombras apreciables** están un tercio por debajo de las
+    recomendadas a propósito: la resolución de la serie.
+15. `{rose_textura}` = 5 (**criterio de Rose**; Rose 1948; Burgess 1999)
+    ya no decide la latitud de texturas: solo la **secuencia de ISO**, a
+    escala de pantalla.
 16. El aviso de **«el paño tiene poca textura»** (Análisis) es intencionado:
     sale cuando la textura/ruido del paño en la Z‑V no llega a
     `{rose_textura}`, y entonces las sombras de la latitud de texturas

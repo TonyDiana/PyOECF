@@ -2,15 +2,17 @@
 """
     :Propósito: El protocolo de la serie (KS) y su reparto en partes:
                 iniciales, lados, cambio, final, tapadas, balances de
-                cámara, sobrantes y saltos, y la ZV. También, si se hizo
-                el balance personalizado
+                cámara, marcadores y bloques de la secuencia de ISO,
+                sobrantes y saltos, y la ZV. También, si se hizo el
+                balance personalizado
     :Autor:     Tony Diana
-    :Versión:   26.10.19
+    :Versión:   26.11.10
 """
 
 # cSpell:ignore leidas, oecf
 
-__all__ = ["KS", "Secuencia", "balance_personalizado", "repartir_secuencia"]
+__all__ = ["KS", "BloqueISO", "Secuencia", "balance_personalizado",
+           "z2_medible", "repartir_secuencia"]
 
 # --- Bibliotecas estándar Python
 from typing import NamedTuple
@@ -52,6 +54,32 @@ class KS(std.EnumMutable):
     """Una racha de Z-V solo cuenta como balances de cámara si tiene al
     menos estas tomas: así, una Z-V suelta no es un balance."""
 
+    MARCADORES = 2
+    """Marcadores de la secuencia de ISO: el inicial y el final."""
+
+    ZONAS_Z2 = 3
+    """Zonas de la Z2 por debajo de la Z-V en la secuencia de ISO."""
+
+    TERCIOS_Z2 = -ZONAS_Z2 * KP.TERCIOS
+    """tercioEV de la Z2 de la secuencia de ISO."""
+
+    MARGEN_Z2 = 1
+    """Tercios que la Z2 de un ISO puede apartarse de TERCIOS_Z2 (en el
+    ISO más alto, por el tiempo más corto de la cámara): se mide como
+    estimación. Más, no se mide (Tony, 2026-11-10)."""
+
+
+#
+# --- Un bloque de la secuencia de ISO
+class BloqueISO(NamedTuple):
+    """
+    Tomas de un ISO en la secuencia de ISO (índices; None si falta): su
+    Z-V (tercioEV 0) y su Z2 (la de tercioEV negativo, que debería ser
+    -9 pero puede quedarse corta por el tiempo más corto de la cámara)
+    """
+    z2: int | None
+    zv: int | None
+
 
 #
 # --- Partes de una serie
@@ -62,7 +90,9 @@ class Secuencia(NamedTuple):
     tercioEV). zv: la ZV de la serie, la última de cambio o, si no hay,
     la última inicial (None si no hay ninguna: Tony, 2026-10-19). paso:
     tercios de cada paso de los lados, 1 (por tercios) o KP.TERCIOS (por
-    pasos enteros, sin tercios: Tony, 2026-10-19).
+    pasos enteros, sin tercios: Tony, 2026-10-19). marcadores: los de la
+    secuencia de ISO, 0, 1 (sin el final) o KS.MARCADORES. bloques: los
+    de la secuencia de ISO, {ISO: bloque}, de menor a mayor ISO.
     """
     iniciales: list[int]
     lados: list[list[int]]
@@ -70,6 +100,8 @@ class Secuencia(NamedTuple):
     finales: list[int]
     tapadas: list[int]
     balances: list[int]
+    marcadores: list[int]
+    bloques: dict[int, BloqueISO]
     sobrantes: list[int]
     saltos: list[tuple[int, int, int]]
     zv: int | None
@@ -99,8 +131,22 @@ def balance_personalizado(tercioEVs: list[int | None],
 
 
 #
+def z2_medible(tercio_z2: int | None, hay_zv: bool) -> bool:
+    """
+    ¿Se puede medir un ISO de la secuencia de ISO? Sí, si tiene Z-V y Z2
+    y su Z2 (tercio_z2, su tercioEV) está a KS.MARGEN_Z2 tercios de
+    KS.TERCIOS_Z2 como mucho. Si no está justo en KS.TERCIOS_Z2, es una
+    estimación
+    """
+    return (hay_zv and (tercio_z2 is not None)
+            and (abs(tercio_z2 - KS.TERCIOS_Z2) <= KS.MARGEN_Z2))
+
+
+#
 def repartir_secuencia(tercioEVs: list[int | None], de_tapada: list[bool],
-                       WBs: list[tuple[float, ...] | None]) -> Secuencia:
+                       WBs: list[tuple[float, ...] | None],
+                       isos: list[float | None],
+                       oscuras: list[bool]) -> Secuencia:
     """
     Reparte la serie en sus partes. Las tomas se agrupan en rachas
     seguidas de tercioEV = 0 (Z-V) o de tercioEV del mismo signo (un
@@ -116,16 +162,24 @@ def repartir_secuencia(tercioEVs: list[int | None], de_tapada: list[bool],
     lado con el balance de la serie, solo si detrás de la última va una
     con la exposición de las tapadas; marca el fin de la serie. Las
     tapadas son las que la tienen y van detrás de la final: sin final no
-    hay tapadas, y sobran (Tony, 2026-10-19). Balances de cámara, con al
-    menos KS.MIN_BALANCES tomas: con tapadas, las Z-V que van detrás de
-    la última; sin ellas, las Z-V tras el segundo lado desde la primera
-    con un balance distinto del de la serie (Tony, 2026-10-19). La serie
+    hay tapadas, y sobran (Tony, 2026-10-19). Secuencia de ISO: tras las
+    tapadas (o tras el segundo lado, si no las hay), el marcador inicial
+    es la primera toma oscura con tercioEV 0 o con la exposición de las
+    tapadas (se acepta ese error: Tony, 2026-11-10), y el final, la
+    última oscura tras él con lo mismo; entre los dos (o tras el inicial,
+    sin final), los bloques por ISO: su Z-V, la última con tercioEV 0, y
+    su Z2, la última con tercioEV negativo. Balances de cámara, con al
+    menos KS.MIN_BALANCES tomas y antes del marcador inicial: con
+    tapadas, las Z-V que van detrás de la última; sin ellas, las Z-V tras
+    el segundo lado desde la primera con un balance distinto del de la
+    serie (Tony, 2026-10-19). La serie
     va por pasos enteros si todas las tomas de los lados caen en una zona
     entera; si no, por tercios. En cada lado, el tercioEV debe avanzar de
     paso en paso desde ±1 paso: lo que no, es un salto (repetida, saltada
     o fuera de orden), y lo que pasa de ±KS.TERCIOS_LADO sobra. Las que no
     se pudieron leer no cuentan. de_tapada (si tiene la exposición de las
-    tapadas) y WBs: de cada toma, en el orden de tercioEVs.
+    tapadas), WBs, isos y oscuras (si salió casi negra): de cada toma, en
+    el orden de tercioEVs.
     """
     # --- Las tomas leídas, en su orden; y, sin las de la exposición de
     #     las tapadas, {índice: tercioEV}
@@ -231,12 +285,58 @@ def repartir_secuencia(tercioEVs: list[int | None], de_tapada: list[bool],
         siguiente = next((i for i in leidas if i > finales[-1]), None)
         if (siguiente is None) or (not de_tapada[siguiente]):
             finales = []
-    tapadas = ([i for i in leidas if de_tapada[i] and (i > finales[-1])]
-               if finales else [])
+    #     seguidas: una tapada posterior, separada de ellas por otras
+    #     tomas (p. ej. un marcador de la secuencia de ISO tomado con los
+    #     valores de las tapadas), no es una tapada y no desplaza los
+    #     balances de cámara
+    tapadas: list[int] = []
+    if finales:
+        for i in (i for i in leidas if i > finales[-1]):
+            if not de_tapada[i]:
+                break
+            tapadas.append(i)
 
-    # --- Balances de cámara: con tapadas, las Z-V tras la última; sin
-    #     ellas, las Z-V tras el segundo lado desde la primera con otro
-    #     balance que el de la serie
+    # --- Secuencia de ISO. Marcador inicial: tras las tapadas (o tras el
+    #     segundo lado, si no las hay), la primera toma oscura con
+    #     tercioEV 0 o con la exposición de las tapadas (se acepta ese
+    #     error: Tony, 2026-11-10). Final: la última oscura tras él con
+    #     tercioEV 0 o con esa exposición
+    desde = tapadas[-1] if tapadas else ultima_lado
+    marcadores: list[int] = []
+    if desde is not None:
+        marcadores = [i for i in leidas if (i > desde) and oscuras[i]
+                      and (de_tapada[i] or (tercioEVs[i] == 0))][:1]
+    if marcadores:
+        final = next((i for i in reversed(leidas)
+                      if (i > marcadores[0]) and oscuras[i]
+                      and (de_tapada[i] or (tercioEVs[i] == 0))), None)
+        if final is not None:
+            marcadores.append(final)
+
+    # --- Bloques: las tomas entre los marcadores (o tras el inicial, sin
+    #     final), por su ISO. Si algo se repitió, la buena es la última
+    bloques: dict[int, BloqueISO] = {}
+    if marcadores:
+        hasta = (marcadores[-1] if (len(marcadores) == KS.MARCADORES)
+                 else len(tercioEVs))
+        por_iso: dict[int, list[int]] = {}
+        for i in leidas:
+            if marcadores[0] < i < hasta:
+                iso = round(isos[i])                            # type: ignore
+                por_iso.setdefault(iso, []).append(i)
+        for iso in sorted(por_iso):
+            grupo = por_iso[iso]
+            bloques[iso] = BloqueISO(
+                z2=next((i for i in reversed(grupo) if tercioEVs[i] < 0),
+                        None),                                  # type: ignore
+                zv=next((i for i in reversed(grupo) if tercioEVs[i] == 0),
+                        None))
+    limite = marcadores[0] if marcadores else len(tercioEVs)
+
+    # --- Balances de cámara, antes del marcador inicial: con tapadas, las
+    #     Z-V tras la última; sin ellas, las Z-V tras el segundo lado desde
+    #     la primera con otro balance que el de la serie
+    tras = [i for i in tras if i < limite]
     if tapadas:
         balances = [i for i in tras if i > tapadas[-1]]
     else:
@@ -245,7 +345,10 @@ def repartir_secuencia(tercioEVs: list[int | None], de_tapada: list[bool],
         balances = tras[desde:]
     if len(balances) < KS.MIN_BALANCES:
         balances = []
-    usadas.update(iniciales, cambios, finales, tapadas, balances)
+    usadas.update(iniciales, cambios, finales, tapadas, balances,
+                  marcadores)
+    usadas.update(i for bloque in bloques.values()
+                  for i in (bloque.z2, bloque.zv) if i is not None)
 
     sobrantes = [i for i in leidas if i not in usadas]
     return Secuencia(
@@ -255,6 +358,8 @@ def repartir_secuencia(tercioEVs: list[int | None], de_tapada: list[bool],
         finales=finales,
         tapadas=tapadas,
         balances=balances,
+        marcadores=marcadores,
+        bloques=bloques,
         sobrantes=sobrantes,
         saltos=saltos,
         zv=zv,

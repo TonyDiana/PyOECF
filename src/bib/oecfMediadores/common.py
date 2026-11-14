@@ -9,7 +9,7 @@
                 (muchos imports de oecfCalc y la réplica de FE) y no se
                 hace
     :Autor:     Tony Diana
-    :Versión:   26.10.30
+    :Versión:   26.11.10
 """
 
 # cSpell:ignore camara, codificacion, codigo, desviacion, kmed, kres
@@ -17,8 +17,9 @@
 
 __all__ = ["KES", "KI", "KRES", "KMA", "MARCADORES_INCIDENCIA",
            "TEXTOS_INCIDENCIA_ES", "KMED", "KP", "KFR", "TXT_DONDE", "TXT_Y",
-           "TEXTOS_LADO", "partes_version", "estado_version", "zona_tercio",
-           "texto_zona", "texto_iso", "ident_toma", "marcadores_incidencia"]
+           "TEXTOS_LADO", "partes_version", "estado_version",
+           "version_formato", "zona_tercio", "texto_zona", "texto_iso",
+           "ident_toma", "marcadores_incidencia"]
 
 # --- Bibliotecas estándar Python
 import builtins
@@ -57,29 +58,41 @@ class KES(std.EnumMutable):
     REVELADO = "revelado"
     RESULTADOS = "resultados"
 
-    # --- oecf: lo genérico, el estudio: {version}, la del formato de este
-    #     JSON (VERSION_FORMATO, MAYOR.MENOR), no la del programa. Es lo
-    #     primero que mira quien lo lee (FE). SI CAMBIAS, AÑADES O
-    #     QUITAS UNA CLAVE (aquí, en review.KAN o en excel.KXL), SUBE LA
-    #     VERSIÓN:
-    #     - MAYOR: se quita o renombra una clave, o cambia lo que
-    #       significa (quien lee una versión más nueva que la suya la
-    #       rechaza; una más antigua, puede leerla si se programa)
-    #     - MENOR: se añade una clave (quien lee ignora lo que no conoce)
-    #     La 1.0 es la primera que leen PyOECF y FE (Tony, 2026-10-23):
-    #     desde ahí, esta regla rige
-    O_VERSION = "version"
-    VERSION_FORMATO = "1.0"
+    # --- oecf: las tres versiones del estudio, cada una por su motivo
+    #     (Tony, 2026-11-13):
+    #     - versionApp: la del programa que lo grabó (sube en cada
+    #       publicación); la da quien llama a grabar_json
+    #     - versionAnalisis: la de cómo se miden los RAW
+    #       (review.KAN.VERSION_ANALISIS); null sin medida. Si es anterior
+    #       a la de la app, hay que volver a medir
+    #     - versionFormato: la de las claves de este JSON (VERSION_FORMATO,
+    #       MAYOR.MENOR). Es lo primero que mira quien lo lee (FE). SI
+    #       CAMBIAS, AÑADES O QUITAS UNA CLAVE (aquí, en review.KAN o en
+    #       excel.KXL), SUBE ESTA VERSIÓN:
+    #       - MAYOR: se quita o renombra una clave, o cambia lo que
+    #         significa (quien lee una versión más nueva que la suya la
+    #         rechaza; una más antigua, puede leerla si se programa)
+    #       - MENOR: se añade una clave (quien lee ignora lo que no conoce)
+    #     Historia del formato: 1.0, la primera que leen PyOECF y FE
+    #     (2026-10-23); 1.1, medida.factorLamina (2026-11-13); 2.0, las
+    #     tres versiones en oecf y sin info.programa.version (2026-11-13);
+    #     2.1, revelado.exportaciones[].contraste (2026-11-13).
+    #     Los JSON 1.x guardaban la del formato en oecf.version
+    #     (O_VERSION_ANTIGUA): ver version_formato
+    O_VERSION_ANALISIS = "versionAnalisis"
+    O_VERSION_ANTIGUA = "version"
+    O_VERSION_APP = "versionApp"
+    O_VERSION_FORMATO = "versionFormato"
+    VERSION_FORMATO = "2.1"
 
     # --- info: de dónde sale el archivo; nada de aquí se usa para
-    #     calcular. El programa que lo grabó, {nombre, version}, lo da
-    #     quien llama a grabar_json: este módulo no sabe qué programa lo
-    #     usa. La carpeta de la serie, solo para saber el origen (Tony,
-    #     2026-10-21). La cámara, {marca, modelo} (la lee restaurar_serie
-    #     si no queda ninguna copia RAW)
+    #     calcular. El programa que lo grabó, {nombre} (su versión, en
+    #     oecf.versionApp), lo da quien llama a grabar_json: este módulo
+    #     no sabe qué programa lo usa. La carpeta de la serie, solo para
+    #     saber el origen (Tony, 2026-10-21). La cámara, {marca, modelo}
+    #     (la lee restaurar_serie si no queda ninguna copia RAW)
     I_PROGRAMA = "programa"
     P_NOMBRE = "nombre"
-    P_VERSION = "version"
     I_FECHA = "fecha"
     I_CARPETA = "carpeta"
     I_CAMARA = "camara"
@@ -126,9 +139,12 @@ class KES(std.EnumMutable):
 
     # --- revelado: lo medido en cada exportación del revelador
     #     (oecfCalc.MedidaTiff), por su tercioEV, con su archivo relativo a
-    #     la carpeta de la serie y con «/»
+    #     la carpeta de la serie y con «/». El contraste: el de la trama del
+    #     paño en L* (null sin paño o sin medir; ausente en los JSON
+    #     anteriores al 2.1)
     R_EXPORTACIONES = "exportaciones"
     E_BITS = "bits"
+    E_CONTRASTE = "contraste"
     E_ESPACIO = "espacio"
     E_LSTAR = "lstar"
     E_MOTIVO = "motivo"
@@ -292,6 +308,24 @@ class KI(std.EnumMutable):
     SIN_BALANCES = "SIN_BALANCES"
     """No hay tomas de balance de cámara."""
 
+    # --- Secuencia de ISO (ver OECF.secuencia)
+    MARCADOR_TAPADAS = "MARCADOR_TAPADAS"
+    """Marcadores de la secuencia de ISO hechos con la exposición de las
+    tapadas (f/11 y 1/160) y no con la de la Z-V: se aceptan (Tony,
+    2026-11-10)."""
+
+    SIN_MARCADOR_FINAL = "SIN_MARCADOR_FINAL"
+    """Falta el marcador final de la secuencia de ISO: son suyas todas las
+    tomas tras el inicial."""
+
+    ISO_ESTIMADO = "ISO_ESTIMADO"
+    """ISO cuya Z2 no está justo en su sitio (por el tiempo más corto de
+    la cámara): su textura es una estimación (sus Z2)."""
+
+    ISO_SIN_MEDIR = "ISO_SIN_MEDIR"
+    """ISO que no se puede medir: le falta la Z-V o la Z2, o su Z2 se
+    aparta demasiado (una toma por ISO)."""
+
     # --- Posiciones de la rejilla y tomas que no caben o se desvían
     SIN_TOMA = "SIN_TOMA"
     """Posición sin toma: impide analizar si es de Z1 a Z9."""
@@ -403,6 +437,10 @@ MARCADORES_INCIDENCIA: dict[str, tuple[str, ...]] = {
     KI.TAPADAS_CON_LUZ: (KMA.N, KMA.IDENTS),
     KI.ISO_TAPADAS: (KMA.N, KMA.IDENTS, KMA.ISO),
     KI.SIN_BALANCES: (),
+    KI.MARCADOR_TAPADAS: (KMA.N, KMA.IDENTS),
+    KI.SIN_MARCADOR_FINAL: (),
+    KI.ISO_ESTIMADO: (KMA.N, KMA.IDENTS),
+    KI.ISO_SIN_MEDIR: (KMA.N, KMA.IDENTS),
     KI.SIN_TOMA: (KMA.ZONA,),
     KI.REPETIDA: (KMA.N, KMA.ZONA),
     KI.FUERA: (KMA.N, KMA.IDENTS),
@@ -468,6 +506,26 @@ TEXTOS_INCIDENCIA_ES: dict[str, str | tuple[str, str]] = {
         _("Hay {n} tomas tapadas con otro ISO: {idents} (se esperaba ISO "
           "{iso}).")),
     KI.SIN_BALANCES: _("No hay balances de cámara."),
+    KI.MARCADOR_TAPADAS: (
+        _("El marcador de la secuencia de ISO se hizo con los valores de "
+          "las tapadas (f/11 y 1/160): {idents}. Se acepta, pero debe "
+          "hacerse con los valores de la ZV."),
+        _("Los marcadores de la secuencia de ISO se hicieron con los "
+          "valores de las tapadas (f/11 y 1/160): {idents}. Se aceptan, "
+          "pero deben hacerse con los valores de la ZV.")),
+    KI.SIN_MARCADOR_FINAL: _(
+        "Falta el marcador final de la secuencia de ISO: se toman como "
+        "suyas todas las tomas que siguen al marcador inicial."),
+    KI.ISO_ESTIMADO: (
+        _("En {n} ISO, la Z2 no llegó a su sitio por el tiempo más corto "
+          "de la cámara: su textura es una estimación: {idents}."),
+        _("En {n} ISO, la Z2 no llegó a su sitio por el tiempo más corto "
+          "de la cámara: su textura es una estimación: {idents}.")),
+    KI.ISO_SIN_MEDIR: (
+        _("No se puede medir {n} ISO de la secuencia: le falta la ZV o la "
+          "Z2, o su Z2 se aparta demasiado: {idents}."),
+        _("No se pueden medir {n} ISO de la secuencia: les falta la ZV o "
+          "la Z2, o su Z2 se aparta demasiado: {idents}.")),
     KI.SIN_TOMA: _("No hay toma en {zona}."),
     KI.REPETIDA: _("Hay {n} tomas en {zona}."),
     KI.FUERA: (
@@ -489,15 +547,18 @@ TEXTOS_INCIDENCIA_ES: dict[str, str | tuple[str, str]] = {
           "{porcentaje} %\u00a0de las {esperadas}.")),
     KI.TARJETA_SUCIA: _(
         "El {porcentaje} %\u00a0de las teselas de tarjeta tiene un ruido o "
-        "unos valores raros: la tarjeta puede tener polvo, marcas o un "
-        "defecto. Límpiela o cámbiela."),
+        "unos valores raros, quizá por polvo, marcas o algún defecto de la "
+        "tarjeta. El análisis sigue adelante; para la próxima serie "
+        "conviene limpiar la tarjeta o usar otra."),
     KI.LUZ_DESIGUAL: _(
         "El {porcentaje} %\u00a0de las teselas de tarjeta recibe una luz "
-        "distinta de la del resto: la luz no es uniforme{lados}. Mueva la "
-        "luz o centre la tarjeta."),
+        "distinta de la del resto: la luz no es uniforme{lados}. El "
+        "análisis sigue adelante; en la próxima serie conviene colocar la "
+        "luz de otra forma o centrar mejor la tarjeta."),
     KI.REVISAR_SERIE: _(
         "En total queda fuera el {porcentaje} %\u00a0de las teselas de "
-        "tarjeta: revise la luz y la tarjeta."),
+        "tarjeta. El análisis sigue adelante; en la próxima serie conviene "
+        "comprobar la luz y la tarjeta."),
     KI.REPETIR_SERIE: _(
         "En total queda fuera el {porcentaje} %\u00a0de las teselas de "
         "tarjeta: conviene repetir la serie."),
@@ -658,6 +719,19 @@ def estado_version(version_dato: str, version_propia: str,
     if dato[0] < propia[0]:
         return KMED.VERSION_ANTIGUA
     return KMED.OK
+
+
+#
+def version_formato(datos: Mapping) -> str:
+    """
+    Versión del formato de un JSON del estudio ya leído: la de
+    oecf.versionFormato o, en los JSON 1.x, la de oecf.version (KeyError
+    o TypeError si no trae ninguna)
+    """
+    oecf = datos[KES.OECF]
+    if KES.O_VERSION_FORMATO in oecf:
+        return oecf[KES.O_VERSION_FORMATO]
+    return oecf[KES.O_VERSION_ANTIGUA]
 
 
 #

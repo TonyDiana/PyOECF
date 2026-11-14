@@ -14,11 +14,12 @@ __all__ = ["estado_version", "ident_toma", "KES", "KFR", "KI", "KMA", "KMED",
            "KP", "KRES", "MARCADORES_INCIDENCIA", "marcadores_incidencia",
            "Mediador", "partes_version", "texto_iso", "texto_zona",
            "TEXTOS_INCIDENCIA_ES", "TEXTOS_LADO", "TXT_DONDE", "TXT_Y",
-           "zona_tercio"]
+           "version_formato", "zona_tercio"]
 
 # --- Paquete propio
 from .common import (KES, KFR, KI, KMA, KMED, KP, KRES, MARCADORES_INCIDENCIA,
                      TEXTOS_INCIDENCIA_ES, TEXTOS_LADO, TXT_DONDE, TXT_Y,
                      estado_version, ident_toma, marcadores_incidencia,
-                     partes_version, texto_iso, texto_zona, zona_tercio)
+                     partes_version, texto_iso, texto_zona, version_formato,
+                     zona_tercio)
 from .fe_mediator import Mediador

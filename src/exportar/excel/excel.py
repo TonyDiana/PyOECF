@@ -34,9 +34,9 @@ from xlsxwriter.worksheet import Worksheet
 
 # --- Bibliotecas internas
 from bib import std
-from bib.oecfMediadores import KP, KRES, zona_tercio
+from bib.oecfMediadores import KP, KRES, texto_iso, zona_tercio
 from kernel import COM as KCOM, K
-from oecfCalc import (escala_mpx, KS, KTE, KTR, OECF, Review,
+from oecfCalc import (escala_mpx, FilaISO, KS, KTE, KTR, OECF, Review,
                       signal_para_snr, snr_modelo, ZonaMedida)
 
 
@@ -105,6 +105,9 @@ class KXL(std.EnumMutable):
     #     el del fotómetro, con los tercios en fracción
     TERCIOS_EXCEL = ("", " 1/3", " 2/3")
 
+    # --- Sin dato en un texto (también en las tablas del PDF)
+    SIN_DATO = "—"
+
     # --- Alto de las cabeceras que se parten en dos líneas
     ALTO_CABECERA = 30
 
@@ -124,9 +127,17 @@ class KXL(std.EnumMutable):
     """Canales del libro (rojo, verde, azul): COM.CANALES_RGB."""
     COL_VALORES = 3
 
+    # --- Tabla del paño en Datos: tras la dispersión y el recortado por
+    #     canal, las dispersiones del verde con las que se mide la textura
+    #     (por píxel; ver Excel.disp_textura): paño y tarjeta
+    COL_TELA_PANTALLA = COL_VALORES + (2 * CANALES)
+    COL_TARJETA_PANTALLA = COL_TELA_PANTALLA + 1
+
     # --- Columna del L* del revelador en su tabla de Datos, tras zona y
-    #     tercios
+    #     tercios, y la del contraste de la trama del paño (Tony,
+    #     2026-11-13)
     COL_REVELADOR = 2
+    COL_CONTRASTE = 3
 
     # --- Hojas, en su orden (claves de sus nombres en los textos)
     T_HOJA_RESUMEN = "hoja_resumen"
@@ -136,7 +147,9 @@ class KXL(std.EnumMutable):
     T_HOJA_CALCULO = "hoja_calculo"
     T_HOJA_RECHAZADAS = "hoja_rechazadas"
     T_HOJA_IA = "hoja_ia"
-    HOJAS = (T_HOJA_RESUMEN, T_HOJA_GRAF, T_HOJA_DATOS,
+    T_HOJA_ISO = "hoja_iso"
+    """ Hoja de la secuencia de ISO: solo si la serie la tiene. """
+    HOJAS = (T_HOJA_RESUMEN, T_HOJA_GRAF, T_HOJA_ISO, T_HOJA_DATOS,
              T_HOJA_CONSTANTES, T_HOJA_CALCULO, T_HOJA_RECHAZADAS,
              T_HOJA_IA)
 
@@ -166,9 +179,24 @@ class KXL(std.EnumMutable):
     C_MPX_REFERENCIA = "MpxReferencia"
     C_TOLERANCIA_LINEAL = "ToleranciaLineal"
     C_UMBRAL_RECORTE = "UmbralRecorte"
+    C_PANO_MINIMO = "PanoMinimo"
+    """Nombre definido de la textura/ruido mínima del paño en la ZV (por
+    debajo, aviso de paño con poca textura)."""
     C_ROSE_TEXTURA = "RoseTextura"
+    """Nombre definido de la textura/ruido, por píxel, desde la que se
+    aprecia la textura en las sombras (criterio de Rose)."""
+    C_TEXTURA_JUSTA = "TexturaJusta"
+    """Nombre definido de la fracción del umbral de sombras desde la que
+    la textura de la Z2 de un ISO es justa (por debajo, se pierde)."""
     C_TEXTURA_CONSERVADA = "TexturaConservada"
+    C_TELA_RECORTADO_APRECIABLE = "TelaRecortadoApreciable"
+    """Nombre definido de la fracción del paño recortado que admite como
+    mucho la zona de luces apreciable."""
     C_TELA_RECORTADO_MAX = "TelaRecortadoMax"
+    C_CONTRASTE_SOMBRAS = "ContrasteSombras"
+    """Nombre definido de la fracción del contraste de la trama del paño
+    en la ZV (en L*, en las exportaciones del revelador) desde la que la
+    textura de una zona de sombras es recomendada (Tony, 2026-11-13)."""
     C_MARGEN_SOMBRAS = "MargenSombras"
     C_ANCHO_ZONA = "AnchoZona"
     C_LAB_ESCALA = "LabEscala"
@@ -187,6 +215,7 @@ class KXL(std.EnumMutable):
     C_TEXTO_NO_RECORTADO = "TextoNoRecortado"
     C_TEXTO_NINGUNO = "TextoNinguno"
     C_TEXTO_NO_ALCANZADO = "TextoNoAlcanzado"
+    C_TEXTO_SIN_REVELADO = "TextoSinRevelado"
     C_TEXTO_SATURADO = "TextoSaturado"
     C_TEXTO_PUNTO = "TextoPunto"
     C_LUZ_POR_TERCIO = "LuzPorTercio"
@@ -209,6 +238,7 @@ class KXL(std.EnumMutable):
     V_NO_RECORTADO = "valor_no_recortado"
     V_NINGUNO = "valor_ninguno"
     V_NO_ALCANZADO = "valor_no_alcanzado"
+    V_SIN_REVELADO = "valor_sin_revelado"
     V_SATURADO = "valor_saturado"
     V_PUNTO = "valor_punto"
 
@@ -227,9 +257,13 @@ class KXL(std.EnumMutable):
         (C_MPX_REFERENCIA, 8, U_MPX),
         (C_TOLERANCIA_LINEAL, KCOM.TOLERANCIA_LINEAL, U_ZONAS),
         (C_UMBRAL_RECORTE, KCOM.UMBRAL_RECORTE, U_PART),
+        (C_PANO_MINIMO, 6, U_VECES),
         (C_ROSE_TEXTURA, 5, U_VECES),
+        (C_TEXTURA_JUSTA, 0.8, U_PART),
         (C_TEXTURA_CONSERVADA, 0.5, U_PART),
-        (C_TELA_RECORTADO_MAX, 0.1, U_PART),
+        (C_TELA_RECORTADO_APRECIABLE, 0.1, U_PART),
+        (C_TELA_RECORTADO_MAX, 0.01, U_PART),
+        (C_CONTRASTE_SOMBRAS, 0.4, U_PART),
         (C_MARGEN_SOMBRAS, 1, U_TERCIOS),
         (C_ANCHO_ZONA, 1, U_ZONAS),
         (C_LAB_ESCALA, KCOM.LAB_ESCALA, U_NUMERO),
@@ -246,6 +280,7 @@ class KXL(std.EnumMutable):
         (C_TEXTO_NO_RECORTADO, V_NO_RECORTADO, U_TEXTO),
         (C_TEXTO_NINGUNO, V_NINGUNO, U_TEXTO),
         (C_TEXTO_NO_ALCANZADO, V_NO_ALCANZADO, U_TEXTO),
+        (C_TEXTO_SIN_REVELADO, V_SIN_REVELADO, U_TEXTO),
         (C_TEXTO_SATURADO, V_SATURADO, U_TEXTO),
         (C_TEXTO_PUNTO, V_PUNTO, U_TEXTO))
     """Constantes del método: (nombre, valor, unidad). Un valor de texto
@@ -275,8 +310,9 @@ class KXL(std.EnumMutable):
     T_NOTA_SNR_ISO = "nota_snr_iso"
     T_NOTA_SNR_USUARIO = "nota_snr_usuario"
 
-    # --- Hoja Datos: anchos (C a K), Z-V de control que caben y textos
-    ANCHOS_DATOS = (12.0, 9.0, 16.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0)
+    # --- Hoja Datos: anchos (C a M), Z-V de control que caben y textos
+    ANCHOS_DATOS = (12.0, 9.0, 16.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0,
+                    14.0, 14.0)
     CONTROLES = 3
     T_TITULO_DATOS = "titulo_datos"
     T_NOTA_DATOS = "nota_datos"
@@ -320,8 +356,11 @@ class KXL(std.EnumMutable):
     T_CAB_TELA_REC_ROJO = "cab_tela_rec_rojo"
     T_CAB_TELA_REC_VERDE = "cab_tela_rec_verde"
     T_CAB_TELA_REC_AZUL = "cab_tela_rec_azul"
+    T_CAB_TELA_PANTALLA = "cab_tela_pantalla"
+    T_CAB_TARJETA_PANTALLA = "cab_tarjeta_pantalla"
     T_NOTA_REVELADOR = "nota_revelador"
     T_CAB_REVELADOR = "cab_revelador"
+    T_CAB_CONTRASTE = "cab_contraste"
 
     # --- Ruido y negro (Datos): la franja oscura del sensor, la comparación
     #     con las tapadas, el negro restado (según su origen, oecfCalc.KTE) y
@@ -340,6 +379,7 @@ class KXL(std.EnumMutable):
     # --- Ruido aceptable por color (Análisis y PDF): título, nota con el
     #     umbral y la frase de cada canal según su suelo sugerido
     T_RUIDO_COLOR = "ruido_color"
+    T_RUIDO_COLOR_ISO = "ruido_color_iso"
     T_RUIDO_COLOR_NOTA = "ruido_color_nota"
     T_RUIDO_COLOR_TODO = "ruido_color_todo"
     T_RUIDO_COLOR_DESDE = "ruido_color_desde"
@@ -352,6 +392,9 @@ class KXL(std.EnumMutable):
     T_PIXELES_CALIENTES = "pixeles_calientes"
     T_PIXELES_MUERTOS = "pixeles_muertos"
     T_PIXELES_SIN_TAPADAS = "pixeles_sin_tapadas"
+    T_PIXELES_SIN_CALIENTES = "pixeles_sin_calientes"
+    T_PIXELES_SIN_MUERTOS = "pixeles_sin_muertos"
+    T_PIXELES_NINGUNO = "pixeles_ninguno"
     DECIMALES_MPX = 1
     """Decimales de los píxeles por megapíxel."""
     MARGEN_TERCIO = 1e-9
@@ -489,6 +532,7 @@ class KXL(std.EnumMutable):
     T_CAB_CUMPLE_SOMBRAS = "cab_cumple_sombras"
     T_CAB_CUMPLE_LUCES = "cab_cumple_luces"
     T_CAB_SIN_RECORTE = "cab_sin_recorte"
+    T_CAB_CONTRASTE_ZV = "cab_contraste_zv"
     T_CAB_SOMBRAS = "cab_sombras"
     T_CAB_LUCES = "cab_luces"
     T_CAB_LATITUD_TEXTURAS = "cab_latitud_texturas"
@@ -502,6 +546,8 @@ class KXL(std.EnumMutable):
     TEXTURA_SOMBRAS = 7
     TEXTURA_LUCES = 8
     TEXTURA_SIN_RECORTE = 9
+    TEXTURA_CONTRASTE = 10
+    TEXTURA_FRACCION = 11
     LIMITE_SOMBRAS = 1
     LIMITE_LUCES = 2
     LIMITE_LATITUD = 3
@@ -826,6 +872,44 @@ class KXL(std.EnumMutable):
     T_CAB_MOTIVO = "cab_motivo"
     T_CAB_DEV = "cab_dev"
 
+    # --- Hoja ISO (secuencia de ISO, en verde): anchos de sus columnas
+    #     (ISO, Z2, desviación, lectura, ruido en Z-V y Z2, textura,
+    #     textura/ruido, % del umbral, textura en sombras, sombras con
+    #     textura desde y nota) y textos
+    ANCHOS_ISO = (8.0, 8.0, 13.0, 13.0, 11.0, 11.0, 11.0, 13.0, 11.0, 15.0,
+                  15.0, 30.0)
+    T_TITULO_ISO = "titulo_iso"
+    T_NOTA_ISO = "nota_iso"
+    T_CAB_ISO = "cab_iso"
+    T_CAB_Z2 = "cab_z2"
+    T_CAB_DESVIACION_ISO = "cab_desviacion_iso"
+    T_CAB_LECTURA_ISO = "cab_lectura_iso"
+    T_CAB_RUIDO_ZV = "cab_ruido_zv"
+    T_CAB_RUIDO_Z2 = "cab_ruido_z2"
+    T_CAB_TEXTURA_Z2 = "cab_textura_z2"
+    T_CAB_TEXTURA_RUIDO_Z2 = "cab_textura_ruido_z2"
+    T_CAB_PORCENTAJE_UMBRAL = "cab_porcentaje_umbral"
+    T_CAB_SE_APRECIA = "cab_se_aprecia"
+    T_CAB_NOTA_ISO = "cab_nota_iso"
+    T_ISO_ESTIMADO = "iso_estimado"
+    T_ISO_SIN_MEDIR = "iso_sin_medir"
+
+    # --- Secuencia de ISO para el estudiante (PDF): exposición, textura
+    #     en sombras (semáforo: se pierde, justa, se ve; en ese orden, el
+    #     de NivelTextura) y la conclusión
+    T_NOTA_ISO_PDF = "nota_iso_pdf"
+    T_CAB_EXPOSICION_ISO = "cab_exposicion_iso"
+    T_EXPOSICION_IGUAL = "exposicion_igual"
+    T_EXPOSICION_CLARA = "exposicion_clara"
+    T_EXPOSICION_OSCURA = "exposicion_oscura"
+    T_TEXTURA_ISO = ("textura_se_pierde", "textura_justa", "textura_se_ve")
+    T_CAB_SOMBRAS_ISO = "cab_sombras_iso"
+    T_SOMBRAS_ISO = "sombras_iso"
+    T_SOMBRAS_NINGUNA = "sombras_ninguna"
+    T_ISO_HASTA = "iso_hasta"
+    T_ISO_TODOS = "iso_todos"
+    T_ISO_NINGUNO = "iso_ninguno"
+
     # --- Leyenda de los colores del texto
     T_LEYENDA = "leyenda"
     T_LEYENDA_DATO = "leyenda_dato"
@@ -906,8 +990,11 @@ class Excel(object):
         self.__excel.formats[0].set_font_size(KXL.LETRA)
 
         # --- Las hojas, en su orden, antes de escribir ninguna: las
-        #     fórmulas de unas leen de otras
+        #     fórmulas de unas leen de otras. La de la secuencia de ISO,
+        #     solo si la serie la tiene
         for clave in KXL.HOJAS:
+            if (clave == KXL.T_HOJA_ISO) and (not datos.isos):
+                continue
             self.__hojas[clave] = self.__excel.add_worksheet(textos[clave])
 
     #
@@ -933,6 +1020,8 @@ class Excel(object):
         self.hoja_graf()
         self.hoja_rechazadas()
         self.hoja_ia()
+        if KXL.T_HOJA_ISO in self.__hojas:
+            self.hoja_iso()
         for clave in KXL.HOJAS_OCULTAS:
             self.__hojas[clave].hide()
         self.__excel.close()
@@ -1189,7 +1278,8 @@ class Excel(object):
             t[KXL.T_CAB_ZONA], t[KXL.T_CAB_TERCIOS], t[KXL.T_CAB_ARCHIVO],
             t[KXL.T_CAB_DISP_ROJO], t[KXL.T_CAB_DISP_VERDE],
             t[KXL.T_CAB_DISP_AZUL], t[KXL.T_CAB_TELA_REC_ROJO],
-            t[KXL.T_CAB_TELA_REC_VERDE], t[KXL.T_CAB_TELA_REC_AZUL]))
+            t[KXL.T_CAB_TELA_REC_VERDE], t[KXL.T_CAB_TELA_REC_AZUL],
+            t[KXL.T_CAB_TELA_PANTALLA], t[KXL.T_CAB_TARJETA_PANTALLA]))
         hoja.set_row(fila, KXL.ALTO_CABECERA)
         self.__filas[KXL.F_TELA] = fila + 1
         for i, toma in enumerate(d.zonas):
@@ -1209,6 +1299,15 @@ class Excel(object):
                      KXL.NUM_PORCENTAJE)):
                 self.fila_canales(hoja, fila, col + desp, valores, banda,
                                   numero)
+            formato = self.celda(KXL.COLOR_DATO, banda, "center",
+                                 KXL.NUM_TRES)
+            for c, valor in zip((KXL.COL_TELA_PANTALLA,
+                                 KXL.COL_TARJETA_PANTALLA),
+                                self.disp_textura(toma)):
+                if (valor is None) or (not math.isfinite(valor)):
+                    hoja.write_blank(fila, col + c, None, formato)
+                else:
+                    hoja.write_number(fila, col + c, valor, formato)
 
         # --- L* del revelador por zona: lee el L* leído de Análisis y
         #     estima los tercios que no lo tienen. Sus fórmulas, en
@@ -1220,13 +1319,26 @@ class Excel(object):
         fila += 2
         self.cabecera(hoja, fila, col, (t[KXL.T_CAB_ZONA],
                                         t[KXL.T_CAB_TERCIOS],
-                                        t[KXL.T_CAB_REVELADOR]))
+                                        t[KXL.T_CAB_REVELADOR],
+                                        t[KXL.T_CAB_CONTRASTE]))
         self.__filas[KXL.F_REVELADOR] = fila + 1
+        contrastes = self.contrastes()
         for i in range((2 * KS.TERCIOS_LADO) + 1):
             fila += 1
             banda = (i % 2) == 0
             tercio_ev = i - KS.TERCIOS_LADO
             self.zona_y_tercios(hoja, fila, col, tercio_ev, banda)
+
+            # --- El contraste de la trama del paño: un dato medido en
+            #     las exportaciones (en blanco sin él)
+            formato = self.celda(KXL.COLOR_DATO, banda, "center",
+                                 KXL.NUM_UNO)
+            if contrastes[i] is None:
+                hoja.write_blank(fila, col + KXL.COL_CONTRASTE, None,
+                                 formato)
+            else:
+                hoja.write_number(fila, col + KXL.COL_CONTRASTE,
+                                  contrastes[i], formato)
 
         self.marco(hoja, ((fila, KXL.ANCHOS_DATOS),))
 
@@ -1602,12 +1714,14 @@ class Excel(object):
     def bloque_texturas(self, hoja: Worksheet, fila_b4: int, col: int,
                         k: dict) -> int:
         """
-        Bloque 4 de Cálculo: latitud de texturas del verde. Arriba, los
-        límites (apreciable y recomendada: sombras, luces y latitud; los
-        lee Análisis); debajo, una fila por zona con la textura del paño
-        (de Datos), su relación con el ruido de la tarjeta, la conservada
-        frente a la ZV, el paño recortado y si cumple cada criterio (ver
-        texturas y limites_texturas). Devuelve su última fila.
+        Bloque 4 de Cálculo: latitud de texturas. Arriba, los límites
+        (apreciable y recomendada: sombras, luces y latitud; los lee
+        Análisis); debajo, una fila por zona con la textura del paño (de
+        Datos), su relación con el ruido de la tarjeta, la conservada
+        frente a la ZV, el paño recortado, si cumple cada criterio, y el
+        contraste de la trama del paño en las exportaciones (de Datos) con
+        su fracción del de la ZV, que decide las sombras (ver texturas y
+        limites_texturas). Devuelve su última fila.
         """
         t, f = self.__textos, self.__filas
         n = (2 * KS.TERCIOS_LADO) + 1
@@ -1636,7 +1750,8 @@ class Excel(object):
             (KXL.T_CAB_TELA_RECORTADO, KXL.TEXTURA_RECORTADO),
             (KXL.T_CAB_CUMPLE_SOMBRAS, KXL.TEXTURA_SOMBRAS),
             (KXL.T_CAB_CUMPLE_LUCES, KXL.TEXTURA_LUCES),
-            (KXL.T_CAB_SIN_RECORTE, KXL.TEXTURA_SIN_RECORTE))}
+            (KXL.T_CAB_SIN_RECORTE, KXL.TEXTURA_SIN_RECORTE),
+            (KXL.T_CAB_CONTRASTE_ZV, KXL.TEXTURA_FRACCION))}
         bajo = {clave: f"{celda(fila_t, c, True, True)}:"
                 f"{celda(fila_t + zv, c, True, True)}"
                 for clave, c in columnas.items()}
@@ -1646,19 +1761,26 @@ class Excel(object):
 
         # --- Límites: apreciable y recomendada
         no = KXL.C_TEXTO_NO_ALCANZADO
+        sin_revelado = KXL.C_TEXTO_SIN_REVELADO
         tercio = KXL.C_TERCIO_POR_ZONA
-        cumple, es, q = (bajo[KXL.T_CAB_CUMPLE_SOMBRAS],
-                         bajo[KXL.T_CAB_ESPERADO],
-                         bajo[KXL.T_CAB_TEXTURA_RUIDO])
+        cumple, es, fr = (bajo[KXL.T_CAB_CUMPLE_SOMBRAS],
+                          bajo[KXL.T_CAB_ESPERADO],
+                          bajo[KXL.T_CAB_CONTRASTE_ZV])
         # --- Solo cuentan los tercios con dato: el criterio por
         #     ISNUMBER de su valor (matriciales)
-        ok = f"{cumple}*ISNUMBER({q})"
-        m = f"MATCH(1,{ok},0)"
-        sombra = (f"{{=IF(SUM({ok})=0,{no},IF({m}=1,INDEX({es},{m}),IF("
-                  f"ISNUMBER(INDEX({q},{m}-1)),ROUND((INDEX({es},{m}-1)+("
-                  f"{KXL.C_ROSE_TEXTURA}-INDEX({q},{m}-1))/(INDEX({q},{m})-"
-                  f"INDEX({q},{m}-1))/{tercio})*{tercio},0)/{tercio},INDEX("
-                  f"{es},{m}))))}}")
+        ok = f"{cumple}*ISNUMBER({fr})"
+        # --- Sombras recomendadas (Tony, 2026-11-13): la primera zona que
+        #     cumple (la fracción del contraste de la ZV, en la tabla por
+        #     zona); sin ningún contraste (antes de la segunda fase), sin
+        #     revelado; sin paño, no alcanzado. Las apreciables, en su
+        #     fila, C_MARGEN_SOMBRAS tercios más abajo
+        if isinstance(self.__datos.tela, str):
+            sombra_rec = f"={no}"
+        else:
+            sombra_rec = (f"{{=IF(COUNT({fr})=0,{sin_revelado},IF(SUM("
+                          f"{ok})=0,{no},INDEX({es},MATCH(1,{ok},0))))}}")
+        c_sombra_rec = celda(fila_b4 + list(limites).index(KXL.T_RECOMENDADA),
+                             col + KXL.LIMITE_SOMBRAS)
         luces = (f"{alto[KXL.T_CAB_CUMPLE_LUCES]}*ISNUMBER("
                  f"{alto[KXL.T_CAB_CONSERVADA]})")
         cortes = (f"{alto[KXL.T_CAB_SIN_RECORTE]}*ISNUMBER("
@@ -1670,15 +1792,16 @@ class Excel(object):
             dos = self.celda(KXL.COLOR_FORMULA, banda, "center", KXL.NUM_DOS)
             hoja.write(r, col, t[clave],
                        self.celda(KXL.COLOR_LITERAL, banda, "center"))
-            c_sombra, c_luz = (celda(fila_b4, col + KXL.LIMITE_SOMBRAS),
-                               celda(fila_b4, col + KXL.LIMITE_LUCES))
+            c_luz = celda(fila_b4, col + KXL.LIMITE_LUCES)
             if clave == KXL.T_APRECIABLE:
-                formulas = (sombra, f"{{=IF(SUM({luces})=0,{no},"
+                formulas = (f"=IF(ISNUMBER({c_sombra_rec}),{c_sombra_rec}-"
+                            f"{KXL.C_MARGEN_SOMBRAS}/{tercio},"
+                            f"{c_sombra_rec})",
+                            f"{{=IF(SUM({luces})=0,{no},"
                             f"MAX(IF({luces}=1,{es_alto})))}}")
             else:
                 tope = f"MAX(IF({cortes}=1,{es_alto}))"
-                formulas = (f"=IF(ISNUMBER({c_sombra}),{c_sombra}+"
-                            f"{KXL.C_MARGEN_SOMBRAS}/{tercio},{c_sombra})",
+                formulas = (sombra_rec,
                             f"{{=IF(SUM({cortes})=0,{no},IF(ISNUMBER("
                             f"{c_luz}),MIN({c_luz},{tope}),{tope}))}}")
             for j, formula in enumerate(formulas):
@@ -1692,8 +1815,9 @@ class Excel(object):
                                celda(r, col + KXL.LIMITE_SOMBRAS))
             self.formula(
                 hoja, r, col + KXL.LIMITE_LATITUD,
-                f"=IF(AND(ISNUMBER({luz_r}),ISNUMBER({sombra_r})),"
-                f"{luz_r}-{sombra_r}+{KXL.C_ANCHO_ZONA},{no})", dos,
+                f"=IF({sombra_r}={sin_revelado},{sin_revelado},"
+                f"IF(AND(ISNUMBER({luz_r}),ISNUMBER({sombra_r})),"
+                f"{luz_r}-{sombra_r}+{KXL.C_ANCHO_ZONA},{no}))", dos,
                 valores[2])
 
         # --- Tabla por zona
@@ -1701,9 +1825,12 @@ class Excel(object):
             KXL.T_CAB_ZONA, KXL.T_CAB_TERCIOS, KXL.T_CAB_ESPERADO,
             KXL.T_CAB_TEXTURA, KXL.T_CAB_TEXTURA_RUIDO, KXL.T_CAB_CONSERVADA,
             KXL.T_CAB_TELA_RECORTADO, KXL.T_CAB_CUMPLE_SOMBRAS,
-            KXL.T_CAB_CUMPLE_LUCES, KXL.T_CAB_SIN_RECORTE)))
+            KXL.T_CAB_CUMPLE_LUCES, KXL.T_CAB_SIN_RECORTE,
+            KXL.T_CAB_CONTRASTE, KXL.T_CAB_CONTRASTE_ZV)))
         hoja.set_row(fila_t - 1, KXL.ALTO_CABECERA_ALTA)
         textura_zv = celda(fila_t + zv, col + KXL.TEXTURA_TEXTURA, True, True)
+        contraste_zv = celda(fila_t + zv, col + KXL.TEXTURA_CONTRASTE, True,
+                             True)
         for i in range(n):
             r, dz, pz = fila_t + i, f[KXL.F_ZONAS] + i, f[KXL.F_TELA] + i
             banda = (i % 2) == 0
@@ -1719,13 +1846,22 @@ class Excel(object):
                 f"={KXL.C_ZONA_ZV}+{celda(r, col + 1)}/{tercio}",
                 self.celda(KXL.COLOR_FORMULA, banda, "center", KXL.NUM_DOS),
                 por_zona[KXL.T_CAB_ESPERADO][i])
-            tela = self.ref(KXL.T_HOJA_DATOS, pz, verde)
-            tarjeta = self.ref(KXL.T_HOJA_DATOS, dz, verde + KXL.CANALES)
+            # --- La textura, con las dispersiones del verde por píxel
+            #     (tabla del paño de Datos; ver disp_textura)
+            tela = self.ref(KXL.T_HOJA_DATOS, pz,
+                            KXL.COLUMNA_INICIO + KXL.COL_TELA_PANTALLA)
+            tarjeta = self.ref(KXL.T_HOJA_DATOS, pz,
+                               KXL.COLUMNA_INICIO + KXL.COL_TARJETA_PANTALLA)
             recorte = self.ref(KXL.T_HOJA_DATOS, pz, verde + KXL.CANALES)
+            # --- El contraste de la trama del paño (tabla del revelador de
+            #     Datos) y su fracción del de la ZV (Tony, 2026-11-13)
+            contraste = self.ref(KXL.T_HOJA_DATOS, f[KXL.F_REVELADOR] + i,
+                                 KXL.COLUMNA_INICIO + KXL.COL_CONTRASTE)
             tx = celda(r, col + KXL.TEXTURA_TEXTURA)
-            qr = celda(r, col + KXL.TEXTURA_RUIDO)
             cv = celda(r, col + KXL.TEXTURA_CONSERVADA)
             rp = celda(r, col + KXL.TEXTURA_RECORTADO)
+            ct = celda(r, col + KXL.TEXTURA_CONTRASTE)
+            fc = celda(r, col + KXL.TEXTURA_FRACCION)
             cols_num = (
                 (KXL.TEXTURA_TEXTURA, KXL.T_CAB_TEXTURA, KXL.NUM_CUATRO,
                  f'=IF(AND(ISNUMBER({tela}),ISNUMBER({tarjeta})),SQRT(MAX(0,'
@@ -1737,7 +1873,13 @@ class Excel(object):
                  f'=IF(AND(ISNUMBER({tx}),N({textura_zv})>0),'
                  f'{tx}/{textura_zv},"")'),
                 (KXL.TEXTURA_RECORTADO, KXL.T_CAB_TELA_RECORTADO,
-                 KXL.NUM_PORCENTAJE, f'=IF(ISNUMBER({recorte}),{recorte},"")'))
+                 KXL.NUM_PORCENTAJE, f'=IF(ISNUMBER({recorte}),{recorte},"")'),
+                (KXL.TEXTURA_CONTRASTE, KXL.T_CAB_CONTRASTE, KXL.NUM_UNO,
+                 f'=IF(ISNUMBER({contraste}),{contraste},"")'),
+                (KXL.TEXTURA_FRACCION, KXL.T_CAB_CONTRASTE_ZV,
+                 KXL.NUM_PORCENTAJE,
+                 f'=IF(AND(ISNUMBER({ct}),N({contraste_zv})>0),'
+                 f'{ct}/{contraste_zv},"")'))
             for desp, clave, numero, formula in cols_num:
                 self.formula(
                     hoja, r, col + desp, formula,
@@ -1753,12 +1895,14 @@ class Excel(object):
                          celda(r + 1, col + KXL.TEXTURA_SOMBRAS))
                 criterios.append((KXL.TEXTURA_SOMBRAS,
                                   KXL.T_CAB_CUMPLE_SOMBRAS,
-                                  f"=IF(ISNUMBER({qr}),AND({qr}>="
-                                  f"{KXL.C_ROSE_TEXTURA},{sigue}),{sigue})"))
+                                  f"=IF(ISNUMBER({fc}),AND({fc}>="
+                                  f"{KXL.C_CONTRASTE_SOMBRAS},{sigue}),"
+                                  f"{sigue})"))
             if i >= zv:
                 for desp, clave, dato, cond in (
                         (KXL.TEXTURA_LUCES, KXL.T_CAB_CUMPLE_LUCES, cv,
-                         f"{cv}>={KXL.C_TEXTURA_CONSERVADA}"),
+                         f"{cv}>={KXL.C_TEXTURA_CONSERVADA},N({rp})<="
+                         f"{KXL.C_TELA_RECORTADO_APRECIABLE}"),
                         (KXL.TEXTURA_SIN_RECORTE, KXL.T_CAB_SIN_RECORTE, rp,
                          f"{rp}<={KXL.C_TELA_RECORTADO_MAX}")):
                     antes = ("TRUE" if (i == zv) else
@@ -2056,8 +2200,10 @@ class Excel(object):
             nota_texturas = t[KXL.T_SIN_TELA]
         else:
             nota_texturas = t[KXL.T_NOTA_TEXTURAS_RESUMEN].format(
-                rose=k[KXL.C_ROSE_TEXTURA],
+                umbral=round(k[KXL.C_CONTRASTE_SOMBRAS] * KXL.CIEN),
                 conservada=round(k[KXL.C_TEXTURA_CONSERVADA] * KXL.CIEN),
+                recortado_apreciable=round(
+                    k[KXL.C_TELA_RECORTADO_APRECIABLE] * KXL.CIEN),
                 recortado=round(k[KXL.C_TELA_RECORTADO_MAX] * KXL.CIEN),
                 margen=k[KXL.C_MARGEN_SOMBRAS])
         fila = self.nota_tarjeta(hoja, fila + 1, col, ultima, nota_texturas,
@@ -2077,7 +2223,8 @@ class Excel(object):
         #     sugerido): barra, nota con el umbral y una frase por canal.
         #     El ruido de lectura y el negro, solo en Datos
         fila += 2
-        self.barra_resumen(hoja, fila, col, ultima, t[KXL.T_RUIDO_COLOR])
+        self.barra_resumen(hoja, fila, col, ultima,
+                           self.titulo_ruido_color())
         fila = self.nota_tarjeta(
             hoja, fila + 1, col, ultima,
             t[KXL.T_RUIDO_COLOR_NOTA].format(umbral=k[KXL.C_SNR_MINIMA]),
@@ -2956,6 +3103,237 @@ class Excel(object):
         hoja.hide_gridlines(2)
 
     #
+    def hoja_iso(self) -> None:
+        """
+        Hoja ISO: la secuencia de ISO, una fila por ISO (ver
+        Review.filasISO), en verde: su Z2, cuánto se aparta su Z-V de la
+        del ISO inicial, el ruido de lectura, el ruido de la tarjeta en la
+        Z-V y en la Z2, la textura del paño en la Z2, textura/ruido, qué
+        parte del umbral de sombras es (ver umbral_iso), cómo es la
+        textura (se ve, justa o se pierde) y una nota (estimación o sin
+        medir)
+        """
+        t = self.__textos
+        hoja = self.__hojas[KXL.T_HOJA_ISO]
+        fila, col = KXL.FILA_INICIO, KXL.COLUMNA_INICIO
+        k = self.valores_constantes()
+        umbral = self.umbral_iso(k)
+        self.titulo(hoja, fila, col, t[KXL.T_TITULO_ISO],
+                    Excel.con_nombre(t[KXL.T_NOTA_ISO]).format(
+                        umbral=(KXL.SIN_DATO if umbral is None
+                                else self.numero_texto(umbral, 1)),
+                        justa=round(k[KXL.C_TEXTURA_JUSTA] * KXL.CIEN)),
+                    KXL.ANCHOS_ISO)
+        fila += 3
+        self.cabecera(hoja, fila, col, tuple(t[c] for c in (
+            KXL.T_CAB_ISO, KXL.T_CAB_Z2, KXL.T_CAB_DESVIACION_ISO,
+            KXL.T_CAB_LECTURA_ISO, KXL.T_CAB_RUIDO_ZV, KXL.T_CAB_RUIDO_Z2,
+            KXL.T_CAB_TEXTURA_Z2, KXL.T_CAB_TEXTURA_RUIDO_Z2,
+            KXL.T_CAB_PORCENTAJE_UMBRAL, KXL.T_CAB_SE_APRECIA,
+            KXL.T_CAB_SOMBRAS_ISO, KXL.T_CAB_NOTA_ISO)))
+        hoja.set_row(fila, KXL.ALTO_CABECERA)
+        for n, f in enumerate(self.__datos.filasISO):
+            fila += 1
+            banda = (n % 2) == 0
+            valores = (
+                (f.iso, KXL.NUM_ENTERO), (self.zona_z2(f), None),
+                (f.desviacion, KXL.NUM_DEV), (f.lectura, KXL.NUM_DOS),
+                (f.ruido_zv, KXL.NUM_PORCENTAJE),
+                (f.ruido_z2, KXL.NUM_PORCENTAJE),
+                (f.textura_z2, KXL.NUM_PORCENTAJE),
+                (f.textura_ruido, KXL.NUM_DOS),
+                (self.parte_umbral(f, umbral), KXL.NUM_PORCENTAJE),
+                (self.aprecia_iso(f, k, umbral), None),
+                (self.sombras_iso(f, k, umbral) or None, None))
+            for i, (valor, numero) in enumerate(valores):
+                formato = self.celda(KXL.COLOR_DATO, banda, "center", numero)
+                if valor is None:
+                    hoja.write_blank(fila, col + i, None, formato)
+                elif numero is None:
+                    hoja.write_string(fila, col + i, valor, formato)
+                else:
+                    hoja.write_number(fila, col + i, valor, formato)
+            hoja.write_string(fila, col + len(valores), self.nota_iso(f),
+                              self.celda(KXL.COLOR_ROTULO, banda, "left"))
+        self.marco(hoja, ((fila, KXL.ANCHOS_ISO),))
+
+    #
+    def zona_z2(self, f: FilaISO) -> str:
+        """ Nombre de la zona de la Z2 de un ISO ("" si no la tiene). """
+        return "" if (f.tercio_z2 is None) else self.nombre_zona(f.tercio_z2)
+
+    #
+    def nota_iso(self, f: FilaISO) -> str:
+        """
+        Nota de un ISO de la secuencia de ISO: que no se puede medir, que
+        es una estimación (con la zona a la que llegó su Z2) o nada
+        """
+        t = self.__textos
+        if not f.medible:
+            return t[KXL.T_ISO_SIN_MEDIR]
+        if f.estimada:
+            return t[KXL.T_ISO_ESTIMADO].format(zona=self.zona_z2(f))
+        return ""
+
+    #
+    def umbral_iso(self, k: dict) -> float | None:
+        """
+        Umbral de la textura en la Z2 de cada ISO: el de las sombras de la
+        serie (ver umbral_sombras)
+        """
+        return self.umbral_sombras(k)
+
+    #
+    @staticmethod
+    def parte_umbral(f: FilaISO, umbral: float | None) -> float | None:
+        """
+        Qué parte del umbral (ver umbral_iso) es la textura/ruido de la Z2
+        de un ISO: 1 = justo el umbral (None sin dato)
+        """
+        if (f.textura_ruido is None) or (not umbral):
+            return None
+        return f.textura_ruido / umbral
+
+    #
+    def nivel_textura_iso(self, f: FilaISO, k: dict,
+                          umbral: float | None) -> int | None:
+        """
+        Cómo es la textura de la Z2 de un ISO, con el orden de
+        KXL.T_TEXTURA_ISO: 0 se pierde (por debajo de C_TEXTURA_JUSTA del
+        umbral), 1 justa (hasta el umbral), 2 se ve (None sin dato)
+        """
+        parte = self.parte_umbral(f, umbral)
+        if parte is None:
+            return None
+        if parte >= 1:
+            return 2
+        return 1 if (parte >= k[KXL.C_TEXTURA_JUSTA]) else 0
+
+    #
+    @staticmethod
+    def zona_sombras_iso(f: FilaISO, k: dict,
+                         umbral: float | None) -> float | None:
+        """
+        Estimación de la zona desde la que hay textura en las sombras de un
+        ISO (en zonas, sin redondear; None sin dato, math.inf si no llega
+        nunca), solo con su Z-V y su Z2. Modelo del ruido de la tarjeta
+        (en niveles): ruido² = lectura² + señal·x + (p·señal)², con la
+        lectura del borde y x y p sacadas de los dos puntos; la textura
+        del paño, la misma fracción de la señal que en la Z2. La zona es
+        donde textura/ruido llega al umbral (ver umbral_iso)
+        """
+        datos = (f.nivel_zv, f.nivel_z2, f.ruido_zv, f.ruido_z2,
+                 f.textura_z2)
+        if (not umbral) or any(d is None for d in datos):
+            return None
+        s1, s2, n1, n2, t = datos                           # type: ignore
+        if (s1 <= 0) or (s2 <= 0) or (s1 == s2) or (t <= 0):
+            return None
+        # --- La lectura del borde es por píxel: a escala de pantalla no
+        #     vale, y el modelo se ajusta solo con los dos puntos
+        lectura2 = 0.0 if f.es_pantalla else ((f.lectura or 0.0) ** 2)
+
+        # --- Los dos puntos: ruido² − lectura² = señal·x + señal²·p²
+        y1 = ((n1 * s1) ** 2) - lectura2
+        y2 = ((n2 * s2) ** 2) - lectura2
+        det = (s1 * (s2 ** 2)) - (s2 * (s1 ** 2))
+        x = ((y1 * (s2 ** 2)) - (y2 * (s1 ** 2))) / det
+        p2 = ((s1 * y2) - (s2 * y1)) / det
+        #     Sin sentido físico (x o p² negativos): solo fotones, con
+        #     el punto de la Z2 (el que manda en las sombras)
+        if (x <= 0) or (p2 < 0):
+            p2 = 0.0
+            x = max(y2, 0.0) / s2
+            if x <= 0:
+                return None
+
+        # --- Señal a la que textura/ruido llega al umbral: la raíz
+        #     positiva de ((t/umbral)² − p²)·S² − x·S − lectura² = 0
+        a = ((t / umbral) ** 2) - p2
+        if a <= 0:
+            return math.inf
+        signal = (x + math.sqrt((x ** 2) + (4 * a * lectura2))) / (2 * a)
+        return k[KXL.C_ZONA_ZV] + math.log(signal / s1,
+                                           k[KXL.C_FACTOR_ZONA])
+
+    #
+    def sombras_iso(self, f: FilaISO, k: dict, umbral: float | None) -> str:
+        """
+        Desde qué zona colocar las sombras con textura en un ISO, en texto:
+        la estimación de zona_sombras_iso al tercio más próximo, más
+        C_MARGEN_SOMBRAS tercios (como la recomendada de la latitud), con
+        «≈»; sin pasar por debajo de Z0. Por encima de la Z-V, «ninguna»
+        ("" sin dato)
+        """
+        t = self.__textos
+        zona = self.zona_sombras_iso(f, k, umbral)
+        if zona is None:
+            return ""
+        if not math.isfinite(zona):
+            return t[KXL.T_SOMBRAS_NINGUNA]
+
+        # --- Al tercio más próximo (el medio, hacia arriba, como en
+        #     limites_texturas) y el margen de la recomendada
+        tercio = k[KXL.C_TERCIO_POR_ZONA]
+        tercio_ev = (math.floor(((zona - k[KXL.C_ZONA_ZV]) * tercio) + 0.5)
+                     + k[KXL.C_MARGEN_SOMBRAS])
+        if tercio_ev > 0:
+            return t[KXL.T_SOMBRAS_NINGUNA]
+        tercio_ev = max(tercio_ev, -KS.TERCIOS_LADO)
+        return t[KXL.T_SOMBRAS_ISO].format(zona=self.nombre_zona(tercio_ev))
+
+    #
+    def aprecia_iso(self, f: FilaISO, k: dict, umbral: float | None) -> str:
+        """
+        Cómo es la textura de la Z2 de un ISO, en texto: se ve, justa o se
+        pierde (ver nivel_textura_iso; "" sin dato)
+        """
+        nivel = self.nivel_textura_iso(f, k, umbral)
+        return ("" if (nivel is None)
+                else self.__textos[KXL.T_TEXTURA_ISO[nivel]])
+
+    #
+    def exposicion_iso(self, f: FilaISO, k: dict) -> str:
+        """
+        Cómo sale la exposición de un ISO frente a la del ISO inicial, al
+        tercio de zona: igual, o cuánto más clara u oscura ("" sin dato)
+        """
+        if f.desviacion is None:
+            return ""
+        tercios = round(f.desviacion * k[KXL.C_TERCIO_POR_ZONA])
+        if tercios == 0:
+            return self.__textos[KXL.T_EXPOSICION_IGUAL]
+        entera, tercio = divmod(abs(tercios), k[KXL.C_TERCIO_POR_ZONA])
+        cuanto = (f"{entera if entera else ''}"
+                  f"{KXL.TERCIOS_EXCEL[tercio]}").strip()
+        clave = (KXL.T_EXPOSICION_CLARA if (tercios > 0)
+                 else KXL.T_EXPOSICION_OSCURA)
+        return self.__textos[clave].format(cuanto=cuanto)
+
+    #
+    def conclusion_iso(self, k: dict, umbral: float | None) -> str:
+        """
+        Frase final de la secuencia de ISO para el estudiante: hasta qué
+        ISO las sombras de la Z2 conservan la textura (justa o se ve) y
+        desde cuál hay que subirlas ("" sin ningún ISO con dato)
+        """
+        t = self.__textos
+        medidos = [(f.iso, self.nivel_textura_iso(f, k, umbral))
+                   for f in self.__datos.filasISO]
+        medidos = [(iso, nivel) for iso, nivel in medidos
+                   if nivel is not None]
+        if not medidos:
+            return ""
+        pierde = next((i for i, (_, nivel) in enumerate(medidos)
+                       if nivel == 0), None)
+        if pierde is None:
+            return t[KXL.T_ISO_TODOS]
+        if pierde == 0:
+            return t[KXL.T_ISO_NINGUNO].format(iso=medidos[0][0])
+        return t[KXL.T_ISO_HASTA].format(hasta=medidos[pierde - 1][0],
+                                         desde=medidos[pierde][0])
+
+    #
     def zonas_canal(self, k: dict) -> dict[str, list]:
         """
         Por zona y canal, lo que calcula el bloque 2 de Cálculo y usan el
@@ -3228,10 +3606,12 @@ class Excel(object):
         Latitud de texturas del verde, por zona (de Z0 a ZX): esperado,
         textura del paño (su dispersión sin el ruido de la tarjeta),
         textura/ruido, textura conservada (frente a la de la ZV), paño
-        recortado y si cumple cada criterio (sombras: textura/ruido de
-        C_ROSE_TEXTURA en adelante hasta la ZV; luces: desde la ZV, textura
-        conservada de C_TEXTURA_CONSERVADA y paño recortado de
-        C_TELA_RECORTADO_MAX como mucho). None: sin dato o fuera de su lado.
+        recortado, contraste de la trama del paño en las exportaciones del
+        revelador (en L*) y su fracción del de la ZV, y si cumple cada
+        criterio (sombras: fracción del contraste de C_CONTRASTE_SOMBRAS en
+        adelante hasta la ZV; luces: desde la ZV, textura conservada de
+        C_TEXTURA_CONSERVADA y paño recortado de C_TELA_RECORTADO_MAX como
+        mucho). None: sin dato o fuera de su lado.
         """
         n = (2 * KS.TERCIOS_LADO) + 1
         zv = KS.TERCIOS_LADO
@@ -3240,15 +3620,14 @@ class Excel(object):
                     for i in range(n)]
         textura, ruido, recortado = [], [], []
         for z in self.__datos.zonas:
-            tela = z.telaDispRGB if z else None
-            tarjeta = z.dispRGB[verde] if z else None
+            tela, tarjeta = self.disp_textura(z)
             if ((tela is None) or (tarjeta is None)
                     or (not math.isfinite(tarjeta))
-                    or (not math.isfinite(tela[verde]))):
+                    or (not math.isfinite(tela))):
                 textura.append(None)
                 ruido.append(None)
             else:
-                tx = math.sqrt(max(0.0, (tela[verde] ** 2) - (tarjeta ** 2)))
+                tx = math.sqrt(max(0.0, (tela ** 2) - (tarjeta ** 2)))
                 textura.append(tx)
                 ruido.append((tx / tarjeta) if (tarjeta > 0) else None)
             recorte = z.telaRecortadoRGB if z else None
@@ -3258,21 +3637,35 @@ class Excel(object):
         conservada = [(tx / base) if ((tx is not None) and base) else None
                       for tx in textura]
 
+        # --- Contraste de la trama del paño en las exportaciones y su
+        #     fracción del de la ZV (Tony, 2026-11-13)
+        contraste = self.contrastes()
+        contraste_zv = contraste[zv]
+        fraccion = [(c / contraste_zv) if ((c is not None) and contraste_zv)
+                    else None for c in contraste]
+
         # --- Sombras, de la ZV hacia abajo; luces, de la ZV hacia arriba.
         #     Un tercio sin dato no corta la cadena: deja pasar lo que
         #     viene del lado de la ZV
         sombras: list = [None] * n
         luces: list = [None] * n
         sin_recorte: list = [None] * n
+        umbral = k[KXL.C_CONTRASTE_SOMBRAS]
         for i in range(zv, -1, -1):
             sigue = True if (i == zv) else sombras[i + 1]
-            sombras[i] = (sigue if (ruido[i] is None) else
-                          ((ruido[i] >= k[KXL.C_ROSE_TEXTURA]) and sigue))
+            sombras[i] = (sigue if (fraccion[i] is None)
+                          else ((fraccion[i] >= umbral) and sigue))
         for i in range(zv, n):
             luz = True if (i == zv) else luces[i - 1]
             corte = True if (i == zv) else sin_recorte[i - 1]
+            # --- Apreciable: conserva su textura y no pasa del recorte
+            #     de C_TELA_RECORTADO_APRECIABLE (sin dato de recorte,
+            #     cuenta como 0, igual que N() en el libro)
+            recorte_i = recortado[i] if (recortado[i] is not None) else 0.0
             luces[i] = (luz if (conservada[i] is None) else
                         ((conservada[i] >= k[KXL.C_TEXTURA_CONSERVADA])
+                         and (recorte_i
+                              <= k[KXL.C_TELA_RECORTADO_APRECIABLE])
                          and luz))
             sin_recorte[i] = (
                 corte if (recortado[i] is None) else
@@ -3283,41 +3676,100 @@ class Excel(object):
                 KXL.T_CAB_TELA_RECORTADO: recortado,
                 KXL.T_CAB_CUMPLE_SOMBRAS: sombras,
                 KXL.T_CAB_CUMPLE_LUCES: luces,
-                KXL.T_CAB_SIN_RECORTE: sin_recorte}
+                KXL.T_CAB_SIN_RECORTE: sin_recorte,
+                KXL.T_CAB_CONTRASTE: contraste,
+                KXL.T_CAB_CONTRASTE_ZV: fraccion}
+
+    #
+    def titulo_ruido_color(self) -> str:
+        """
+        Título del ruido aceptable por color (Análisis y PDF), con el ISO
+        de la serie, al que se refiere (Tony, 2026-11-13); sin ISO leído,
+        sin él
+        """
+        t, iso = self.__textos, self.__datos.iso
+        if iso is None:
+            return t[KXL.T_RUIDO_COLOR]
+        return t[KXL.T_RUIDO_COLOR_ISO].format(iso=texto_iso(iso))
+
+    #
+    def contrastes(self) -> list[float | None]:
+        """
+        Contraste de la trama del paño en las exportaciones del revelador,
+        por zona (de Z0 a ZX, en L*): None sin él (sin paño, sin
+        exportación o antes de la segunda fase)
+        """
+        n = (2 * KS.TERCIOS_LADO) + 1
+        medidos = self.__datos.contraste
+        if len(medidos) != n:
+            return [None] * n
+        return [float(c) if math.isfinite(c) else None for c in medidos]
+
+    #
+    @staticmethod
+    def disp_textura(z: ZonaMedida | None) -> tuple[float | None,
+                                                    float | None]:
+        """
+        Dispersión del paño y de la tarjeta en verde con las que se mide
+        la textura de una toma para la latitud de texturas: por píxel
+        (Tony, 2026-11-13: a escala de pantalla, TD daba «desde Z0⅓»;
+        por píxel, Z2 apreciable y Z2⅓ recomendada, lo que ve Tony). La
+        escala de pantalla queda solo para la secuencia de ISO (ver
+        zona_sombras_iso y oecfCalc.review). (None, None) sin toma; el
+        paño, None si no hay
+        """
+        verde = 1
+        if z is None:
+            return None, None
+        tela = z.telaDispRGB
+        return (None if tela is None else tela[verde]), z.dispRGB[verde]
+
+    #
+    @staticmethod
+    def umbral_sombras(k: dict) -> float:
+        """
+        Textura/ruido desde la que se aprecia la textura en las sombras:
+        C_ROSE_TEXTURA (por píxel en la latitud de texturas; a escala de
+        pantalla en la secuencia de ISO)
+        """
+        return k[KXL.C_ROSE_TEXTURA]
 
     #
     def limites_texturas(self, k: dict, por_zona: dict[str, list]
                          ) -> dict[str, Tramo]:
         """
         Límites de la latitud de texturas (en zonas; si no se alcanzan, el
-        texto de C_TEXTO_NO_ALCANZADO): sombras apreciables (donde la
-        textura/ruido llega a C_ROSE_TEXTURA, entre los dos tercios vecinos y
-        al tercio más próximo; sin dato en el de debajo, el tercio que
-        cumple) y recomendadas (C_MARGEN_SOMBRAS tercios más arriba), luces
-        apreciables (la última con la textura conservada) y recomendadas
-        (la última sin pasar de C_TELA_RECORTADO_MAX, sin pasar de la
-        apreciable) y las dos latitudes. Solo cuentan los tercios con dato.
+        texto de C_TEXTO_NO_ALCANZADO): sombras recomendadas (la primera
+        zona cuyo contraste de la trama del paño llega a
+        C_CONTRASTE_SOMBRAS del de la ZV sin volver a bajar hasta ella;
+        antes de la segunda fase, sin ese contraste, el texto de
+        C_TEXTO_SIN_REVELADO) y apreciables (C_MARGEN_SOMBRAS tercios más
+        abajo), luces apreciables (la última con la textura conservada) y
+        recomendadas (la última sin pasar de C_TELA_RECORTADO_MAX, sin
+        pasar de la apreciable) y las dos latitudes (sin revelado, su
+        texto). Solo cuentan los tercios con dato (Tony, 2026-11-13: las
+        sombras, del contraste en las exportaciones, no de la
+        textura/ruido de los RAW).
         """
         no = self.__textos[KXL.V_NO_ALCANZADO]
+        sin_revelado = self.__textos[KXL.V_SIN_REVELADO]
         tercio = k[KXL.C_TERCIO_POR_ZONA]
         es = por_zona[KXL.T_CAB_ESPERADO]
-        ruido = por_zona[KXL.T_CAB_TEXTURA_RUIDO]
+        fraccion = por_zona[KXL.T_CAB_CONTRASTE_ZV]
         cumple = por_zona[KXL.T_CAB_CUMPLE_SOMBRAS]
-        primera = next((i for i, c in enumerate(cumple)
-                        if c and (ruido[i] is not None)), None)
-        if primera is None:
-            sombra = no
-        elif (primera == 0) or (ruido[primera - 1] is None):
-            sombra = es[primera]
+
+        # --- Sin paño, no alcanzado; con paño y sin ningún contraste en
+        #     las sombras (antes de la segunda fase), sin revelado
+        if isinstance(self.__datos.tela, str):
+            sombra_rec = no
+        elif all(f is None for f in fraccion[:KS.TERCIOS_LADO + 1]):
+            sombra_rec = sin_revelado
         else:
-            antes = primera - 1
-            cruce = es[antes] + ((k[KXL.C_ROSE_TEXTURA] - ruido[antes])
-                                 / (ruido[primera] - ruido[antes]) / tercio)
-            # --- Al tercio más próximo; el medio, hacia arriba (como
-            #     ROUND de Excel; round() de Python iría al par)
-            sombra = math.floor((cruce * tercio) + 0.5) / tercio
-        sombra_rec = ((sombra + (k[KXL.C_MARGEN_SOMBRAS] / tercio))
-                      if isinstance(sombra, float) else sombra)
+            primera = next((i for i, c in enumerate(cumple)
+                            if c and (fraccion[i] is not None)), None)
+            sombra_rec = no if (primera is None) else es[primera]
+        sombra = ((sombra_rec - (k[KXL.C_MARGEN_SOMBRAS] / tercio))
+                  if isinstance(sombra_rec, float) else sombra_rec)
         luces = [e for e, c, v in zip(es, por_zona[KXL.T_CAB_CUMPLE_LUCES],
                                       por_zona[KXL.T_CAB_CONSERVADA])
                  if c and (v is not None)]
@@ -3327,10 +3779,14 @@ class Excel(object):
                   if c and (v is not None)]
         luz_rec = ((min(luz, max(cortes)) if isinstance(luz, float)
                     else max(cortes)) if cortes else no)
-        return {KXL.T_APRECIABLE: (sombra, luz,
-                                   self.latitud(luz, sombra, k)),
-                KXL.T_RECOMENDADA: (sombra_rec, luz_rec,
-                                    self.latitud(luz_rec, sombra_rec, k))}
+
+        # --- Las latitudes: sin revelado, su texto
+        latitud = (sin_revelado if (sombra == sin_revelado)
+                   else self.latitud(luz, sombra, k))
+        latitud_rec = (sin_revelado if (sombra_rec == sin_revelado)
+                       else self.latitud(luz_rec, sombra_rec, k))
+        return {KXL.T_APRECIABLE: (sombra, luz, latitud),
+                KXL.T_RECOMENDADA: (sombra_rec, luz_rec, latitud_rec)}
 
     #
     def latitud(self, alto: object, bajo: object,
@@ -3354,34 +3810,44 @@ class Excel(object):
     def aviso_poca_textura(self, k: dict) -> str:
         """
         Aviso de que el paño tiene poca textura: su textura/ruido en la
-        Z-V no llega a C_ROSE_TEXTURA, y las sombras de la latitud de
-        texturas no pueden medirse ("" si llega o no hay dato).
+        Z-V no llega a C_PANO_MINIMO, y las sombras de la latitud de
+        texturas pueden salir cortas o no medirse ("" si llega o no hay
+        dato)
         """
         ruido = self.texturas(k)[KXL.T_CAB_TEXTURA_RUIDO][KS.TERCIOS_LADO]
-        if (ruido is None) or (ruido >= k[KXL.C_ROSE_TEXTURA]):
+        if (ruido is None) or (ruido >= k[KXL.C_PANO_MINIMO]):
             return ""
         return self.__textos[KXL.T_POCA_TEXTURA].format(
-            textura=self.numero_texto(ruido, 1), rose=k[KXL.C_ROSE_TEXTURA])
+            textura=self.numero_texto(ruido, 1),
+            minimo=k[KXL.C_PANO_MINIMO])
 
     #
     def lineas_pixeles(self) -> list[str]:
         """
         Las líneas de los píxeles defectuosos, para Datos, Análisis y el
-        PDF: los calientes y los muertos (cuántos y por megapíxel) o, sin
-        tapadas, que no se pueden contar los calientes. Vacío si no se
-        contaron píxeles.
+        PDF: los calientes y los muertos (cuántos y por megapíxel; si no
+        hay, «ninguno») o, sin tapadas, que no se pueden contar los
+        calientes. Sin ninguno de los dos, una sola línea: no hay píxeles
+        defectuosos. Vacío si no se contaron píxeles.
         """
         t, pixeles = self.__textos, self.__datos.pixeles
         if pixeles is None:
             return []
+        if (pixeles.calientes == 0) and (pixeles.muertos == 0):
+            return [t[KXL.T_PIXELES_NINGUNO]]
         lineas = []
         if (pixeles.calientes is None) or (pixeles.calientesMpx is None):
             lineas.append(t[KXL.T_PIXELES_SIN_TAPADAS])
+        elif pixeles.calientes == 0:
+            lineas.append(t[KXL.T_PIXELES_SIN_CALIENTES])
         else:
             lineas.append(t[KXL.T_PIXELES_CALIENTES].format(
                 n=pixeles.calientes, por_mpx=self.numero_texto(
                     pixeles.calientesMpx, KXL.DECIMALES_MPX)))
-        if (pixeles.muertos is not None) and (pixeles.muertosMpx is not None):
+        if pixeles.muertos == 0:
+            lineas.append(t[KXL.T_PIXELES_SIN_MUERTOS])
+        elif ((pixeles.muertos is not None)
+              and (pixeles.muertosMpx is not None)):
             lineas.append(t[KXL.T_PIXELES_MUERTOS].format(
                 n=pixeles.muertos, por_mpx=self.numero_texto(
                     pixeles.muertosMpx, KXL.DECIMALES_MPX)))
