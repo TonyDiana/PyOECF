@@ -44,7 +44,7 @@ from matplotlib.transforms import Bbox
 # --- Bibliotecas internas
 from bib import std
 from bib.oecfMediadores import KP
-from oecfCalc import BalanceMedido, OECF, Ventana
+from oecfCalc import BalanceMedido, KNE, OECF, rangos_neutros, Ventana
 from .excel import KXL, Excel, PuntoCurva
 
 
@@ -263,41 +263,24 @@ class KPDF(std.EnumMutable):
     T_PAGINA = "pagina"
     T_AVISO_EXPOSICION_ISO = "aviso_exposicion_iso"
     T_CAB_CANTIDAD = "cab_cantidad_pixeles"
-    T_CAB_EN_CAMARA = "cab_en_camara"
-    T_CAB_KELVIN_LUZ = "cab_kelvin_luz"
-    T_CAB_LUZ = "cab_luz_neutra"
-    T_CAB_LUZ_MIRED = "cab_luz_mired"
+    T_CAB_EN_CAMARA = KXL.T_CAB_EN_CAMARA
+    T_CAB_KELVIN_LUZ = KXL.T_CAB_KELVIN_LUZ
+    T_CAB_LUZ = KXL.T_CAB_LUZ
+    T_CAB_LUZ_MIRED = KXL.T_CAB_LUZ_MIRED
     T_CAB_POR_MPX = "cab_por_mpx"
     T_CAB_RUIDO_DESDE = "cab_ruido_desde"
     T_CAB_SR_Z2 = "cab_sr_z2"
     T_CAB_SR_ZV = "cab_sr_zv"
     T_CAB_TV_ISO = "cab_tv_iso"
-    T_LUZ_CALIDA = "luz_calida"
-    T_LUZ_FLASH = "luz_flash"
-    T_LUZ_LED_FRIO = "luz_led_frio"
-    T_LUZ_SOL = "luz_sol"
-    T_NOTA_NEUTRAS = "nota_neutras"
-    T_SIN_DATOS_NEUTRA = "sin_datos_neutra"
-
-    # --- Kelvin neutros, junto a la tabla de balances: qué Kelvin poner en
-    #     la cámara para que salga neutra con cada luz habitual (su rótulo
-    #     y su Kelvin, de menor a mayor: no en orden alfabético), con esta
-    #     tolerancia en mired (MIRED entre los Kelvin; Kelvin y mired a la
-    #     vez, para ir metiendo el mired en el vocabulario del alumno).
-    #     Los Kelvin de la cámara se redondean a REDONDEO_KELVIN, y hacen
-    #     falta al menos PUNTOS_NEUTRAS balances con Kelvin anotado y
-    #     medido. Si la luz queda fuera de lo medido, se estima prolongando
-    #     la curva hasta EXTRAPOLA_MIRED mired más allá (y se marca como
-    #     estimado); más lejos, sin datos. 5500 K es una referencia, no el
-    #     Sol de mediodía; los LED de tienda son de 3200 o 6400 K (Tony,
-    #     2026-11-13: «prefiero una estimación que una nada»)
-    LUCES_NEUTRAS = ((T_LUZ_CALIDA, 3200), (T_LUZ_SOL, 5000),
-                     (T_LUZ_FLASH, 5500), (T_LUZ_LED_FRIO, 6400))
-    EXTRAPOLA_MIRED = 15
-    MIRED = 1000000
-    PUNTOS_NEUTRAS = 2
-    REDONDEO_KELVIN = 10
-    TOLERANCIA_MIRED = 5
+    # --- Las luces de los Kelvin neutros: su texto lleva el código que
+    #     les da el cálculo (oecfCalc.KNE), que es el que leen también el
+    #     libro y el JSON
+    T_LUZ_CALIDA = KNE.LUZ_CALIDA
+    T_LUZ_FLASH = KNE.LUZ_FLASH
+    T_LUZ_LED_FRIO = KNE.LUZ_LED_FRIO
+    T_LUZ_SOL = KNE.LUZ_SOL
+    T_NOTA_NEUTRAS = KXL.T_NOTA_NEUTRAS
+    T_SIN_DATOS_NEUTRA = KXL.T_SIN_DATOS_NEUTRA
 
 
 # --- Ver KPDF.MOTOR
@@ -512,27 +495,20 @@ class Pdf(object):
                        balances: list[BalanceMedido]) -> float:
         """
         A la derecha de la tabla de balances, desde y hacia abajo: una
-        tabla con una fila por luz habitual (KPDF.LUCES_NEUTRAS: su Kelvin,
+        tabla con una fila por luz habitual (KNE.LUCES_NEUTRAS: su Kelvin,
         el rango que cubre la tolerancia en mired y el rango de Kelvin que
         poner en la cámara para que salga neutra con ella; «≈» si es una
         estimación, o «sin datos») y debajo una nota que explica el mired.
         Devuelve dónde acaba (y, si no hay nada que decir).
         """
         t = self.__textos
-        rangos = self.rangos_neutros(balances)
+        rangos = rangos_neutros(balances)
         if not rangos:
             return y
-        mired = KPDF.TOLERANCIA_MIRED
-        filas, colores = [], {}
-        for i, (clave, kelvin, luz_de, luz_a, cam_de, cam_a,
-                estimado) in enumerate(rangos):
-            if cam_de is None:
-                camara = t[KPDF.T_SIN_DATOS_NEUTRA]
-            else:
-                camara = f"{'≈ ' if estimado else ''}{cam_de}–{cam_a}"
-            filas.append((t[clave], str(kelvin), f"{luz_de}–{luz_a}",
-                          camara))
-            colores[(i, 1)] = self.color_kelvin(kelvin)
+        mired = KNE.TOLERANCIA_MIRED
+        filas = self.__excel.filas_neutros(rangos)
+        colores = {(i, 1): self.color_kelvin(r.kelvin)
+                   for i, r in enumerate(rangos)}
         izquierda = self.columna_derecha()
         y = self.tabla(fig, y, (
             t[KPDF.T_CAB_LUZ], t[KPDF.T_CAB_KELVIN_LUZ],
@@ -542,79 +518,6 @@ class Pdf(object):
         return self.nota(fig, y - KPDF.TABLA_A_NOTA,
                          t[KPDF.T_NOTA_NEUTRAS].format(mired=mired),
                          izquierda=izquierda)
-
-    #
-    def rangos_neutros(self, balances: list[BalanceMedido]) -> list[
-            tuple[str, int, int, int, int | None, int | None, bool]]:
-        """
-        Por cada luz de KPDF.LUCES_NEUTRAS: (rótulo, su Kelvin, Kelvin
-        mínimo y máximo de la luz dentro de la tolerancia, Kelvin mínimo y
-        máximo que poner en la cámara, si es una estimación). Se invierte
-        la curva de los balances (Kelvin anotado → medido) con una recta
-        entre cada par de puntos, en mired; el medido que se busca es el
-        de la luz. Fuera de lo medido se prolonga la recta de los dos
-        últimos puntos, hasta KPDF.EXTRAPOLA_MIRED mired (estimación);
-        más lejos, los dos Kelvin de la cámara son None. Con menos de
-        KPDF.PUNTOS_NEUTRAS balances, ninguna luz.
-        """
-        puntos = sorted(
-            (self.mired(b.kelvin), self.mired(b.kelvin_cam))
-            for b in balances
-            if (b.kelvin is not None) and (b.kelvin_cam is not None))
-        if len(puntos) < KPDF.PUNTOS_NEUTRAS:
-            return []
-        rangos = []
-        for clave, kelvin in KPDF.LUCES_NEUTRAS:
-            centro = self.mired(kelvin)
-            bajo = centro - KPDF.TOLERANCIA_MIRED
-            alto = centro + KPDF.TOLERANCIA_MIRED
-            luz = (self.kelvin_redondo(alto), self.kelvin_redondo(bajo))
-            fuera = max(puntos[0][0] - bajo, alto - puntos[-1][0], 0)
-            if fuera > KPDF.EXTRAPOLA_MIRED:
-                rangos.append((clave, kelvin, *luz, None, None, False))
-                continue
-            en_cam = (self.interpolar(puntos, bajo),
-                      self.interpolar(puntos, alto))
-            rangos.append((
-                clave, kelvin, *luz,
-                self.kelvin_redondo(max(en_cam)),
-                self.kelvin_redondo(min(en_cam)), fuera > 0))
-        return rangos
-
-    #
-    @staticmethod
-    def mired(kelvin: float) -> float:
-        """ Mired de una temperatura de color: KPDF.MIRED entre los Kelvin
-            (a más Kelvin, menos mired). """
-        return KPDF.MIRED / kelvin
-
-    #
-    @staticmethod
-    def kelvin_redondo(mired: float) -> int:
-        """ Kelvin de un mired, redondeado a KPDF.REDONDEO_KELVIN. """
-        return int(round((KPDF.MIRED / mired) / KPDF.REDONDEO_KELVIN)
-                   * KPDF.REDONDEO_KELVIN)
-
-    #
-    @staticmethod
-    def interpolar(puntos: list[tuple[float, float]], x: float) -> float:
-        """
-        y de una x, con una recta entre cada par de puntos (x, y) ordenados
-        por x. Fuera de ellos, se prolonga la recta de los dos primeros o de
-        los dos últimos. Si dos puntos tienen la misma x, vale la y del
-        primero.
-        """
-        pares = list(zip(puntos, puntos[1:]))
-        if x < puntos[0][0]:
-            pares = pares[:1]
-        elif x > puntos[-1][0]:
-            pares = pares[-1:]
-        for (x0, y0), (x1, y1) in pares:
-            if (x0 <= x <= x1) or (x < puntos[0][0]) or (x > puntos[-1][0]):
-                if x1 == x0:
-                    return y0
-                return y0 + ((y1 - y0) * ((x - x0) / (x1 - x0)))
-        return puntos[-1][1]
 
     #
     def pagina_iso(self, k: dict) -> Figure:

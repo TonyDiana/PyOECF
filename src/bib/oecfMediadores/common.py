@@ -9,7 +9,7 @@
                 (muchos imports de oecfCalc y la réplica de FE) y no se
                 hace
     :Autor:     Tony Diana
-    :Versión:   26.11.10
+    :Versión:   26.11.14
 """
 
 # cSpell:ignore camara, codificacion, codigo, desviacion, kmed, kres
@@ -60,8 +60,10 @@ class KES(std.EnumMutable):
 
     # --- oecf: las tres versiones del estudio, cada una por su motivo
     #     (Tony, 2026-11-13):
-    #     - versionApp: la del programa que lo grabó (sube en cada
-    #       publicación); la da quien llama a grabar_json
+    #     - versionApp: la del programa que escribió el último cálculo
+    #       (sube en cada publicación); la da quien llama a grabar_json,
+    #       grabar_revelado y grabar_resultados (Tony, 2026-11-14: la del
+    #       último cambio, no la de la primera generación)
     #     - versionAnalisis: la de cómo se miden los RAW
     #       (review.KAN.VERSION_ANALISIS); null sin medida. Si es anterior
     #       a la de la app, hay que volver a medir
@@ -76,7 +78,12 @@ class KES(std.EnumMutable):
     #     Historia del formato: 1.0, la primera que leen PyOECF y FE
     #     (2026-10-23); 1.1, medida.factorLamina (2026-11-13); 2.0, las
     #     tres versiones en oecf y sin info.programa.version (2026-11-13);
-    #     2.1, revelado.exportaciones[].contraste (2026-11-13).
+    #     2.1, revelado.exportaciones[].contraste (2026-11-13). Sin subir
+    #     la versión (FE aún solo lee la 2.1; Tony, 2026-11-14), a la 2.1 se
+    #     le añadieron resultados.kelvinNeutros, resultados.analisisISO y
+    #     tres constantes más en resultados.constantes: un 2.1 puede traerlas
+    #     o no, y quien lee las trata como «sin dato» si faltan. Subir la
+    #     versión es decisión de Tony.
     #     Los JSON 1.x guardaban la del formato en oecf.version
     #     (O_VERSION_ANTIGUA): ver version_formato
     O_VERSION_ANALISIS = "versionAnalisis"
@@ -90,7 +97,12 @@ class KES(std.EnumMutable):
     #     oecf.versionApp), lo da quien llama a grabar_json: este módulo
     #     no sabe qué programa lo usa. La carpeta de la serie, solo para
     #     saber el origen (Tony, 2026-10-21). La cámara, {marca, modelo}
-    #     (la lee restaurar_serie si no queda ninguna copia RAW)
+    #     (la lee restaurar_serie si no queda ninguna copia RAW). La fecha
+    #     es la del último cálculo escrito en el JSON (al medir los RAW, al
+    #     analizar el revelador y al grabar los resultados), con la hora
+    #     local de quien lo escribió y sin zona horaria: no es la de las
+    #     fotos (esa es la de serie.tomas[].fecha) ni hay que fiarse de la
+    #     del archivo en el disco (Tony, 2026-11-14)
     I_PROGRAMA = "programa"
     P_NOMBRE = "nombre"
     I_FECHA = "fecha"
@@ -166,13 +178,17 @@ class KRES(std.EnumMutable):
     CANALES_JSON = ("R", "G", "B")
 
     # --- Grupos de los resultados
+    J_ANALISIS_ISO = "analisisISO"
     J_CANALES = "canales"
     J_CONSTANTES = "constantes"
     J_CURVA = "curva"
     J_DIFERENCIAS = "diferenciasMedias"
+    J_KELVIN_NEUTROS = "kelvinNeutros"
     J_LINEALIDAD = "linealidad"
+    J_SENAL_RUIDO_ZONA = "senalRuidoPorZona"
     J_TEXTURAS = "latitudTexturas"
     """Clave de la latitud de texturas en los resultados del JSON."""
+    J_TEXTURAS_ZONA = "texturasPorZona"
 
     # --- Por canal: lo que da el bloque 1 de Cálculo. Unidades, como en
     #     el libro: zonas (Z-V = zonaZV; una posición negativa es más
@@ -219,9 +235,11 @@ class KRES(std.EnumMutable):
 
     # --- La linealidad por tercio: la desviación de cada canal respecto a
     #     la recta de pendiente 1 por la ZV (obtenido − esperado, en zonas;
-    #     positiva = por encima) y si está recortado (true, false o null
+    #     positiva = por encima), si está recortado (true, false o null
+    #     sin toma) y la zona equivalente que se obtuvo (J_OBTENIDO, null
     #     sin toma)
     J_DESVIACION = "desviacion"
+    J_OBTENIDO = "obtenido"
     J_RECORTADO = "recortado"
 
     # --- Los tramos de la latitud de texturas: sombras, luces y zonas,
@@ -238,16 +256,144 @@ class KRES(std.EnumMutable):
     #     resultados.constantes), para que quien lea el JSON no dependa de
     #     los valores actuales
     CONST_ANCHO_ZONA = "anchoZona"  # lo que ocupa una zona, en zonas
+    # fracción del contraste de la trama del paño en la Z-V, desde la que se
+    # recomiendan las sombras
+    CONST_CONTRASTE_SOMBRAS = "contrasteSombras"
     CONST_FACTOR_ZONA = "factorZona"  # veces más luz entre zonas vecinas
     CONST_L_POR_ZONA = "lPorZona"  # L* que sube cada zona del objetivo
     CONST_LZV = "lzv"  # L* de la Z-V
+    # tercios que bajan las sombras apreciables respecto a las recomendadas
+    CONST_MARGEN_SOMBRAS = "margenSombras"
+    # megapíxeles a los que se normaliza la señal/ruido
+    CONST_MPX_REFERENCIA = "mpxReferencia"
+    # señal/ruido del suelo de ingeniería (donde llega la curva del suelo)
+    CONST_RATIO_SR = "relacionSR"
+    # textura/ruido desde el que se aprecia la textura (criterio de Rose)
+    CONST_ROSE_TEXTURA = "roseTextura"
     CONST_SNR_EXCELENTE = "snrExcelente"  # señal/ruido del suelo excelente
     CONST_SNR_MINIMA = "snrMinima"  # señal/ruido del suelo sugerido
+    # fracción de paño recortado desde la que la luz deja de ser apreciable
+    CONST_TELA_RECORTADO_APRECIABLE = "telaRecortadoApreciable"
+    # fracción de paño recortado desde la que la luz deja de recomendarse
+    CONST_TELA_RECORTADO_MAX = "telaRecortadoMax"
     CONST_TERCIO_POR_ZONA = "tercioPorZona"  # tercios de paso en una zona
+    # fracción de la textura de la Z-V que se conserva en las luces
+    CONST_TEXTURA_CONSERVADA = "texturaConservada"
+    # fracción de roseTextura desde la que la textura es justa (por
+    # debajo, se pierde)
+    CONST_TEXTURA_JUSTA = "texturaJusta"
     # zonas: desviación máxima (en valor absoluto) de un punto lineal
     CONST_TOLERANCIA_LINEAL = "toleranciaLineal"
     CONST_UMBRAL_RECORTE = "umbralRecorte"  # fracción del máximo del canal
     CONST_ZONA_ZV = "zonaZV"  # número de la zona de la Z-V
+
+    # --- Los Kelvin neutros (en J_KELVIN_NEUTROS): qué Kelvin poner en la
+    #     cámara para que salga neutra con cada luz habitual. Una lista con
+    #     una entrada por luz (de menor a mayor Kelvin), vacía si hay menos
+    #     de dos balances con Kelvin anotado y medido. En cada entrada: la
+    #     luz (su código LUZ_*, sin traducir), su Kelvin, el rango de Kelvin
+    #     de la luz dentro de la tolerancia, el rango que poner en la cámara
+    #     (null si la luz queda lejos de lo medido) y si es una estimación
+    LUZ_CALIDA = "luz_calida"
+    LUZ_FLASH = "luz_flash"
+    LUZ_LED_FRIO = "luz_led_frio"
+    LUZ_SOL = "luz_sol"
+    N_CAM_DESDE = "camDesde"
+    N_CAM_HASTA = "camHasta"
+    N_ES_ESTIMADO = "esEstimado"
+    N_KELVIN = "kelvin"
+    N_LUZ = "luz"
+    N_LUZ_DESDE = "luzDesde"
+    N_LUZ_HASTA = "luzHasta"
+
+    # --- El análisis de la secuencia de ISO (en J_ANALISIS_ISO): una
+    #     entrada por ISO, de menor a mayor, sin textos. Distinto de
+    #     medida.secuenciaISO, que son las medidas en bruto. Los ruidos y
+    #     las texturas son dispersiones relativas (a escala de pantalla si
+    #     A_ES_PANTALLA; si no, por píxel: JSON anteriores). A_TERCIO_Z2: la
+    #     toma de sombras (Z2 o Z3). Lo que no se puede medir va como null
+    #     (A_ES_MEDIBLE false). A_DESVIACION: cuánto se aparta su ZV de la
+    #     del ISO inicial, en zonas; A_EXPOSICION, lo mismo en tercios
+    #     (positivo: más clara). A_NIVEL_*: el nivel de la tarjeta sobre el
+    #     negro. A_SENAL_RUIDO_*: 1 ÷ ruido. Las valoraciones (V_*) dicen
+    #     cómo es cada una frente a las constantes del análisis (snrMinima y
+    #     snrExcelente para el ruido; roseTextura y texturaJusta para la
+    #     textura). A_PARTE_UMBRAL: textura/ruido ÷ roseTextura (1 = justo
+    #     el umbral). A_SOMBRAS_DESDE: el tercioEV desde el que hay textura
+    #     en las sombras; si no hay número, A_ESTADO_SOMBRAS dice por qué
+    #     (EST_NINGUNO: no la hay por debajo de la ZV; EST_SIN_DATO)
+    A_DESVIACION = "desviacion"
+    A_ES_ESTIMADA = "esEstimada"
+    A_ES_MEDIBLE = "esMedible"
+    A_ES_PANTALLA = "esPantalla"
+    A_ESTADO_SOMBRAS = "estadoSombras"
+    A_EXPOSICION = "exposicionTercios"
+    A_ISO = "iso"
+    A_LECTURA = "lectura"
+    A_NIVEL_Z2 = "nivelZ2"
+    A_NIVEL_ZV = "nivelZV"
+    A_PARTE_UMBRAL = "parteUmbral"
+    A_RUIDO_Z2 = "ruidoZ2"
+    A_RUIDO_ZV = "ruidoZV"
+    A_SENAL_RUIDO_Z2 = "senalRuidoZ2"
+    A_SENAL_RUIDO_ZV = "senalRuidoZV"
+    A_SOMBRAS_DESDE = "sombrasDesde"
+    A_TERCIO_Z2 = "tercioZ2"
+    A_TEXTURA_RUIDO = "texturaRuido"
+    A_TEXTURA_Z2 = "texturaZ2"
+    A_VALORACION_RUIDO_Z2 = "valoracionRuidoZ2"
+    A_VALORACION_RUIDO_ZV = "valoracionRuidoZV"
+    A_VALORACION_TEXTURA = "valoracionTextura"
+    V_BIEN = "bien"
+    V_JUSTA = "justa"
+    V_JUSTO = "justo"
+    V_MAL = "mal"
+    V_SE_PIERDE = "sePierde"
+    V_SE_VE = "seVe"
+    # --- Por su nivel: 0, 1 y 2
+    VALORACIONES_RUIDO = (V_MAL, V_JUSTO, V_BIEN)
+    VALORACIONES_TEXTURA = (V_SE_PIERDE, V_JUSTA, V_SE_VE)
+
+    # --- La latitud de texturas zona a zona (en J_TEXTURAS_ZONA): una
+    #     entrada por tercio (de J_TERCIO = −15 a 15, como la curva), solo
+    #     del canal verde. Es lo que hay detrás de los límites de
+    #     J_TEXTURAS, y todo el grupo es null si no hay paño. Z_TEXTURA: la
+    #     dispersión del paño sin el ruido de la tarjeta; Z_TEXTURA_RUIDO:
+    #     textura/ruido; Z_CONSERVADA: la textura frente a la de la Z-V;
+    #     Z_TELA_RECORTADO: fracción del paño recortado; Z_CONTRASTE: el
+    #     contraste de la trama del paño en las exportaciones del revelador,
+    #     en L*, y Z_FRACCION_CONTRASTE su fracción del de la Z-V (null antes
+    #     de la segunda fase). Los criterios (true, false o null sin dato):
+    #     Z_CUMPLE_SOMBRAS (contrasteSombras, de la Z-V hacia abajo),
+    #     Z_CUMPLE_LUCES (texturaConservada y telaRecortadoApreciable, de la
+    #     Z-V hacia arriba) y Z_SIN_RECORTE (telaRecortadoMax)
+    Z_CONSERVADA = "conservada"
+    Z_CONTRASTE = "contraste"
+    Z_CUMPLE_LUCES = "cumpleLuces"
+    Z_CUMPLE_SOMBRAS = "cumpleSombras"
+    Z_FRACCION_CONTRASTE = "fraccionContraste"
+    Z_SIN_RECORTE = "sinRecorte"
+    Z_TELA_RECORTADO = "telaRecortado"
+    Z_TEXTURA = "textura"
+    Z_TEXTURA_RUIDO = "texturaRuido"
+
+    # --- La señal/ruido zona a zona (en J_SENAL_RUIDO_ZONA): una entrada
+    #     por tercio (J_TERCIO, de −15 a 15), con, por canal (R, G y B),
+    #     S_SENAL_RUIDO (por píxel: 1 ÷ la dispersión relativa de la
+    #     tarjeta; null sin toma o saturada), S_NORMALIZADA (la anterior
+    #     normalizada a mpxReferencia megapíxeles) y S_SATURADO (true si la
+    #     dispersión es 0: no hay señal/ruido; null sin toma); y, del verde,
+    #     S_MODELO_VERDE (la señal/ruido de la curva de transferencia en la
+    #     señal esperada de la zona, normalizada; null si no vale: sin curva
+    #     o por encima del máximo del canal) y S_FALTA_VERDE (cuánto le falta
+    #     al verde para el esperado, en zonas, nunca negativo; null sin
+    #     toma). Los suelos que se comparan con ella (snrMinima,
+    #     snrExcelente y relacionSR) están en las constantes
+    S_FALTA_VERDE = "faltaVerde"
+    S_MODELO_VERDE = "modeloVerde"
+    S_NORMALIZADA = "normalizada"
+    S_SATURADO = "saturado"
+    S_SENAL_RUIDO = "senalRuido"
 
 
 #

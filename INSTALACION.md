@@ -43,7 +43,7 @@ Si prefiere no excluirla, compruebe antes el hash (paso 3 de arriba).
 
 ## Opción 2: desde el código fuente (Sólo mantenedores)
 
-1. Instale **Python 3.14**.
+1. Instale **Python 3.12**.
 
 2. Solo en **Linux**: instale el paquete del sistema de Tk.
 

@@ -11,7 +11,7 @@
                 piezas internas: no se parte en «leer» y «grabar» (sería
                 un tercer archivo para lo común, y solo lo usa gui/main.py)
     :Autor:     Tony Diana
-    :Versión:   26.10.30
+    :Versión:   26.11.14
 """
 
 # cSpell:ignore camara, codificacion, kmed, lstar, oecf, timespec
@@ -75,6 +75,30 @@ def _es_mas_nuevo(datos: dict) -> bool:
     return (estado_version(version_formato(datos), KES.VERSION_FORMATO,
                            False)
             == KMED.VERSION_NUEVA)
+
+
+#
+# --- La fecha y hora de ahora, para info.fecha: la del último cálculo que
+#     se escribió en el JSON (Tony, 2026-11-14: la fecha va dentro, para no
+#     depender de la del archivo en el disco)
+def _ahora() -> str:
+    return datetime.now().isoformat(timespec=KEE.FORMATO_FECHA)
+
+
+#
+# --- Pone al día, en un JSON leído y antes de escribirlo, quién y cuándo
+#     escribió el último cálculo: info.fecha y oecf.versionApp (Tony,
+#     2026-11-14: las del último cambio, no las de la primera generación).
+#     No toca oecf.versionAnalisis (cómo se midieron los RAW: solo cambia
+#     al volver a medirlos) ni oecf.versionFormato (cómo son las claves de
+#     lo ya escrito). Si falta el grupo info u oecf, lo deja como está
+def _poner_ultimo_cambio(datos: dict, version: str) -> None:
+    info = datos.get(KES.INFO)
+    if isinstance(info, dict):
+        info[KES.I_FECHA] = _ahora()
+    oecf = datos.get(KES.OECF)
+    if isinstance(oecf, dict):
+        oecf[KES.O_VERSION_APP] = version
 
 
 #
@@ -236,12 +260,14 @@ def _completar(review: Review, oecf: OECF, revelado: dict | None) -> Review:
 
 
 #
-def grabar_revelado(oecf: OECF, medidas: dict[int, MedidaTiff]) -> bool:
+def grabar_revelado(oecf: OECF, medidas: dict[int, MedidaTiff],
+                    version: str) -> bool:
     """
     Sustituye el revelado del JSON de esta serie por lo medido en sus
     exportaciones ({tercioEV: MedidaTiff}), y rehace sus incidencias
-    (pueden avisar de las exportaciones). Lo demás, como estaba. False
-    si no se puede leer o escribir.
+    (pueden avisar de las exportaciones). Pone al día la fecha y la
+    versión del programa (la que se da): las del último cálculo. Lo demás,
+    como estaba. False si no se puede leer o escribir.
     """
     rutas = oecf.exportaciones
     try:
@@ -254,6 +280,7 @@ def grabar_revelado(oecf: OECF, medidas: dict[int, MedidaTiff]) -> bool:
              KES.E_MOTIVO: m.motivo}
             for tercio_ev, m in sorted(medidas.items())]}
         datos[KES.INCIDENCIAS] = _incidencias(oecf)
+        _poner_ultimo_cambio(datos, version)
         _escribir(oecf.carpeta, datos)
     except (OSError, ValueError):
         return False
@@ -273,15 +300,17 @@ def leer_resultados(carpeta: Path) -> dict | None:
 
 
 #
-def grabar_resultados(carpeta: Path, resultados: dict) -> bool:
+def grabar_resultados(carpeta: Path, resultados: dict, version: str) -> bool:
     """
     Añade (o sustituye) los resultados del análisis en el JSON de esta
-    carpeta OECF (lo demás, como estaba). False si no se puede leer o
-    escribir.
+    carpeta OECF y pone al día la fecha y la versión del programa (la que
+    se da): las del último cálculo. Lo demás, como estaba. False si no se
+    puede leer o escribir.
     """
     try:
         datos = _leer(carpeta)
         datos[KES.RESULTADOS] = resultados
+        _poner_ultimo_cambio(datos, version)
         _escribir(carpeta, datos)
     except (OSError, ValueError):
         return False
@@ -365,8 +394,7 @@ def grabar_json(OECF: OECF, programa: str, version: str) -> Path | None:
                                      else None)},
         KES.INFO: {
             KES.I_PROGRAMA: {KES.P_NOMBRE: programa},
-            KES.I_FECHA: datetime.now().isoformat(
-                timespec=KEE.FORMATO_FECHA),
+            KES.I_FECHA: _ahora(),
             KES.I_CARPETA: str(OECF.path),
             KES.I_CAMARA: ({KES.C_MARCA: cam.marca, KES.C_MODELO: cam.modelo}
                            if cam else None)},

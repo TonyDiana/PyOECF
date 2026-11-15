@@ -1703,7 +1703,7 @@ class Ventana(ctk.CTk):
         # --- Y, con lo que calculó el libro, los resultados en el JSON
         #     (para FotoEstación) y el PDF
         if excel is not None:
-            grabar_resultados(oecf.carpeta, excel.resultados())
+            grabar_resultados(oecf.carpeta, excel.resultados(), K.version)
             pdf, archivo, fallo = self.EscribirPdf(
                 excel, oecf.carpetaReview)
             self.Mensaje(partial(self._componer, pdf, archivo=archivo,
@@ -2975,7 +2975,7 @@ class Ventana(ctk.CTk):
         contraste = tuple(contrastes.get(t, math.nan) for t in tercios)
         review = dataclasses.replace(review, revelador=revelador,
                                      contraste=contraste)
-        guardado = grabar_revelado(oecf, medidos)
+        guardado = grabar_revelado(oecf, medidos, K.version)
         excel, ruta, escrito, error = self._escribir_libro(review)
         texto = (kv.TXT_REVELADO_HECHO if (guardado and escrito)
                  else kv.TXT_REVELADO_FALLO)
@@ -2996,7 +2996,7 @@ class Ventana(ctk.CTk):
             lineas.append(K.tr(kv.TXT_ERROR_EXCEL).format(archivo=ruta.name,
                                                           error=error))
         if excel is not None:
-            grabar_resultados(oecf.carpeta, excel.resultados())
+            grabar_resultados(oecf.carpeta, excel.resultados(), K.version)
             pdf, archivo, fallo = self.EscribirPdf(
                 excel, oecf.carpetaReview)
             lineas.append(K.tr(pdf).format(archivo=archivo, error=fallo))

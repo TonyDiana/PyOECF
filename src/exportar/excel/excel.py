@@ -36,7 +36,8 @@ from xlsxwriter.worksheet import Worksheet
 from bib import std
 from bib.oecfMediadores import KP, KRES, texto_iso, zona_tercio
 from kernel import COM as KCOM, K
-from oecfCalc import (escala_mpx, Exp, FilaISO, KS, KTE, KTR, OECF, Review,
+from oecfCalc import (escala_mpx, Exp, FilaISO, KNE, KS, KTE, KTR, OECF,
+                      RangoNeutro, rangos_a_dict, rangos_neutros, Review,
                       signal_para_snr, snr_modelo, tercios_sombra,
                       textura as calcular_textura, ZonaMedida)
 
@@ -329,6 +330,20 @@ class KXL(std.EnumMutable):
     #     si no hay traducción, tal cual)
     T_BALANCES = "balances"
     T_NOTA_BALANCES = "nota_balances"
+
+    # --- Kelvin neutros (en Análisis, bajo los balances, y en el PDF): su
+    #     título y las claves de los textos de su tabla. El PDF usa estas
+    #     mismas claves (KPDF las toma de aquí)
+    T_KELVIN_NEUTROS = "kelvin_neutros"
+    T_CAB_EN_CAMARA = "cab_en_camara"
+    T_CAB_KELVIN_LUZ = "cab_kelvin_luz"
+    T_CAB_LUZ = "cab_luz_neutra"
+    T_CAB_LUZ_MIRED = "cab_luz_mired"
+    T_NOTA_NEUTRAS = "nota_neutras"
+    T_SIN_DATOS_NEUTRA = "sin_datos_neutra"
+    # --- Columnas que ocupa cada una en Análisis: luz, Kelvin, rango de la
+    #     luz (en mired) y Kelvin en la cámara
+    ANCHOS_NEUTROS = (1, 1, 2, 3)
     T_SIN_BALANCES = "sin_balances"
     T_CAB_BALANCE = "cab_balance"
     T_CAB_KELVIN_ANOTADO = "cab_kelvin_anotado"
@@ -520,15 +535,32 @@ class KXL(std.EnumMutable):
     Z_DEV = "dev"
     Z_RECORTADO = KRES.J_RECORTADO
 
+    # --- Claves de senal_ruido_zonas (por zona, y por canal las que lo
+    #     dicen)
+    Z_FALTA = "falta"
+    Z_MODELO = "modelo"
+    Z_SNR = "snr"
+    Z_SNR_NORMALIZADA = "snr_normalizada"
+
     # --- Las constantes que usó el análisis, en los resultados del JSON:
     #     cada una, con su nombre en el libro y su clave en el JSON
     CONSTANTES_JSON = ((C_ANCHO_ZONA, KRES.CONST_ANCHO_ZONA),
+                       (C_CONTRASTE_SOMBRAS, KRES.CONST_CONTRASTE_SOMBRAS),
                        (C_FACTOR_ZONA, KRES.CONST_FACTOR_ZONA),
                        (C_L_POR_ZONA, KRES.CONST_L_POR_ZONA),
                        (C_LZV, KRES.CONST_LZV),
+                       (C_MARGEN_SOMBRAS, KRES.CONST_MARGEN_SOMBRAS),
+                       (C_MPX_REFERENCIA, KRES.CONST_MPX_REFERENCIA),
+                       (C_RATIO_SR, KRES.CONST_RATIO_SR),
+                       (C_ROSE_TEXTURA, KRES.CONST_ROSE_TEXTURA),
                        (C_SNR_EXCELENTE, KRES.CONST_SNR_EXCELENTE),
                        (C_SNR_MINIMA, KRES.CONST_SNR_MINIMA),
+                       (C_TELA_RECORTADO_APRECIABLE,
+                        KRES.CONST_TELA_RECORTADO_APRECIABLE),
+                       (C_TELA_RECORTADO_MAX, KRES.CONST_TELA_RECORTADO_MAX),
                        (C_TERCIO_POR_ZONA, KRES.CONST_TERCIO_POR_ZONA),
+                       (C_TEXTURA_CONSERVADA, KRES.CONST_TEXTURA_CONSERVADA),
+                       (C_TEXTURA_JUSTA, KRES.CONST_TEXTURA_JUSTA),
                        (C_TOLERANCIA_LINEAL, KRES.CONST_TOLERANCIA_LINEAL),
                        (C_UMBRAL_RECORTE, KRES.CONST_UMBRAL_RECORTE),
                        (C_ZONA_ZV, KRES.CONST_ZONA_ZV))
@@ -549,6 +581,20 @@ class KXL(std.EnumMutable):
     T_CAB_CUMPLE_LUCES = "cab_cumple_luces"
     T_CAB_SIN_RECORTE = "cab_sin_recorte"
     T_CAB_CONTRASTE_ZV = "cab_contraste_zv"
+
+    # --- Lo que Excel.texturas() calcula por zona y va al JSON
+    #     (resultados.texturasPorZona): cada clave del JSON, con su
+    #     columna en lo que devuelve texturas(); primero los números y
+    #     luego los criterios (true, false o None)
+    TEXTURAS_NUMEROS_JSON = ((KRES.Z_CONSERVADA, T_CAB_CONSERVADA),
+                             (KRES.Z_CONTRASTE, T_CAB_CONTRASTE),
+                             (KRES.Z_FRACCION_CONTRASTE, T_CAB_CONTRASTE_ZV),
+                             (KRES.Z_TELA_RECORTADO, T_CAB_TELA_RECORTADO),
+                             (KRES.Z_TEXTURA, T_CAB_TEXTURA),
+                             (KRES.Z_TEXTURA_RUIDO, T_CAB_TEXTURA_RUIDO))
+    TEXTURAS_CRITERIOS_JSON = ((KRES.Z_CUMPLE_LUCES, T_CAB_CUMPLE_LUCES),
+                               (KRES.Z_CUMPLE_SOMBRAS, T_CAB_CUMPLE_SOMBRAS),
+                               (KRES.Z_SIN_RECORTE, T_CAB_SIN_RECORTE))
     T_CAB_SOMBRAS = "cab_sombras"
     T_CAB_LUCES = "cab_luces"
     T_CAB_LATITUD_TEXTURAS = "cab_latitud_texturas"
@@ -1447,16 +1493,13 @@ class Excel(object):
         curva tonal (esperado, sensor y revelador). Cada fórmula, con su
         resultado; si falta un dato, en blanco.
         """
-        t, d, f = self.__textos, self.__datos, self.__filas
+        t, f = self.__textos, self.__filas
         hoja = self.__hojas[KXL.T_HOJA_CALCULO]
         fila, col = KXL.FILA_INICIO, KXL.COLUMNA_INICIO
         k = self.valores_constantes()
         n = (2 * KS.TERCIOS_LADO) + 1
         cols_datos = [KXL.COLUMNA_INICIO + KXL.COL_VALORES + j
                       for j in range(2 * KXL.CANALES)]
-        medias = self.medias_zv()
-        topes = self.topes()
-        disp = [z.dispRGB if z else None for z in d.zonas]
         self.titulo(hoja, fila, col, t[KXL.T_TITULO_CALCULO],
                     t[KXL.T_NOTA_CALCULO],
                     KXL.ANCHOS_CALCULO)
@@ -1478,9 +1521,9 @@ class Excel(object):
             por_zona[clave] for clave in (KXL.Z_ESPERADO, KXL.Z_OBTENIDO,
                                           KXL.Z_DEV, KXL.Z_RECORTADO))
         resultados = self.canales(k)
-        snr = [[None if (q is None) else ((1 / q[j]) if (q[j] > 0)
-                                          else t[KXL.V_SATURADO])
-                for q in disp] for j in range(KXL.CANALES)]
+        senal = self.senal_ruido_zonas(k, por_zona)
+        snr = [[t[KXL.V_SATURADO] if (v == math.inf) else v for v in canal]
+               for canal in senal[KXL.Z_SNR]]
 
         # --- Bloque 1: por canal (sección, nota y cabecera, como el 2)
         fila = fila_b1 - 3
@@ -1608,8 +1651,6 @@ class Excel(object):
         mpx = self.ref(KXL.T_HOJA_DATOS, f[KXL.F_MPX],
                        KXL.COLUMNA_INICIO + KXL.COL_VALORES, True, True)
         normalizar = f"SQRT({mpx}/{KXL.C_MPX_REFERENCIA})"
-        escala = escala_mpx(d.alto, d.ancho, k[KXL.C_MPX_REFERENCIA])
-        curvas = d.transferenciaRGB
         c_verde = KXL.COLUMNA_INICIO + KXL.COL_VALORES + 1
         lectura_v, ganancia_v, proporcional_v = (
             self.ref(KXL.T_HOJA_DATOS, f[clave], c_verde, True, True)
@@ -1666,9 +1707,7 @@ class Excel(object):
             self.formula(
                 hoja, r, col + 15, f'=IF(ISNUMBER({verde}),MAX(0,'
                 f'{celda(r, col + 2, False, True)}-{verde}),"")',
-                fmt(KXL.NUM_TRES), self.en_blanco(
-                    None if (obtenido[1][i] is None)
-                    else max(0.0, esperado[i] - obtenido[1][i])))
+                fmt(KXL.NUM_TRES), self.en_blanco(senal[KXL.Z_FALTA][i]))
             self.formula(hoja, r, col + 16, f"={techo_verde}",
                          fmt(KXL.NUM_DOS), techo_v)
             self.formula(hoja, r, col + 17, f"={suelo_verde}",
@@ -1680,19 +1719,18 @@ class Excel(object):
             #     la gráfica no lo dibuja)
             for j in range(KXL.CANALES):
                 pixel = celda(r, col + 12 + j)
-                snr_ji = snr[j][i]
+                normalizada = senal[KXL.Z_SNR_NORMALIZADA][j][i]
                 self.formula(
                     hoja, r, col + 19 + j, f"=IF(ISNUMBER({pixel}),{pixel}*"
                     f"{normalizar},{KXL.FORMULA_NA})",
-                    fmt(KXL.NUM_UNO), (snr_ji * escala)
-                    if isinstance(snr_ji, float) else KXL.RESULTADO_NA)
+                    fmt(KXL.NUM_UNO), KXL.RESULTADO_NA
+                    if (normalizada is None) else normalizada)
 
             # --- Modelo (verde): la señal/ruido de la curva en la señal
             #     esperada de la zona, normalizada; hasta el máximo
             signal = (f"({media_v}*{KXL.C_FACTOR_ZONA}^({celda(r, col + 1)}"
                       f"/{KXL.C_TERCIO_POR_ZONA}))")
-            signal_v = medias[1] * (k[KXL.C_FACTOR_ZONA] ** (
-                ((i - KS.TERCIOS_LADO) / k[KXL.C_TERCIO_POR_ZONA])))
+            modelo = senal[KXL.Z_MODELO][i]
             self.formula(
                 hoja,
                 r, col + 22, f"=IF(AND(N({ganancia_v})>0,N({media_v})>0),"
@@ -1700,9 +1738,8 @@ class Excel(object):
                 f"{lectura_v})^2+{signal}/{ganancia_v}+(N("
                 f"{proporcional_v})*{signal})^2)*{normalizar},"
                 f"{KXL.FORMULA_NA}),{KXL.FORMULA_NA})",
-                fmt(KXL.NUM_UNO), (snr_modelo(curvas[1], signal_v) * escala)
-                if (curvas and (medias[1] > 0) and (signal_v <= topes[1]))
-                else KXL.RESULTADO_NA)
+                fmt(KXL.NUM_UNO), KXL.RESULTADO_NA
+                if (modelo is None) else modelo)
 
             # --- Umbrales excelente y de ingeniería (el aceptable, arriba)
             for desp, umbral in ((23, KXL.C_SNR_EXCELENTE),
@@ -2088,7 +2125,8 @@ class Excel(object):
         filas combinadas, así una tarjeta no estira las filas de la otra.
         Izquierda: cabecera (cámara, fecha, bits, exposición de la Z-V y
         serie), latitud de texturas, latitud por canal, ruido de lectura y
-        negro, balances de blancos y avisos. Derecha: sugerencia de
+        negro, balances de blancos, Kelvin neutros y avisos. Derecha:
+        sugerencia de
         revelado, diferencias medias, las decisiones propias del
         estudiante y las recomendaciones (la tabla
         por zona: L* leído, diferencias del sensor y del revelador,
@@ -2099,7 +2137,8 @@ class Excel(object):
         fila_balances = self.resumen_izquierda(hoja)
         ultima_derecha = self.resumen_derecha(hoja)
         ultima_balances = self.resumen_balances(hoja, fila_balances)
-        ultima_izquierda = self.resumen_avisos(hoja, ultima_balances + 2)
+        ultima_neutros = self.resumen_neutros(hoja, ultima_balances)
+        ultima_izquierda = self.resumen_avisos(hoja, ultima_neutros + 2)
         self.marco(hoja, ((ultima_izquierda, KXL.ANCHOS_RESUMEN),
                           (ultima_derecha, KXL.ANCHOS_RESUMEN_DERECHA)),
                    KXL.ANILLO_RESUMEN, KXL.ANCHO_ANILLO_RESUMEN,
@@ -2350,6 +2389,72 @@ class Excel(object):
                              align="center", valign="vcenter",
                              border=KXL.FINO, border_color=KXL.BORDE_TABLA))
         return max(fila, fin_nota)
+
+    #
+    def filas_neutros(self, rangos: list[RangoNeutro]
+                      ) -> list[tuple[str, str, str, str]]:
+        """
+        Las filas de la tabla de Kelvin neutros (Análisis y PDF), en el
+        idioma del libro: la luz, su Kelvin, el rango de Kelvin que cubre
+        la tolerancia en mired y el que poner en la cámara («≈» si es una
+        estimación, o «sin datos»).
+        """
+        t = self.__textos
+        filas = []
+        for r in rangos:
+            if r.camDesde is None:
+                camara = t[KXL.T_SIN_DATOS_NEUTRA]
+            else:
+                camara = (f"{'≈ ' if r.esEstimado else ''}"
+                          f"{r.camDesde}–{r.camHasta}")
+            filas.append((t[r.luz], str(r.kelvin),
+                          f"{r.luzDesde}–{r.luzHasta}", camara))
+        return filas
+
+    #
+    def resumen_neutros(self, hoja: Worksheet, ultima_fila: int) -> int:
+        """
+        Kelvin neutros de la tarjeta izquierda de Análisis, bajo los
+        balances (de los que salen, ver rangos_neutros): la barra, la
+        cabecera (luz, Kelvin, rango de la luz en mired y Kelvin en la
+        cámara), una fila por luz habitual y la nota que explica el mired.
+        Son valores, no fórmulas: el libro no es la fuente (están en el
+        JSON). Sin KNE.PUNTOS_NEUTRAS balances, nada. Devuelve su última
+        fila (ultima_fila si no escribe nada).
+        """
+        t = self.__textos
+        rangos = rangos_neutros(self.__datos.balancesDistintos)
+        if not rangos:
+            return ultima_fila
+        col = KXL.COLUMNA_INICIO
+        ultima = col + len(KXL.ANCHOS_RESUMEN) - 1
+        mired = KNE.TOLERANCIA_MIRED
+        fila = ultima_fila + 2
+        self.barra_resumen(hoja, fila, col, ultima, t[KXL.T_KELVIN_NEUTROS])
+        titulos = (t[KXL.T_CAB_LUZ], t[KXL.T_CAB_KELVIN_LUZ],
+                   t[KXL.T_CAB_LUZ_MIRED].format(mired=mired),
+                   t[KXL.T_CAB_EN_CAMARA])
+        fila = self.cabecera_tarjeta(
+            hoja, fila + 2, col, tuple(zip(titulos, KXL.ANCHOS_NEUTROS)),
+            KXL.FILAS_CABECERA)
+        for i, textos in enumerate(self.filas_neutros(rangos)):
+            fila += 1
+            banda = (i % 2) == 0
+            columna = col
+            for j, (texto, ancho) in enumerate(zip(textos,
+                                                   KXL.ANCHOS_NEUTROS)):
+                formato = self.celda_resumen(banda,
+                                             "left" if (j == 0) else "center")
+                if ancho > 1:
+                    hoja.merge_range(fila, columna, fila,
+                                     columna + ancho - 1, texto, formato)
+                else:
+                    hoja.write(fila, columna, texto, formato)
+                columna += ancho
+        return self.nota_tarjeta(
+            hoja, fila + 1, col, ultima,
+            t[KXL.T_NOTA_NEUTRAS].format(mired=mired), KXL.ANCHOS_RESUMEN,
+            self.nota_resumen(KXL.COLOR_ROTULO))
 
     #
     def resumen_avisos(self, hoja: Worksheet, fila: int) -> int:
@@ -3289,30 +3394,42 @@ class Excel(object):
                                            k[KXL.C_FACTOR_ZONA])
 
     #
-    def sombras_iso(self, f: FilaISO, k: dict, umbral: float | None) -> str:
+    def tercio_sombras_iso(self, f: FilaISO, k: dict,
+                           umbral: float | None) -> int | float | None:
         """
-        Desde qué zona colocar las sombras con textura en un ISO, en texto:
-        la estimación de zona_sombras_iso al tercio más próximo, más
-        C_MARGEN_SOMBRAS tercios (como la recomendada de la latitud), con
-        «≈»; sin pasar por debajo de Z0. Por encima de la Z-V, «ninguna»
-        ("" sin dato)
+        Desde qué tercioEV colocar las sombras con textura en un ISO: la
+        estimación de zona_sombras_iso al tercio más próximo (el medio,
+        hacia arriba, como en limites_texturas), más C_MARGEN_SOMBRAS
+        tercios (como la recomendada de la latitud), sin pasar por debajo
+        de Z0. None sin dato; math.inf si no la hay por debajo de la Z-V
         """
-        t = self.__textos
         zona = self.zona_sombras_iso(f, k, umbral)
         if zona is None:
-            return ""
+            return None
         if not math.isfinite(zona):
-            return t[KXL.T_SOMBRAS_NINGUNA]
-
-        # --- Al tercio más próximo (el medio, hacia arriba, como en
-        #     limites_texturas) y el margen de la recomendada
+            return math.inf
         tercio = k[KXL.C_TERCIO_POR_ZONA]
         tercio_ev = (math.floor(((zona - k[KXL.C_ZONA_ZV]) * tercio) + 0.5)
                      + k[KXL.C_MARGEN_SOMBRAS])
         if tercio_ev > 0:
+            return math.inf
+        return max(tercio_ev, -KS.TERCIOS_LADO)
+
+    #
+    def sombras_iso(self, f: FilaISO, k: dict, umbral: float | None) -> str:
+        """
+        Desde qué zona colocar las sombras con textura en un ISO, en texto
+        (ver tercio_sombras_iso), con «≈»; por encima de la Z-V, «ninguna»
+        ("" sin dato)
+        """
+        t = self.__textos
+        tercio_ev = self.tercio_sombras_iso(f, k, umbral)
+        if tercio_ev is None:
+            return ""
+        if tercio_ev == math.inf:
             return t[KXL.T_SOMBRAS_NINGUNA]
-        tercio_ev = max(tercio_ev, -KS.TERCIOS_LADO)
-        return t[KXL.T_SOMBRAS_ISO].format(zona=self.nombre_zona(tercio_ev))
+        return t[KXL.T_SOMBRAS_ISO].format(zona=self.nombre_zona(
+            int(tercio_ev)))
 
     #
     def aprecia_iso(self, f: FilaISO, k: dict, umbral: float | None) -> str:
@@ -3325,14 +3442,24 @@ class Excel(object):
                 else self.__textos[KXL.T_TEXTURA_ISO[nivel]])
 
     #
+    def tercios_exposicion_iso(self, f: FilaISO, k: dict) -> int | None:
+        """
+        Cuánto se aparta la exposición de un ISO de la del ISO inicial, en
+        tercios (positivo: más clara; None sin dato)
+        """
+        if f.desviacion is None:
+            return None
+        return round(f.desviacion * k[KXL.C_TERCIO_POR_ZONA])
+
+    #
     def exposicion_iso(self, f: FilaISO, k: dict) -> str:
         """
         Cómo sale la exposición de un ISO frente a la del ISO inicial, al
         tercio de zona: igual, o cuánto más clara u oscura ("" sin dato)
         """
-        if f.desviacion is None:
+        tercios = self.tercios_exposicion_iso(f, k)
+        if tercios is None:
             return ""
-        tercios = round(f.desviacion * k[KXL.C_TERCIO_POR_ZONA])
         if tercios == 0:
             return self.__textos[KXL.T_EXPOSICION_IGUAL]
         entera, tercio = divmod(abs(tercios), k[KXL.C_TERCIO_POR_ZONA])
@@ -3364,6 +3491,17 @@ class Excel(object):
         return OECF.TextoF(diafragmas.pop()) if (len(diafragmas) == 1) else ""
 
     #
+    @staticmethod
+    def senal_iso(ruido: float | None) -> float | None:
+        """
+        Señal/ruido de la tarjeta en una toma de la secuencia de ISO: 1 ÷
+        su ruido (dispersión relativa); None sin dato
+        """
+        if (ruido is None) or (ruido <= 0):
+            return None
+        return 1 / ruido
+
+    #
     def senal_ruido_iso(self, ruido: float | None) -> str:
         """
         Señal/ruido de la tarjeta en una toma de la secuencia de ISO, desde
@@ -3371,9 +3509,9 @@ class Excel(object):
         si es menor de KXL.SENAL_RUIDO_DECIMAL (para que un 9,9 no salga
         como un 10 en rojo); "" sin dato.
         """
-        if (ruido is None) or (ruido <= 0):
+        senal = self.senal_iso(ruido)
+        if senal is None:
             return ""
-        senal = 1 / ruido
         return self.numero_texto(
             senal, 1 if (senal < KXL.SENAL_RUIDO_DECIMAL) else 0)
 
@@ -3392,6 +3530,61 @@ class Excel(object):
         if senal < k[KXL.C_SNR_MINIMA]:
             return 0
         return 1 if (senal < k[KXL.C_SNR_EXCELENTE]) else 2
+
+    #
+    def analisis_iso(self, k: dict) -> list[dict]:
+        """
+        La secuencia de ISO calculada, para el JSON (las claves de
+        KRES.A_*): por ISO, lo de Review.filasISO y lo que enseñan la hoja
+        ISO y el PDF (señal/ruido, valoraciones, desde qué zona hay
+        textura y la exposición). Sin textos: números y códigos; lo que no
+        se puede medir, None.
+        """
+        num = self.numero_json
+        umbral = self.umbral_iso(k)
+        analisis = []
+        for f in self.__datos.filasISO:
+            ruido_zv = self.nivel_ruido_iso(f.ruido_zv, k)
+            ruido_z2 = self.nivel_ruido_iso(f.ruido_z2, k)
+            textura = self.nivel_textura_iso(f, k, umbral)
+            sombras = self.tercio_sombras_iso(f, k, umbral)
+            if sombras is None:
+                estado = KRES.EST_SIN_DATO
+            elif sombras == math.inf:
+                estado = KRES.EST_NINGUNO
+            else:
+                estado = KRES.EST_OK
+            analisis.append({
+                KRES.A_ISO: f.iso,
+                KRES.A_TERCIO_Z2: f.tercio_z2,
+                KRES.A_ES_MEDIBLE: f.medible,
+                KRES.A_ES_ESTIMADA: f.estimada,
+                KRES.A_ES_PANTALLA: f.es_pantalla,
+                KRES.A_DESVIACION: num(f.desviacion),
+                KRES.A_EXPOSICION: self.tercios_exposicion_iso(f, k),
+                KRES.A_LECTURA: num(f.lectura),
+                KRES.A_NIVEL_ZV: num(f.nivel_zv),
+                KRES.A_NIVEL_Z2: num(f.nivel_z2),
+                KRES.A_RUIDO_ZV: num(f.ruido_zv),
+                KRES.A_RUIDO_Z2: num(f.ruido_z2),
+                KRES.A_SENAL_RUIDO_ZV: num(self.senal_iso(f.ruido_zv)),
+                KRES.A_SENAL_RUIDO_Z2: num(self.senal_iso(f.ruido_z2)),
+                KRES.A_VALORACION_RUIDO_ZV: (
+                    None if (ruido_zv is None)
+                    else KRES.VALORACIONES_RUIDO[ruido_zv]),
+                KRES.A_VALORACION_RUIDO_Z2: (
+                    None if (ruido_z2 is None)
+                    else KRES.VALORACIONES_RUIDO[ruido_z2]),
+                KRES.A_TEXTURA_Z2: num(f.textura_z2),
+                KRES.A_TEXTURA_RUIDO: num(f.textura_ruido),
+                KRES.A_PARTE_UMBRAL: num(self.parte_umbral(f, umbral)),
+                KRES.A_VALORACION_TEXTURA: (
+                    None if (textura is None)
+                    else KRES.VALORACIONES_TEXTURA[textura]),
+                KRES.A_SOMBRAS_DESDE: (
+                    int(sombras) if (estado == KRES.EST_OK) else None),
+                KRES.A_ESTADO_SOMBRAS: estado})
+        return analisis
 
     #
     def zonas_canal(self, k: dict) -> dict[str, list]:
@@ -3422,6 +3615,84 @@ class Excel(object):
             for j in range(KXL.CANALES)]
         return {KXL.Z_ESPERADO: esperado, KXL.Z_OBTENIDO: obtenido,
                 KXL.Z_DEV: dev, KXL.Z_RECORTADO: recortado}
+
+    #
+    def senal_ruido_zonas(self, k: dict,
+                          por_zona: dict[str, list] | None = None
+                          ) -> dict[str, list]:
+        """
+        La señal/ruido por zona (de Z0 a ZX) que calcula el bloque 2 de
+        Cálculo (hoja_calculo escribe sus fórmulas; esto, sus resultados):
+        Z_SNR, por canal y por píxel (1 ÷ la dispersión relativa de la
+        tarjeta; math.inf si es 0, saturada; None sin toma);
+        Z_SNR_NORMALIZADA, por canal, la anterior a C_MPX_REFERENCIA
+        megapíxeles (None si no es un número); Z_MODELO, la señal/ruido de
+        la curva de transferencia del verde en la señal esperada de la
+        zona, normalizada (None sin curva ni media del verde, o por encima
+        del máximo del verde); y Z_FALTA, lo que le falta al verde para el
+        esperado, en zonas (nunca negativo; None sin toma). Si ya se
+        calculó zonas_canal, se pasa como por_zona.
+        """
+        d = self.__datos
+        if por_zona is None:
+            por_zona = self.zonas_canal(k)
+        n = (2 * KS.TERCIOS_LADO) + 1
+        verde = 1
+        escala = escala_mpx(d.alto, d.ancho, k[KXL.C_MPX_REFERENCIA])
+        curvas = d.transferenciaRGB
+        medias = self.medias_zv()
+        topes = self.topes()
+        disp = [z.dispRGB if z else None for z in d.zonas]
+        snr = [[None if (q is None) else ((1 / q[j]) if (q[j] > 0)
+                                          else math.inf)
+                for q in disp] for j in range(KXL.CANALES)]
+        normalizada = [[(v * escala) if (isinstance(v, float)
+                                         and (v != math.inf)) else None
+                        for v in canal] for canal in snr]
+
+        # --- Modelo (verde): la señal/ruido de la curva en la señal
+        #     esperada de la zona, normalizada; hasta el máximo
+        modelo = []
+        for i in range(n):
+            signal = medias[verde] * (k[KXL.C_FACTOR_ZONA] ** (
+                (i - KS.TERCIOS_LADO) / k[KXL.C_TERCIO_POR_ZONA]))
+            modelo.append(
+                (snr_modelo(curvas[verde], signal) * escala)
+                if (curvas and (medias[verde] > 0)
+                    and (signal <= topes[verde])) else None)
+
+        esperado = por_zona[KXL.Z_ESPERADO]
+        obtenido = por_zona[KXL.Z_OBTENIDO][verde]
+        falta = [None if (obtenido[i] is None)
+                 else max(0.0, esperado[i] - obtenido[i]) for i in range(n)]
+        return {KXL.Z_SNR: snr, KXL.Z_SNR_NORMALIZADA: normalizada,
+                KXL.Z_MODELO: modelo, KXL.Z_FALTA: falta}
+
+    #
+    def senal_ruido_json(self, senal: dict[str, list]) -> list[dict]:
+        """
+        La señal/ruido por zona para el JSON (las claves de KRES.S_*): una
+        entrada por tercio (de −KS.TERCIOS_LADO a KS.TERCIOS_LADO), con, por
+        canal, la señal/ruido por píxel, la normalizada y si está saturada,
+        y, del verde, el modelo y lo que falta. Ver senal_ruido_zonas; los
+        números, como float o None.
+        """
+        num = self.numero_json
+        entradas = []
+        for i in range(len(senal[KXL.Z_FALTA])):
+            entrada: dict[str, object] = {KRES.J_TERCIO: i - KS.TERCIOS_LADO}
+            for j, clave in enumerate(KRES.CANALES_JSON):
+                pixel = senal[KXL.Z_SNR][j][i]
+                entrada[clave] = {
+                    KRES.S_SENAL_RUIDO: num(pixel),
+                    KRES.S_NORMALIZADA: num(
+                        senal[KXL.Z_SNR_NORMALIZADA][j][i]),
+                    KRES.S_SATURADO: (None if (pixel is None)
+                                      else bool(pixel == math.inf))}
+            entrada[KRES.S_MODELO_VERDE] = num(senal[KXL.Z_MODELO][i])
+            entrada[KRES.S_FALTA_VERDE] = num(senal[KXL.Z_FALTA][i])
+            entradas.append(entrada)
+        return entradas
 
     #
     def topes(self) -> list[float]:
@@ -3482,10 +3753,11 @@ class Excel(object):
         Resultados del análisis para el JSON (los que lee FotoEstación,
         que no lleva el código de PyOECF): por canal (canales), la latitud de
         texturas, la curva zona a zona, las diferencias medias, la
-        linealidad por tercio y las constantes que usó el análisis. Sin
-        textos: lo que no es un número va como None, y en cada canal sus
-        estados (KRES.EST_*) dicen por qué (no alcanzado, ninguno, sin
-        dato).
+        linealidad por tercio, la señal/ruido por zona, la latitud de
+        texturas por zona, los Kelvin neutros, el análisis de la secuencia
+        de ISO y las constantes que usó el análisis. Sin textos: lo que no
+        es un número va como None, y en cada canal sus estados (KRES.EST_*)
+        dicen por qué (no alcanzado, ninguno, sin dato).
         """
         k = self.valores_constantes()
 
@@ -3505,17 +3777,23 @@ class Excel(object):
                 tercio[clave] = {
                     KRES.J_DESVIACION: self.numero_json(
                         por_zona[KXL.Z_DEV][j][i]),
+                    KRES.J_OBTENIDO: self.numero_json(
+                        por_zona[KXL.Z_OBTENIDO][j][i]),
                     KRES.J_RECORTADO: self.recortado_json(
                         por_zona[KXL.Z_RECORTADO][j][i])}
             linealidad.append(tercio)
+        senal_ruido = self.senal_ruido_json(
+            self.senal_ruido_zonas(k, por_zona))
         constantes = {clave: k[nombre]
                       for nombre, clave in KXL.CONSTANTES_JSON}
-        limites = self.limites_texturas(k, self.texturas(k))
+        por_textura = self.texturas(k)
+        limites = self.limites_texturas(k, por_textura)
         sin_tela = isinstance(self.__datos.tela, str)
         texturas = None if sin_tela else {
             clave: dict(zip(KRES.TEXTURAS_JSON,
                             (self.numero_json(v) for v in valores)))
             for clave, valores in limites.items()}
+        texturas_zona = None if sin_tela else self.texturas_json(por_textura)
         puntos = self.puntos_curva(k)
         curva = [{KRES.J_ZONA: p.nombre, KRES.J_TERCIO: p.tercio_ev,
                   KRES.J_ESPERADO: p.esperado, KRES.J_OBJETIVO: p.objetivo,
@@ -3529,9 +3807,14 @@ class Excel(object):
                      if p.revelador is not None]
         medias = {KRES.J_SENSOR: self.media(sensor),
                   KRES.J_REVELADOR: self.media(revelador)}
+        neutros = rangos_a_dict(rangos_neutros(self.__datos.balancesDistintos))
         return {KRES.J_CANALES: canales, KRES.J_TEXTURAS: texturas,
                 KRES.J_CURVA: curva, KRES.J_DIFERENCIAS: medias,
-                KRES.J_LINEALIDAD: linealidad, KRES.J_CONSTANTES: constantes}
+                KRES.J_LINEALIDAD: linealidad, KRES.J_CONSTANTES: constantes,
+                KRES.J_KELVIN_NEUTROS: neutros,
+                KRES.J_ANALISIS_ISO: self.analisis_iso(k),
+                KRES.J_TEXTURAS_ZONA: texturas_zona,
+                KRES.J_SENAL_RUIDO_ZONA: senal_ruido}
 
     #
     @staticmethod
@@ -3739,6 +4022,25 @@ class Excel(object):
                 KXL.T_CAB_SIN_RECORTE: sin_recorte,
                 KXL.T_CAB_CONTRASTE: contraste,
                 KXL.T_CAB_CONTRASTE_ZV: fraccion}
+
+    #
+    def texturas_json(self, por_zona: dict[str, list]) -> list[dict]:
+        """
+        Lo que calcula texturas() para el JSON (las claves de KRES.Z_*): una
+        entrada por tercio (de −KS.TERCIOS_LADO a KS.TERCIOS_LADO). Los
+        números, como float o None; los criterios, true, false o None.
+        """
+        entradas = []
+        n = len(por_zona[KXL.T_CAB_ESPERADO])
+        for i in range(n):
+            entrada: dict[str, object] = {KRES.J_TERCIO: i - KS.TERCIOS_LADO}
+            for clave, columna in KXL.TEXTURAS_NUMEROS_JSON:
+                entrada[clave] = self.numero_json(por_zona[columna][i])
+            for clave, columna in KXL.TEXTURAS_CRITERIOS_JSON:
+                cumple = por_zona[columna][i]
+                entrada[clave] = None if (cumple is None) else bool(cumple)
+            entradas.append(entrada)
+        return entradas
 
     #
     def titulo_ruido_color(self) -> str:

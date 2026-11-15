@@ -882,6 +882,8 @@ TEXTOS = {
               "zones, because that third has no L* read.",
         K.CA: "En color: estimat entre les dues zones senceres veïnes, "
               "perquè eixe terç no té L* llegit."},
+    _L.T_KELVIN_NEUTROS: {K.ES: "Kelvin neutros", K.EN: "Neutral Kelvin",
+                          K.CA: "Kelvin neutres"},
     _L.T_BALANCES: {K.ES: "Balances de blancos", K.EN: "White balances",
                     K.CA: "Balanços de blancs"},
     _L.T_NOTA_BALANCES: {

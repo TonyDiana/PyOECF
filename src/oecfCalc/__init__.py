@@ -17,11 +17,12 @@ __all__ = ["ajustar_transferencia", "avisos_rechazadas",
            "contraste_tela", "escala_mpx", "exceso_negro", "Exp",
            "exp_relativa", "factores",
            "FilaISO", "Incidencia",
-           "incidencia_a_dict", "KAN", "KCA", "KRV", "KS", "KTE", "KTR",
+           "incidencia_a_dict", "KAN", "KCA", "KNE", "KRV", "KS", "KTE", "KTR",
            "lstar_tiff", "matriz_color", "Medida", "MedidaISO", "MedidaTiff",
            "medir_teselas", "medir_tiff", "medir_toma", "OECF", "Oscuridad",
            "oscuridad", "part_recortada", "porcentaje", "problema_carpeta",
-           "recorte", "repartir_secuencia", "restar_exceso",
+           "RangoNeutro", "rangos_a_dict", "rangos_neutros", "recorte",
+           "repartir_secuencia", "restar_exceso",
            "Review", "review_a_dict", "review_de_dict", "ruido_temporal",
            "Secuencia", "seleccionar", "Select", "signal_para_snr",
            "snr_modelo", "Tela", "temperatura", "Teselas", "tercios_sombra",
@@ -31,6 +32,7 @@ __all__ = ["ajustar_transferencia", "avisos_rechazadas",
 from .carpeta import KCA, problema_carpeta
 from .incidencias import (Incidencia, avisos_rechazadas,
                           calcular_incidencias, incidencia_a_dict)
+from .neutros import KNE, RangoNeutro, rangos_a_dict, rangos_neutros
 from .oecf import OECF, Exp, Toma
 from .review import (KAN, BalanceMedido, FilaISO, MedidaISO, Review,
                      ZonaMedida, review_a_dict, review_de_dict, textura)

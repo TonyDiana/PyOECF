@@ -2,8 +2,8 @@
 
 
 ## Deploy
-### 26.11  --- <small>(<ins>*Nov/26*</ins>)</small>
-- Primera versión desplegable.
+### 26.11a  --- <small>(<ins>*16/Nov/26*</ins>)</small> --- Solucionar problemas de W11.
+### 26.11  --- <small>(<ins>*14/Nov/26*</ins>)</small> --- Primera versión desplegable.
 
 
 ## Betatester
