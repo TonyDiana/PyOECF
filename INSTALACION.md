@@ -40,6 +40,8 @@ Si Defender lo ha puesto en cuarentena:
 
 Si prefiere no excluirla, compruebe antes el hash (paso 3 de arriba).
 
+Si al abrirlo aparece **«Una directiva de Control de aplicaciones bloqueó este archivo»**, es **Smart App Control**, una protección de Windows 11 que bloquea los archivos sin firma y sin reputación conocida. Windows no permite añadir excepciones por archivo. Avise al autor indicando qué equipo y qué versión de Windows usa. Desactivar Smart App Control (**Seguridad de Windows → Control de aplicaciones y navegador → Smart App Control**) lo resuelve, pero es decisión suya: en muchas versiones de Windows no se puede volver a activar sin reinstalar el sistema.
+
 
 ## Opción 2: desde el código fuente (Sólo mantenedores)
 
